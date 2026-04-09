@@ -118,10 +118,10 @@ export default function LandingPage() {
           </ul>
 
           <a
-            href="#preventa"
+            href="/register"
             className="hidden md:inline-flex items-center gap-2 bg-[#ff2d78] hover:bg-[#e0255f] text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-colors shadow-sm"
           >
-            Unirme a la preventa ✨
+            Crear mi cuenta ✨
           </a>
 
           {/* Mobile menu button */}
@@ -197,16 +197,16 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="#preventa"
+              href="/register"
               className="inline-flex items-center justify-center gap-2 bg-[#ff2d78] hover:bg-[#e0255f] text-white font-semibold text-base px-8 py-4 rounded-full transition-colors shadow-lg shadow-pink-200"
             >
-              Quiero mi acceso con descuento 💕
+              Crear mi cuenta 💕
             </a>
             <a
-              href="#que-incluye"
+              href="/login"
               className="inline-flex items-center justify-center gap-2 bg-white hover:bg-[#fff0f3] text-[#ff2d78] font-semibold text-base px-8 py-4 rounded-full border border-[#ffd6e0] transition-colors"
             >
-              Ver qué incluye
+              Ya tengo cuenta
             </a>
           </div>
 
