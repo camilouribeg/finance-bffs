@@ -1,0 +1,185 @@
+"use client";
+
+import { useState } from "react";
+
+type Bolsillo = {
+  id: string;
+  nombre: string;
+  meta: number;
+  actual: number;
+  emoji: string;
+};
+
+const DEFAULT_EMOJIS = ["✈️","🏠","🚨","🎓","💻","👗","💍","🎉","🐾","🌱"];
+
+export default function AhorroPage() {
+  const [bolsillos, setBolsillos] = useState<Bolsillo[]>([
+    { id: "1", nombre: "Fondo de emergencias", meta: 3000000, actual: 500000, emoji: "🚨" },
+    { id: "2", nombre: "Viaje soñado", meta: 5000000, actual: 200000, emoji: "✈️" },
+  ]);
+  const [nombre, setNombre] = useState("");
+  const [meta, setMeta] = useState("");
+  const [emoji, setEmoji] = useState("🐷");
+  const [showForm, setShowForm] = useState(false);
+
+  function addBolsillo(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nombre || !meta) return;
+    setBolsillos([
+      ...bolsillos,
+      { id: crypto.randomUUID(), nombre, meta: parseFloat(meta), actual: 0, emoji },
+    ]);
+    setNombre(""); setMeta(""); setEmoji("🐷"); setShowForm(false);
+  }
+
+  function abonar(id: string, amount: number) {
+    setBolsillos(bolsillos.map((b) =>
+      b.id === id ? { ...b, actual: Math.min(b.actual + amount, b.meta) } : b
+    ));
+  }
+
+  function removeBolsillo(id: string) {
+    setBolsillos(bolsillos.filter((b) => b.id !== id));
+  }
+
+  function fmt(n: number) {
+    return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+  }
+
+  const totalMeta = bolsillos.reduce((s, b) => s + b.meta, 0);
+  const totalActual = bolsillos.reduce((s, b) => s + b.actual, 0);
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
+            Bolsillos de ahorro 🐷
+          </h1>
+          <p className="text-[#1a1a2e]/50 text-sm mt-1">Tus metas de ahorro, organizadas</p>
+        </div>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="bg-[#ff2d78] hover:bg-[#e0255f] text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-colors"
+        >
+          + Nuevo bolsillo
+        </button>
+      </div>
+
+      {/* Total summary */}
+      <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="bg-white rounded-2xl border border-[#ffd6e0] p-5">
+          <p className="text-xs text-[#1a1a2e]/50 mb-1">Total acumulado</p>
+          <p className="text-2xl font-bold text-green-600">{fmt(totalActual)}</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-[#ffd6e0] p-5">
+          <p className="text-xs text-[#1a1a2e]/50 mb-1">Meta total</p>
+          <p className="text-2xl font-bold text-[#1a1a2e]">{fmt(totalMeta)}</p>
+        </div>
+      </div>
+
+      {/* New bolsillo form */}
+      {showForm && (
+        <div className="bg-white rounded-2xl border border-[#ffd6e0] p-6 mb-6">
+          <h2 className="font-semibold text-[#1a1a2e] mb-4">Crear bolsillo</h2>
+          <form onSubmit={addBolsillo} className="flex flex-col gap-3">
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="text-xs text-[#1a1a2e]/60 mb-1 block">Nombre</label>
+                <input
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  placeholder="Ej: Viaje a París"
+                  className="w-full border border-[#ffd6e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ff2d78]/30 focus:border-[#ff2d78] bg-[#fff8f9]"
+                />
+              </div>
+              <div className="w-28">
+                <label className="text-xs text-[#1a1a2e]/60 mb-1 block">Emoji</label>
+                <select
+                  value={emoji}
+                  onChange={(e) => setEmoji(e.target.value)}
+                  className="w-full border border-[#ffd6e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ff2d78]/30 bg-[#fff8f9]"
+                >
+                  {["🐷", ...DEFAULT_EMOJIS].map((e) => <option key={e}>{e}</option>)}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-[#1a1a2e]/60 mb-1 block">Meta de ahorro</label>
+              <input
+                type="number"
+                value={meta}
+                onChange={(e) => setMeta(e.target.value)}
+                placeholder="0"
+                className="w-full border border-[#ffd6e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ff2d78]/30 focus:border-[#ff2d78] bg-[#fff8f9]"
+              />
+            </div>
+            <button type="submit" className="bg-[#ff2d78] hover:bg-[#e0255f] text-white font-semibold py-2.5 rounded-xl text-sm">
+              Crear bolsillo 🐷
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Bolsillos grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {bolsillos.map((b) => {
+          const pct = Math.min((b.actual / b.meta) * 100, 100);
+          const [abonoAmt, setAbonoAmt] = useState("");
+          return (
+            <div key={b.id} className="bg-white rounded-2xl border border-[#ffd6e0] p-6">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{b.emoji}</span>
+                  <div>
+                    <p className="font-semibold text-[#1a1a2e]">{b.nombre}</p>
+                    <p className="text-xs text-[#1a1a2e]/50">Meta: {fmt(b.meta)}</p>
+                  </div>
+                </div>
+                <button onClick={() => removeBolsillo(b.id)} className="text-[#1a1a2e]/20 hover:text-red-400 text-xs">✕</button>
+              </div>
+
+              <div className="mb-3">
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-[#1a1a2e]/60">{fmt(b.actual)} ahorrado</span>
+                  <span className="font-semibold text-[#ff2d78]">{pct.toFixed(0)}%</span>
+                </div>
+                <div className="h-3 bg-[#ffd6e0] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#ff2d78] rounded-full transition-all duration-500"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+
+              {pct < 100 && (
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={abonoAmt}
+                    onChange={(e) => setAbonoAmt(e.target.value)}
+                    placeholder="Abonar..."
+                    className="flex-1 border border-[#ffd6e0] rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#ff2d78]/30 bg-[#fff8f9]"
+                  />
+                  <button
+                    onClick={() => { abonar(b.id, parseFloat(abonoAmt) || 0); setAbonoAmt(""); }}
+                    className="bg-[#ff2d78] text-white text-xs px-4 py-2 rounded-xl font-semibold hover:bg-[#e0255f]"
+                  >
+                    + Abonar
+                  </button>
+                </div>
+              )}
+
+              {pct >= 100 && (
+                <div className="text-center bg-green-50 border border-green-200 rounded-xl py-2">
+                  <p className="text-sm font-semibold text-green-600">🎉 ¡Meta alcanzada!</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
