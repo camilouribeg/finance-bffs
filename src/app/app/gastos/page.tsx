@@ -11,6 +11,8 @@ const CATEGORY_EMOJIS: Record<string, string> = {
   "Suscripciones": "📱", "Cafés": "☕", "Domicilios": "🛵", "Compras impulsivas": "🛍️", "Otros": "📦",
 };
 
+const CATEGORIES = ["Vivienda","Comida","Transporte","Salud","Educación","Entretenimiento","Ropa","Belleza","Suscripciones","Cafés","Domicilios","Compras impulsivas","Otros"];
+
 const TIPS = [
   { icon: "💡", title: "La regla del 24 horas", desc: "Antes de una compra no planeada, espera 24 horas. Si al día siguiente sigues queriéndola, evalúa si está en tu presupuesto." },
   { icon: "📊", title: "Conoce tus patrones", desc: "Ver en qué categoría gastas más te da poder. No para juzgarte, sino para tomar decisiones conscientes." },
@@ -26,6 +28,13 @@ export default function GastosVisualPage() {
   const [month, setMonth] = useState(new Date().getMonth());
   const [year] = useState(new Date().getFullYear());
 
+  // Form state
+  const [categoria, setCategoria] = useState(CATEGORIES[1]);
+  const [descripcion, setDescripcion] = useState("");
+  const [valor, setValor] = useState("");
+  const [fecha, setFecha] = useState("");
+  const [adding, setAdding] = useState(false);
+
   useEffect(() => {
     async function load() {
       const supabase = createClient();
@@ -37,6 +46,30 @@ export default function GastosVisualPage() {
     }
     load();
   }, []);
+
+  async function addGasto(e: React.FormEvent) {
+    e.preventDefault();
+    if (!descripcion || !valor) return;
+    setAdding(true);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase.from("gastos").insert({
+      user_id: user.id,
+      fecha: fecha || new Date().toISOString().split("T")[0],
+      categoria, descripcion,
+      valor: parseFloat(valor),
+    }).select().single();
+    if (data) setGastos([data, ...gastos]);
+    setDescripcion(""); setValor(""); setFecha("");
+    setAdding(false);
+  }
+
+  async function removeGasto(id: string) {
+    const supabase = createClient();
+    await supabase.from("gastos").delete().eq("id", id);
+    setGastos(gastos.filter((g) => g.id !== id));
+  }
 
   function fmt(n: number) {
     return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
@@ -75,6 +108,32 @@ export default function GastosVisualPage() {
           {MONTHS.map((m, i) => <option key={i} value={i}>{m} {year}</option>)}
         </select>
       </div>
+
+      {/* Quick add form */}
+      <form onSubmit={addGasto} className="bg-white rounded-2xl border border-[#ffb8e0] p-5 mb-6">
+        <p className="text-sm font-semibold text-[#1a1a2e] mb-3">Registrar gasto rápido</p>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <select value={categoria} onChange={(e) => setCategoria(e.target.value)}
+            className="border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 sm:w-44">
+            {CATEGORIES.map((c) => (
+              <option key={c}>{CATEGORY_EMOJIS[c] ? `${CATEGORY_EMOJIS[c]} ${c}` : c}</option>
+            ))}
+          </select>
+          <input type="text" value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
+            placeholder="¿En qué gastaste? *" required
+            className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+          <input type="number" value={valor} onChange={(e) => setValor(e.target.value)}
+            placeholder="Valor *" required
+            className="border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 sm:w-36" />
+          <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)}
+            className="border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 sm:w-40 text-[#1a1a2e]/50" />
+          <button type="submit" disabled={adding}
+            className="bg-[#ec7fa9] hover:bg-[#d96d97] disabled:opacity-50 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors whitespace-nowrap">
+            {adding ? "..." : "+ Agregar"}
+          </button>
+        </div>
+        <p className="text-xs text-[#1a1a2e]/30 mt-2">* obligatorio · fecha es opcional</p>
+      </form>
 
       {loading ? (
         <div className="text-center py-20 text-[#1a1a2e]/30">Cargando...</div>
@@ -152,7 +211,10 @@ export default function GastosVisualPage() {
                           <p className="text-xs text-[#1a1a2e]/40">{g.fecha}</p>
                         </div>
                       </div>
-                      <span className="text-sm font-semibold text-[#ec7fa9] flex-shrink-0 ml-3">{fmt(g.valor)}</span>
+                      <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                        <span className="text-sm font-semibold text-[#ec7fa9]">{fmt(g.valor)}</span>
+                        <button onClick={() => removeGasto(g.id)} className="text-[#1a1a2e]/20 hover:text-red-400 text-xs">✕</button>
+                      </div>
                     </div>
                   ))}
                 </div>
