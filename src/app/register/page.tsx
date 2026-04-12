@@ -6,10 +6,26 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
+const COUNTRY_CODES = [
+  { code: "+57", flag: "🇨🇴", name: "Colombia" },
+  { code: "+1", flag: "🇺🇸", name: "Estados Unidos" },
+  { code: "+52", flag: "🇲🇽", name: "México" },
+  { code: "+54", flag: "🇦🇷", name: "Argentina" },
+  { code: "+56", flag: "🇨🇱", name: "Chile" },
+  { code: "+51", flag: "🇵🇪", name: "Perú" },
+  { code: "+593", flag: "🇪🇨", name: "Ecuador" },
+  { code: "+58", flag: "🇻🇪", name: "Venezuela" },
+  { code: "+502", flag: "🇬🇹", name: "Guatemala" },
+  { code: "+506", flag: "🇨🇷", name: "Costa Rica" },
+  { code: "+34", flag: "🇪🇸", name: "España" },
+  { code: "+44", flag: "🇬🇧", name: "Reino Unido" },
+];
+
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [dialCode, setDialCode] = useState("+57");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +52,7 @@ export default function RegisterPage() {
           data: {
             full_name: firstName,
             last_name: lastName,
-            phone,
+            phone: phone ? `${dialCode} ${phone}` : "",
           },
         },
       });
@@ -128,13 +144,26 @@ export default function RegisterPage() {
                     <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">
                       Teléfono <span className="text-[#1a1a2e]/30 font-normal">(opcional)</span>
                     </label>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+57 300 000 0000"
-                      className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
-                    />
+                    <div className="flex gap-2">
+                      <select
+                        value={dialCode}
+                        onChange={(e) => setDialCode(e.target.value)}
+                        className="border border-[#ffb8e0] rounded-xl px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 bg-[#ffedfa] w-32 flex-shrink-0"
+                      >
+                        {COUNTRY_CODES.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.flag} {c.code}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="300 000 0000"
+                        className="flex-1 border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
+                      />
+                    </div>
                   </div>
 
                   <button
