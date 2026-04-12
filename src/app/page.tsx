@@ -48,6 +48,13 @@ const HOW_STEPS = [
   },
 ];
 
+const PRESALE_PERKS = [
+  "Precio bloqueado para siempre — nunca sube aunque el precio general suba",
+  "Acceso prioritario a nuevas funciones antes que nadie",
+  "Comunidad privada de Finance BFFs 💕",
+  "Soporte directo con el equipo",
+];
+
 const PLANS = [
   {
     name: "Acceso 1 mes",
@@ -57,6 +64,7 @@ const PLANS = [
     features: ["Acceso completo por 1 mes", "Dashboard mensual", "Tracking de gastos", "Bolsillos de ahorro"],
     cta: "Empezar ahora",
     highlight: false,
+    presale: "Precio de preventa",
   },
   {
     name: "Plan mensual",
@@ -66,6 +74,7 @@ const PLANS = [
     features: ["Todo lo del acceso 1 mes", "Historial de meses anteriores", "Cancela cuando quieras", "Actualizaciones incluidas"],
     cta: "Elegir mensual",
     highlight: true,
+    presale: "Precio bloqueado en preventa",
   },
   {
     name: "Plan anual",
@@ -75,6 +84,7 @@ const PLANS = [
     features: ["Todo lo del plan mensual", "Precio bloqueado por 1 año", "Prioridad en soporte", "Acceso a nuevas funciones"],
     cta: "Elegir anual",
     highlight: false,
+    presale: "Mejor precio del año",
   },
 ];
 
@@ -89,9 +99,9 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <a href="#" className="flex items-center gap-2">
             <span className="text-2xl font-bold text-[#ec7fa9]" style={{ fontFamily: "var(--font-playfair)" }}>
-              Finance BFFs
+              Finly
             </span>
-            <span className="text-lg">💕</span>
+            <span className="text-xs text-[#1a1a2e]/40 font-medium mt-1">by Finance BFFs 💕</span>
           </a>
 
           <ul className="hidden md:flex items-center gap-8">
@@ -140,22 +150,24 @@ export default function LandingPage() {
         <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-[#ffb8e0] opacity-30 blob" aria-hidden="true" />
 
         <div className="relative max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-white border border-[#ffb8e0] text-[#ec7fa9] text-sm font-medium px-4 py-1.5 rounded-full mb-8">
-            <span className="w-2 h-2 bg-[#ec7fa9] rounded-full inline-block" />
-            Preventa abierta — plazas limitadas
-          </div>
+          <a
+            href="#precios"
+            className="inline-flex items-center gap-2 bg-white border border-[#ffb8e0] text-[#ec7fa9] text-sm font-medium px-4 py-1.5 rounded-full mb-8 hover:bg-[#ffedfa] transition-colors cursor-pointer"
+          >
+            <span className="w-2 h-2 bg-[#ec7fa9] rounded-full inline-block animate-pulse" />
+            🎉 Preventa abierta — plazas limitadas · Ver beneficios →
+          </a>
 
-          {/* Story */}
-          <p className="text-[#ec7fa9] font-medium text-lg mb-3">Te entra dinero… pero no sabes en qué se va.</p>
-          <h1 className="text-5xl md:text-6xl font-bold text-[#1a1a2e] leading-tight mb-4" style={{ fontFamily: "var(--font-playfair)" }}>
-            Y eso <span className="italic text-[#ec7fa9]">cansa.</span>
+          <h1 className="text-5xl md:text-6xl font-bold text-[#1a1a2e] leading-tight mb-5" style={{ fontFamily: "var(--font-playfair)" }}>
+            Entender tu dinero no tiene que ser{" "}
+            <span className="italic text-[#ec7fa9]">complicado.</span>
           </h1>
+
           <p className="text-lg text-[#1a1a2e]/60 max-w-xl mx-auto mb-3 leading-relaxed">
-            No necesitas hacerlo perfecto ni sola.<br />
-            Solo necesitas una forma más simple.
+            Te entra dinero… pero no sabes en qué se va. Y eso cansa.
           </p>
           <p className="text-base text-[#1a1a2e]/80 max-w-xl mx-auto mb-10 font-medium">
-            Entender tu dinero no tiene que ser complicado.<br />
+            No necesitas hacerlo perfecto ni sola.<br />
             Solo necesitas empezar.
           </p>
 
@@ -164,7 +176,7 @@ export default function LandingPage() {
               href="/register"
               className="inline-flex items-center justify-center gap-2 bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold text-base px-8 py-4 rounded-full transition-colors shadow-lg"
             >
-              Crear mi cuenta 💕
+              Quiero mi acceso de preventa 💕
             </a>
             <a
               href="/login"
@@ -183,7 +195,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ───── DESCRIPCIÓN ───── */}
+      {/* ───── QUÉ ES ───── */}
       <section className="py-16 px-6 bg-white">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a2e] mb-6" style={{ fontFamily: "var(--font-playfair)" }}>
@@ -226,7 +238,6 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* Simple section */}
           <div className="bg-white rounded-3xl border border-[#ffb8e0] p-8 text-center">
             <h3 className="text-2xl font-bold text-[#1a1a2e] mb-6" style={{ fontFamily: "var(--font-playfair)" }}>
               Es mucho más simple de lo que crees
@@ -271,11 +282,30 @@ export default function LandingPage() {
       {/* ───── PRICING ───── */}
       <section id="precios" className="py-20 px-6 bg-[#ffedfa]">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
               Elige tu plan
             </h2>
             <p className="text-[#1a1a2e]/60">Sin sorpresas. Cancela cuando quieras.</p>
+          </div>
+
+          {/* Presale benefits banner */}
+          <div className="bg-[#ec7fa9] rounded-3xl p-6 mb-8 text-white">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-2 h-2 bg-white rounded-full inline-block animate-pulse" />
+              <p className="font-bold text-sm uppercase tracking-widest">🎉 Beneficios de entrar en preventa ahora</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {PRESALE_PERKS.map((perk, i) => (
+                <div key={i} className="flex items-center gap-3 bg-white/20 rounded-2xl px-4 py-3">
+                  <span className="text-white text-base flex-shrink-0">✓</span>
+                  <p className="text-white/90 text-sm">{perk}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-white/70 text-xs mt-4 text-center">
+              Plazas limitadas — el precio de preventa no se mantendrá para siempre
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -293,7 +323,12 @@ export default function LandingPage() {
                     ✦ Más popular
                   </div>
                 )}
-                <p className={`font-semibold text-lg mb-1 ${p.highlight ? "text-white" : "text-[#1a1a2e]"}`}>
+                <div className={`text-xs font-semibold mb-2 px-3 py-1 rounded-full inline-block w-fit ${
+                  p.highlight ? "bg-white/20 text-white" : "bg-[#ffedfa] text-[#ec7fa9]"
+                }`}>
+                  🎉 {p.presale}
+                </div>
+                <p className={`font-semibold text-lg mb-1 mt-2 ${p.highlight ? "text-white" : "text-[#1a1a2e]"}`}>
                   {p.name}
                 </p>
                 <p className={`text-sm mb-4 ${p.highlight ? "text-white/70" : "text-[#1a1a2e]/50"}`}>
@@ -332,9 +367,10 @@ export default function LandingPage() {
 
       {/* ───── FOOTER ───── */}
       <footer className="bg-[#1a1a2e] py-12 px-6 text-center">
-        <p className="text-2xl font-bold text-[#ec7fa9] mb-2" style={{ fontFamily: "var(--font-playfair)" }}>
-          Finance BFFs 💕
+        <p className="text-2xl font-bold text-[#ec7fa9] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
+          Finly
         </p>
+        <p className="text-white/30 text-xs mb-1">by Finance BFFs 💕</p>
         <p className="text-white/40 text-sm mb-4">Tu mejor amiga en las finanzas.</p>
         <a
           href="https://www.instagram.com/financebestfriends"

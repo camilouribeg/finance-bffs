@@ -48,7 +48,7 @@ export default function GastosPage() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const newGasto = { user_id: user.id, fecha, categoria, descripcion, valor: parseFloat(valor) };
+    const newGasto = { user_id: user.id, fecha: fecha || new Date().toISOString().split("T")[0], categoria, descripcion, valor: parseFloat(valor) };
     const { data } = await supabase.from("gastos").insert(newGasto).select().single();
     if (data) setGastos([data, ...gastos]);
     setDescripcion("");
@@ -88,7 +88,7 @@ export default function GastosPage() {
             <h2 className="font-semibold text-[#1a1a2e] mb-4">Registrar gasto</h2>
             <form onSubmit={addGasto} className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-[#1a1a2e]/60 mb-1 block">Fecha</label>
+                <label className="text-xs text-[#1a1a2e]/60 mb-1 block">Fecha <span className="text-[#1a1a2e]/30">(opcional)</span></label>
                 <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)}
                   className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]" />
               </div>

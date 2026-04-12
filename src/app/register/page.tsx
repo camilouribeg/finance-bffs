@@ -4,12 +4,13 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const [name, setName] = useState("");
+  const [step, setStep] = useState(1);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -32,7 +33,11 @@ export default function RegisterPage() {
         email,
         password,
         options: {
-          data: { full_name: name },
+          data: {
+            full_name: firstName,
+            last_name: lastName,
+            phone,
+          },
         },
       });
 
@@ -45,116 +50,170 @@ export default function RegisterPage() {
       if (data.user) {
         window.location.href = "/app";
       } else {
-        setError("Something went wrong. Please try again.");
+        setError("Algo salió mal. Intenta de nuevo.");
         setLoading(false);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Unexpected error. Please try again.");
+      setError(err instanceof Error ? err.message : "Error inesperado. Intenta de nuevo.");
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#ffedfa] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#ffedfa] flex items-center justify-center px-4 py-12">
       <div className="absolute top-0 right-0 w-96 h-96 bg-[#ffb8e0] opacity-40 blob pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-72 h-72 bg-[#ffb8e0] opacity-30 blob pointer-events-none" />
 
       <div className="relative w-full max-w-md">
+        {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/">
-            <span
-              className="text-3xl font-bold text-[#ec7fa9]"
-              style={{ fontFamily: "var(--font-playfair)" }}
-            >
-              Finance BFFs 💕
+          <Link href="/" className="inline-block">
+            <span className="text-3xl font-bold text-[#ec7fa9]" style={{ fontFamily: "var(--font-playfair)" }}>
+              Finly
             </span>
+            <span className="text-xs text-[#1a1a2e]/40 font-medium ml-2">by Finance BFFs 💕</span>
           </Link>
           <p className="text-[#1a1a2e]/50 text-sm mt-2">Tu mejor amiga en las finanzas</p>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-xl border border-[#ffb8e0] p-8">
-          <h1
-            className="text-2xl font-bold text-[#1a1a2e] mb-1"
-            style={{ fontFamily: "var(--font-playfair)" }}
-          >
-            Crea tu cuenta ✨
-          </h1>
-          <p className="text-[#1a1a2e]/50 text-sm mb-8">
-            Empieza a tomar control de tu dinero hoy
-          </p>
-
-          <form onSubmit={handleRegister} className="flex flex-col gap-4">
-            <div>
-              <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">
-                Tu nombre
-              </label>
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="María"
-                className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">
-                Correo electrónico
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@correo.com"
-                className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">
-                Contraseña
-              </label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-                className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
-              />
-            </div>
-
-            {error && (
-              <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#ec7fa9] hover:bg-[#d96d97] disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition-colors mt-2"
-            >
-              {loading ? "Creando cuenta..." : "Crear mi cuenta →"}
-            </button>
-          </form>
-
-          {/* Presale badge */}
-          <div className="mt-6 bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl p-4 text-center">
-            <p className="text-xs text-[#ec7fa9] font-semibold">🎉 PRECIO DE PREVENTA</p>
-            <p className="text-[#1a1a2e]/70 text-sm mt-1">
-              Primer mes gratis, luego solo <strong>$X/mes</strong>
-            </p>
+        <div className="bg-white rounded-3xl shadow-xl border border-[#ffb8e0] overflow-hidden">
+          {/* Progress bar */}
+          <div className="h-1 bg-[#ffb8e0]">
+            <div
+              className="h-full bg-[#ec7fa9] transition-all duration-500"
+              style={{ width: step === 1 ? "50%" : "100%" }}
+            />
           </div>
 
-          <p className="text-center text-sm text-[#1a1a2e]/50 mt-4">
-            ¿Ya tienes cuenta?{" "}
-            <Link href="/login" className="text-[#ec7fa9] font-medium hover:underline">
-              Inicia sesión
-            </Link>
-          </p>
+          <div className="p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="text-2xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
+                  {step === 1 ? "Cuéntanos de ti ✨" : "Crea tu acceso 🔐"}
+                </h1>
+                <p className="text-[#1a1a2e]/50 text-sm mt-1">
+                  {step === 1 ? "Paso 1 de 2 — tus datos" : "Paso 2 de 2 — tu cuenta"}
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={step === 1 ? (e) => { e.preventDefault(); setStep(2); } : handleRegister} className="flex flex-col gap-4">
+              {step === 1 && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Nombre</label>
+                      <input
+                        type="text"
+                        required
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        placeholder="María"
+                        className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Apellido</label>
+                      <input
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        placeholder="García"
+                        className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">
+                      Teléfono <span className="text-[#1a1a2e]/30 font-normal">(opcional)</span>
+                    </label>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+57 300 000 0000"
+                      className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={!firstName}
+                    className="w-full bg-[#ec7fa9] hover:bg-[#d96d97] disabled:opacity-40 text-white font-semibold py-3.5 rounded-xl transition-colors mt-2"
+                  >
+                    Continuar →
+                  </button>
+                </>
+              )}
+
+              {step === 2 && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Correo electrónico</label>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="tu@correo.com"
+                      className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Contraseña</label>
+                    <input
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
+                    />
+                  </div>
+
+                  {error && (
+                    <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                      {error}
+                    </p>
+                  )}
+
+                  <div className="flex gap-3 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl transition-colors hover:bg-[#ffedfa] text-sm"
+                    >
+                      ← Atrás
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition-colors text-sm"
+                    >
+                      {loading ? "Creando cuenta..." : "Crear mi cuenta →"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </form>
+
+            {/* Presale badge */}
+            <div className="mt-6 bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl p-4 text-center">
+              <p className="text-xs text-[#ec7fa9] font-semibold">🎉 PRECIO DE PREVENTA ACTIVO</p>
+              <p className="text-[#1a1a2e]/70 text-sm mt-1">
+                Precio bloqueado para siempre al unirte hoy
+              </p>
+            </div>
+
+            <p className="text-center text-sm text-[#1a1a2e]/50 mt-4">
+              ¿Ya tienes cuenta?{" "}
+              <Link href="/login" className="text-[#ec7fa9] font-medium hover:underline">
+                Inicia sesión
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
