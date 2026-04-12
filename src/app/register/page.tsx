@@ -42,7 +42,7 @@ export default function RegisterPage() {
       return;
     }
 
-    router.push("/app");
+    window.location.href = "/app";
   }
 
   return (
