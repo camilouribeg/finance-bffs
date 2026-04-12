@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
@@ -12,6 +13,7 @@ const CATEGORY_EMOJIS: Record<string, string> = {
 };
 
 const CATEGORIES = ["Vivienda","Comida","Transporte","Salud","Educación","Entretenimiento","Ropa","Belleza","Suscripciones","Cafés","Domicilios","Compras impulsivas","Otros"];
+const PIE_COLORS = ["#ec7fa9","#ffb8e0","#f472b6","#fb7185","#f9a8d4","#e879f9","#c084fc","#a78bfa","#818cf8","#60a5fa","#34d399","#fbbf24","#f87171"];
 
 const TIPS = [
   { icon: "💡", title: "La regla del 24 horas", desc: "Antes de una compra no planeada, espera 24 horas. Si al día siguiente sigues queriéndola, evalúa si está en tu presupuesto." },
@@ -160,35 +162,40 @@ export default function GastosVisualPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Category breakdown */}
+            {/* Pie chart */}
             <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
               <h2 className="font-semibold text-[#1a1a2e] mb-5">Por categoría</h2>
               {byCategory.length === 0 ? (
                 <div className="text-center py-10 text-[#1a1a2e]/30">
                   <p className="text-3xl mb-2">📭</p>
                   <p className="text-sm">Sin gastos registrados este mes</p>
-                  <p className="text-xs mt-1 text-[#1a1a2e]/20">Registra tus gastos en el Dashboard</p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-3">
-                  {byCategory.map(([cat, val]) => (
-                    <div key={cat}>
-                      <div className="flex justify-between text-xs mb-1.5">
-                        <span className="text-[#1a1a2e]/70 flex items-center gap-1.5">
-                          <span>{CATEGORY_EMOJIS[cat] || "📦"}</span> {cat}
-                        </span>
-                        <span className="font-semibold text-[#ec7fa9]">{fmt(val)}</span>
+                <>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie data={byCategory.map(([name, value]) => ({ name, value }))}
+                        cx="50%" cy="50%" innerRadius={55} outerRadius={90}
+                        paddingAngle={2} dataKey="value">
+                        {byCategory.map(([cat], i) => (
+                          <Cell key={cat} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(v) => fmt(Number(v))} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex flex-col gap-2 mt-2">
+                    {byCategory.map(([cat, val], i) => (
+                      <div key={cat} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                          <span className="text-[#1a1a2e]/70">{CATEGORY_EMOJIS[cat] || "📦"} {cat}</span>
+                        </div>
+                        <span className="font-semibold text-[#1a1a2e]">{total > 0 ? ((val / total) * 100).toFixed(0) : 0}%</span>
                       </div>
-                      <div className="h-2 bg-[#ffb8e0] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#ec7fa9] rounded-full transition-all duration-700"
-                          style={{ width: `${(val / maxCat) * 100}%` }} />
-                      </div>
-                      <p className="text-xs text-[#1a1a2e]/30 mt-0.5 text-right">
-                        {total > 0 ? ((val / total) * 100).toFixed(0) : 0}% del total
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
 
