@@ -35,10 +35,10 @@ export default function AppSidebar({
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="px-6 py-6 border-b border-[#ffd6e0]">
+      <div className="px-6 py-6 border-b border-[#ffb8e0]">
         <Link href="/" className="flex items-center gap-2">
           <span
-            className="text-xl font-bold text-[#ff2d78]"
+            className="text-xl font-bold text-[#ec7fa9]"
             style={{ fontFamily: "var(--font-playfair)" }}
           >
             Finance BFFs
@@ -59,8 +59,8 @@ export default function AppSidebar({
               onClick={() => setMobileOpen(false)}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
                 active
-                  ? "bg-[#ff2d78] text-white shadow-sm"
-                  : "text-[#1a1a2e]/70 hover:bg-[#fff0f3] hover:text-[#ff2d78]"
+                  ? "bg-[#ec7fa9] text-white shadow-sm"
+                  : "text-[#1a1a2e]/70 hover:bg-[#ffedfa] hover:text-[#ec7fa9]"
               }`}
             >
               <span className="text-lg">{item.icon}</span>
@@ -71,7 +71,7 @@ export default function AppSidebar({
       </nav>
 
       {/* Subscription status */}
-      <div className="px-4 py-3 mx-3 mb-3 rounded-xl bg-[#fff0f3] border border-[#ffd6e0]">
+      <div className="px-4 py-3 mx-3 mb-3 rounded-xl bg-[#ffedfa] border border-[#ffb8e0]">
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full ${isActive ? "bg-green-400" : "bg-orange-400"}`} />
           <span className="text-xs font-medium text-[#1a1a2e]/70">
@@ -84,7 +84,7 @@ export default function AppSidebar({
       <div className="px-3 pb-6">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-[#1a1a2e]/50 hover:bg-[#fff0f3] hover:text-[#ff2d78] transition-colors"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-[#1a1a2e]/50 hover:bg-[#ffedfa] hover:text-[#ec7fa9] transition-colors"
         >
           <span className="text-lg">🚪</span>
           Cerrar sesión
@@ -96,19 +96,19 @@ export default function AppSidebar({
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-[#ffd6e0] sticky top-0 h-screen">
+      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-[#ffb8e0] sticky top-0 h-screen">
         <SidebarContent />
       </aside>
 
       {/* Mobile header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-[#ffd6e0] px-4 h-14 flex items-center justify-between">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-[#ffb8e0] px-4 h-14 flex items-center justify-between">
         <span
-          className="text-lg font-bold text-[#ff2d78]"
+          className="text-lg font-bold text-[#ec7fa9]"
           style={{ fontFamily: "var(--font-playfair)" }}
         >
           Finance BFFs 💕
         </span>
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 text-[#ff2d78]">
+        <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 text-[#ec7fa9]">
           <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             {mobileOpen ? (
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

@@ -64,7 +64,7 @@ export default function GastosPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Add expense form */}
         <div className="md:col-span-2">
-          <div className="bg-white rounded-2xl border border-[#ffd6e0] p-6 mb-6">
+          <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6 mb-6">
             <h2 className="font-semibold text-[#1a1a2e] mb-4">Registrar gasto</h2>
             <form onSubmit={addGasto} className="grid grid-cols-2 gap-3">
               <div>
@@ -73,7 +73,7 @@ export default function GastosPage() {
                   type="date"
                   value={fecha}
                   onChange={(e) => setFecha(e.target.value)}
-                  className="w-full border border-[#ffd6e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ff2d78]/30 focus:border-[#ff2d78] bg-[#fff8f9]"
+                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]"
                 />
               </div>
               <div>
@@ -81,7 +81,7 @@ export default function GastosPage() {
                 <select
                   value={categoria}
                   onChange={(e) => setCategoria(e.target.value)}
-                  className="w-full border border-[#ffd6e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ff2d78]/30 focus:border-[#ff2d78] bg-[#fff8f9]"
+                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]"
                 >
                   {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
                 </select>
@@ -93,7 +93,7 @@ export default function GastosPage() {
                   value={descripcion}
                   onChange={(e) => setDescripcion(e.target.value)}
                   placeholder="Ej: Mercado semanal"
-                  className="w-full border border-[#ffd6e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ff2d78]/30 focus:border-[#ff2d78] bg-[#fff8f9]"
+                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]"
                 />
               </div>
               <div>
@@ -103,13 +103,13 @@ export default function GastosPage() {
                   value={valor}
                   onChange={(e) => setValor(e.target.value)}
                   placeholder="0"
-                  className="w-full border border-[#ffd6e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ff2d78]/30 focus:border-[#ff2d78] bg-[#fff8f9]"
+                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]"
                 />
               </div>
               <div className="col-span-2">
                 <button
                   type="submit"
-                  className="w-full bg-[#ff2d78] hover:bg-[#e0255f] text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
+                  className="w-full bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
                 >
                   + Agregar gasto
                 </button>
@@ -118,16 +118,16 @@ export default function GastosPage() {
           </div>
 
           {/* Filter + list */}
-          <div className="bg-white rounded-2xl border border-[#ffd6e0] p-6">
+          <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-[#1a1a2e]">
                 Gastos registrados{" "}
-                <span className="text-[#ff2d78]">({filtered.length})</span>
+                <span className="text-[#ec7fa9]">({filtered.length})</span>
               </h2>
               <select
                 value={filtro}
                 onChange={(e) => setFiltro(e.target.value)}
-                className="border border-[#ffd6e0] rounded-xl px-3 py-1.5 text-xs bg-[#fff8f9] outline-none"
+                className="border border-[#ffb8e0] rounded-xl px-3 py-1.5 text-xs bg-[#ffedfa] outline-none"
               >
                 <option>Todas</option>
                 {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
@@ -142,20 +142,20 @@ export default function GastosPage() {
             ) : (
               <div className="flex flex-col gap-2">
                 {filtered.map((g) => (
-                  <div key={g.id} className="flex items-center justify-between p-3 rounded-xl bg-[#fff8f9] border border-[#ffd6e0]">
+                  <div key={g.id} className="flex items-center justify-between p-3 rounded-xl bg-[#ffedfa] border border-[#ffb8e0]">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[#1a1a2e] truncate">{g.descripcion}</p>
                       <p className="text-xs text-[#1a1a2e]/50">{g.fecha} · {g.categoria}</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-bold text-[#ff2d78]">{fmt(g.valor)}</span>
+                      <span className="text-sm font-bold text-[#ec7fa9]">{fmt(g.valor)}</span>
                       <button onClick={() => removeGasto(g.id)} className="text-[#1a1a2e]/30 hover:text-red-400 transition-colors text-xs">✕</button>
                     </div>
                   </div>
                 ))}
-                <div className="pt-3 border-t border-[#ffd6e0] flex justify-between">
+                <div className="pt-3 border-t border-[#ffb8e0] flex justify-between">
                   <span className="text-sm font-semibold text-[#1a1a2e]/70">Total</span>
-                  <span className="text-base font-bold text-[#ff2d78]">{fmt(total)}</span>
+                  <span className="text-base font-bold text-[#ec7fa9]">{fmt(total)}</span>
                 </div>
               </div>
             )}
@@ -163,7 +163,7 @@ export default function GastosPage() {
         </div>
 
         {/* By category summary */}
-        <div className="bg-white rounded-2xl border border-[#ffd6e0] p-6 h-fit">
+        <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6 h-fit">
           <h2 className="font-semibold text-[#1a1a2e] mb-4">Por categoría</h2>
           {byCategory.length === 0 ? (
             <p className="text-xs text-[#1a1a2e]/40 text-center py-8">Sin datos aún</p>
@@ -173,11 +173,11 @@ export default function GastosPage() {
                 <div key={cat}>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-[#1a1a2e]/70">{cat}</span>
-                    <span className="font-semibold text-[#ff2d78]">{fmt(t)}</span>
+                    <span className="font-semibold text-[#ec7fa9]">{fmt(t)}</span>
                   </div>
-                  <div className="h-1.5 bg-[#ffd6e0] rounded-full">
+                  <div className="h-1.5 bg-[#ffb8e0] rounded-full">
                     <div
-                      className="h-full bg-[#ff2d78] rounded-full"
+                      className="h-full bg-[#ec7fa9] rounded-full"
                       style={{ width: `${Math.min((t / (byCategory[0]?.total || 1)) * 100, 100)}%` }}
                     />
                   </div>

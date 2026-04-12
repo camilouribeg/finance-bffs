@@ -55,15 +55,15 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fff8f9] flex items-center justify-center px-4">
-      <div className="absolute top-0 right-0 w-96 h-96 bg-[#ffd6e0] opacity-40 blob pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-72 h-72 bg-[#ffb6c9] opacity-30 blob pointer-events-none" />
+    <div className="min-h-screen bg-[#ffedfa] flex items-center justify-center px-4">
+      <div className="absolute top-0 right-0 w-96 h-96 bg-[#ffb8e0] opacity-40 blob pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-72 h-72 bg-[#ffb8e0] opacity-30 blob pointer-events-none" />
 
       <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/">
             <span
-              className="text-3xl font-bold text-[#ff2d78]"
+              className="text-3xl font-bold text-[#ec7fa9]"
               style={{ fontFamily: "var(--font-playfair)" }}
             >
               Finance BFFs 💕
@@ -72,7 +72,7 @@ export default function RegisterPage() {
           <p className="text-[#1a1a2e]/50 text-sm mt-2">Tu mejor amiga en las finanzas</p>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-xl border border-[#ffd6e0] p-8">
+        <div className="bg-white rounded-3xl shadow-xl border border-[#ffb8e0] p-8">
           <h1
             className="text-2xl font-bold text-[#1a1a2e] mb-1"
             style={{ fontFamily: "var(--font-playfair)" }}
@@ -94,7 +94,7 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="María"
-                className="w-full border border-[#ffd6e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ff2d78]/30 focus:border-[#ff2d78] transition-all bg-[#fff8f9]"
+                className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
               />
             </div>
 
@@ -108,7 +108,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="tu@correo.com"
-                className="w-full border border-[#ffd6e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ff2d78]/30 focus:border-[#ff2d78] transition-all bg-[#fff8f9]"
+                className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
               />
             </div>
 
@@ -122,7 +122,7 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Mínimo 6 caracteres"
-                className="w-full border border-[#ffd6e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ff2d78]/30 focus:border-[#ff2d78] transition-all bg-[#fff8f9]"
+                className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
               />
             </div>
 
@@ -135,15 +135,15 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#ff2d78] hover:bg-[#e0255f] disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition-colors mt-2"
+              className="w-full bg-[#ec7fa9] hover:bg-[#d96d97] disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition-colors mt-2"
             >
               {loading ? "Creando cuenta..." : "Crear mi cuenta →"}
             </button>
           </form>
 
           {/* Presale badge */}
-          <div className="mt-6 bg-[#fff0f3] border border-[#ffd6e0] rounded-2xl p-4 text-center">
-            <p className="text-xs text-[#ff2d78] font-semibold">🎉 PRECIO DE PREVENTA</p>
+          <div className="mt-6 bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl p-4 text-center">
+            <p className="text-xs text-[#ec7fa9] font-semibold">🎉 PRECIO DE PREVENTA</p>
             <p className="text-[#1a1a2e]/70 text-sm mt-1">
               Primer mes gratis, luego solo <strong>$X/mes</strong>
             </p>
@@ -151,7 +151,7 @@ export default function RegisterPage() {
 
           <p className="text-center text-sm text-[#1a1a2e]/50 mt-4">
             ¿Ya tienes cuenta?{" "}
-            <Link href="/login" className="text-[#ff2d78] font-medium hover:underline">
+            <Link href="/login" className="text-[#ec7fa9] font-medium hover:underline">
               Inicia sesión
             </Link>
           </p>

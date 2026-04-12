@@ -32,17 +32,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fff8f9] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#ffedfa] flex items-center justify-center px-4">
       {/* Background blob */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-[#ffd6e0] opacity-40 blob pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-72 h-72 bg-[#ffb6c9] opacity-30 blob pointer-events-none" />
+      <div className="absolute top-0 right-0 w-96 h-96 bg-[#ffb8e0] opacity-40 blob pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-72 h-72 bg-[#ffb8e0] opacity-30 blob pointer-events-none" />
 
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/">
             <span
-              className="text-3xl font-bold text-[#ff2d78]"
+              className="text-3xl font-bold text-[#ec7fa9]"
               style={{ fontFamily: "var(--font-playfair)" }}
             >
               Finance BFFs 💕
@@ -51,7 +51,7 @@ export default function LoginPage() {
           <p className="text-[#1a1a2e]/50 text-sm mt-2">Tu mejor amiga en las finanzas</p>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-xl border border-[#ffd6e0] p-8">
+        <div className="bg-white rounded-3xl shadow-xl border border-[#ffb8e0] p-8">
           <h1
             className="text-2xl font-bold text-[#1a1a2e] mb-1"
             style={{ fontFamily: "var(--font-playfair)" }}
@@ -73,7 +73,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="tu@correo.com"
-                className="w-full border border-[#ffd6e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ff2d78]/30 focus:border-[#ff2d78] transition-all bg-[#fff8f9]"
+                className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
               />
             </div>
 
@@ -87,7 +87,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full border border-[#ffd6e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ff2d78]/30 focus:border-[#ff2d78] transition-all bg-[#fff8f9]"
+                className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
               />
             </div>
 
@@ -100,7 +100,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#ff2d78] hover:bg-[#e0255f] disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition-colors mt-2"
+              className="w-full bg-[#ec7fa9] hover:bg-[#d96d97] disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition-colors mt-2"
             >
               {loading ? "Entrando..." : "Entrar a mi cuenta"}
             </button>
@@ -108,7 +108,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-[#1a1a2e]/50 mt-6">
             ¿No tienes cuenta?{" "}
-            <Link href="/register" className="text-[#ff2d78] font-medium hover:underline">
+            <Link href="/register" className="text-[#ec7fa9] font-medium hover:underline">
               Regístrate aquí
             </Link>
           </p>

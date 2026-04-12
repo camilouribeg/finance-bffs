@@ -68,7 +68,7 @@ export default function DashboardPage() {
         <select
           value={month}
           onChange={(e) => setMonth(Number(e.target.value))}
-          className="border border-[#ffd6e0] rounded-xl px-4 py-2 text-sm bg-white text-[#1a1a2e] outline-none focus:ring-2 focus:ring-[#ff2d78]/30"
+          className="border border-[#ffb8e0] rounded-xl px-4 py-2 text-sm bg-white text-[#1a1a2e] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30"
         >
           {MONTHS.map((m, i) => (
             <option key={i} value={i}>
@@ -93,7 +93,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Ingresos */}
-        <div className="bg-white rounded-2xl border border-[#ffd6e0] p-6">
+        <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
           <h2 className="font-semibold text-[#1a1a2e] mb-4 flex items-center gap-2">
             💰 Ingresos del mes
           </h2>
@@ -102,14 +102,14 @@ export default function DashboardPage() {
             <InputRow label="Ingresos variables" value={ingresoVariable} onChange={setIngresoVariable} />
             <InputRow label="Otros ingresos" value={otrosIngresos} onChange={setOtrosIngresos} />
           </div>
-          <div className="mt-4 pt-4 border-t border-[#ffd6e0] flex justify-between items-center">
+          <div className="mt-4 pt-4 border-t border-[#ffb8e0] flex justify-between items-center">
             <span className="text-sm font-semibold text-[#1a1a2e]/70">Total</span>
             <span className="text-lg font-bold text-green-600">{fmt(totalIngresos)}</span>
           </div>
         </div>
 
         {/* Gastos */}
-        <div className="bg-white rounded-2xl border border-[#ffd6e0] p-6">
+        <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
           <h2 className="font-semibold text-[#1a1a2e] mb-4 flex items-center gap-2">
             💸 Gastos del mes
           </h2>
@@ -119,14 +119,14 @@ export default function DashboardPage() {
             <InputRow label="Cuotas / deudas" value={deudas} onChange={setDeudas} />
             <InputRow label="Ahorro" value={ahorro} onChange={setAhorro} />
           </div>
-          <div className="mt-4 pt-4 border-t border-[#ffd6e0] flex justify-between items-center">
+          <div className="mt-4 pt-4 border-t border-[#ffb8e0] flex justify-between items-center">
             <span className="text-sm font-semibold text-[#1a1a2e]/70">Total gastos</span>
             <span className="text-lg font-bold text-red-500">{fmt(totalGastos)}</span>
           </div>
         </div>
 
         {/* Método 60/30/10 */}
-        <div className="bg-white rounded-2xl border border-[#ffd6e0] p-6">
+        <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
           <h2 className="font-semibold text-[#1a1a2e] mb-1 flex items-center gap-2">
             📐 Método 60/30/10
           </h2>
@@ -138,7 +138,7 @@ export default function DashboardPage() {
               pct={pctGastos}
               target={60}
               value={fmt(totalGastos)}
-              color="#ff2d78"
+              color="#ec7fa9"
             />
             <ProgressBar
               label="Ahorro"
@@ -161,7 +161,7 @@ export default function DashboardPage() {
         <div className={`rounded-2xl border p-6 flex flex-col justify-center items-center text-center ${
           disponible >= 0
             ? "bg-[#f0fdf4] border-green-200"
-            : "bg-[#fff0f3] border-[#ffd6e0]"
+            : "bg-[#ffedfa] border-[#ffb8e0]"
         }`}>
           <p className="text-4xl mb-3">{disponible >= 0 ? "✨" : "😰"}</p>
           <p
@@ -170,7 +170,7 @@ export default function DashboardPage() {
           >
             {disponible >= 0 ? "Dinero disponible" : "Estás en déficit"}
           </p>
-          <p className={`text-3xl font-bold ${disponible >= 0 ? "text-green-600" : "text-[#ff2d78]"}`}>
+          <p className={`text-3xl font-bold ${disponible >= 0 ? "text-green-600" : "text-[#ec7fa9]"}`}>
             {fmt(disponible)}
           </p>
           <p className="text-xs text-[#1a1a2e]/50 mt-2">
@@ -192,11 +192,11 @@ function SummaryCard({
   const colors: Record<string, string> = {
     green: "text-green-600",
     red: "text-red-500",
-    pink: "text-[#ff2d78]",
+    pink: "text-[#ec7fa9]",
     blue: "text-blue-600",
   };
   return (
-    <div className="bg-white rounded-2xl border border-[#ffd6e0] p-4">
+    <div className="bg-white rounded-2xl border border-[#ffb8e0] p-4">
       <p className="text-xl mb-2">{icon}</p>
       <p className="text-xs text-[#1a1a2e]/50 mb-1">{label}</p>
       <p className={`text-lg font-bold ${colors[color]}`}>{value}</p>
@@ -217,7 +217,7 @@ function InputRow({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="0"
-        className="w-32 border border-[#ffd6e0] rounded-xl px-3 py-2 text-sm text-right outline-none focus:ring-2 focus:ring-[#ff2d78]/30 focus:border-[#ff2d78] bg-[#fff8f9]"
+        className="w-32 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm text-right outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]"
       />
     </div>
   );
@@ -234,11 +234,11 @@ function ProgressBar({
     <div>
       <div className="flex justify-between items-center mb-1">
         <span className="text-xs text-[#1a1a2e]/70">{label}</span>
-        <span className={`text-xs font-semibold ${overTarget ? "text-[#ff2d78]" : "text-[#1a1a2e]/60"}`}>
+        <span className={`text-xs font-semibold ${overTarget ? "text-[#ec7fa9]" : "text-[#1a1a2e]/60"}`}>
           {pct.toFixed(0)}% <span className="text-[#1a1a2e]/30">(meta: {target}%)</span>
         </span>
       </div>
-      <div className="h-2 bg-[#ffd6e0] rounded-full overflow-hidden">
+      <div className="h-2 bg-[#ffb8e0] rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${capped}%`, backgroundColor: color }}

@@ -60,7 +60,7 @@ export default function AhorroPage() {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-[#ff2d78] hover:bg-[#e0255f] text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-colors"
+          className="bg-[#ec7fa9] hover:bg-[#d96d97] text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-colors"
         >
           + Nuevo bolsillo
         </button>
@@ -68,11 +68,11 @@ export default function AhorroPage() {
 
       {/* Total summary */}
       <div className="grid grid-cols-2 gap-4 mb-8">
-        <div className="bg-white rounded-2xl border border-[#ffd6e0] p-5">
+        <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
           <p className="text-xs text-[#1a1a2e]/50 mb-1">Total acumulado</p>
           <p className="text-2xl font-bold text-green-600">{fmt(totalActual)}</p>
         </div>
-        <div className="bg-white rounded-2xl border border-[#ffd6e0] p-5">
+        <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
           <p className="text-xs text-[#1a1a2e]/50 mb-1">Meta total</p>
           <p className="text-2xl font-bold text-[#1a1a2e]">{fmt(totalMeta)}</p>
         </div>
@@ -80,7 +80,7 @@ export default function AhorroPage() {
 
       {/* New bolsillo form */}
       {showForm && (
-        <div className="bg-white rounded-2xl border border-[#ffd6e0] p-6 mb-6">
+        <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6 mb-6">
           <h2 className="font-semibold text-[#1a1a2e] mb-4">Crear bolsillo</h2>
           <form onSubmit={addBolsillo} className="flex flex-col gap-3">
             <div className="flex gap-3">
@@ -91,7 +91,7 @@ export default function AhorroPage() {
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
                   placeholder="Ej: Viaje a París"
-                  className="w-full border border-[#ffd6e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ff2d78]/30 focus:border-[#ff2d78] bg-[#fff8f9]"
+                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]"
                 />
               </div>
               <div className="w-28">
@@ -99,7 +99,7 @@ export default function AhorroPage() {
                 <select
                   value={emoji}
                   onChange={(e) => setEmoji(e.target.value)}
-                  className="w-full border border-[#ffd6e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ff2d78]/30 bg-[#fff8f9]"
+                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 bg-[#ffedfa]"
                 >
                   {["🐷", ...DEFAULT_EMOJIS].map((e) => <option key={e}>{e}</option>)}
                 </select>
@@ -112,10 +112,10 @@ export default function AhorroPage() {
                 value={meta}
                 onChange={(e) => setMeta(e.target.value)}
                 placeholder="0"
-                className="w-full border border-[#ffd6e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ff2d78]/30 focus:border-[#ff2d78] bg-[#fff8f9]"
+                className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]"
               />
             </div>
-            <button type="submit" className="bg-[#ff2d78] hover:bg-[#e0255f] text-white font-semibold py-2.5 rounded-xl text-sm">
+            <button type="submit" className="bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm">
               Crear bolsillo 🐷
             </button>
           </form>
@@ -128,7 +128,7 @@ export default function AhorroPage() {
           const pct = Math.min((b.actual / b.meta) * 100, 100);
           const [abonoAmt, setAbonoAmt] = useState("");
           return (
-            <div key={b.id} className="bg-white rounded-2xl border border-[#ffd6e0] p-6">
+            <div key={b.id} className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">{b.emoji}</span>
@@ -143,11 +143,11 @@ export default function AhorroPage() {
               <div className="mb-3">
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-[#1a1a2e]/60">{fmt(b.actual)} ahorrado</span>
-                  <span className="font-semibold text-[#ff2d78]">{pct.toFixed(0)}%</span>
+                  <span className="font-semibold text-[#ec7fa9]">{pct.toFixed(0)}%</span>
                 </div>
-                <div className="h-3 bg-[#ffd6e0] rounded-full overflow-hidden">
+                <div className="h-3 bg-[#ffb8e0] rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#ff2d78] rounded-full transition-all duration-500"
+                    className="h-full bg-[#ec7fa9] rounded-full transition-all duration-500"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -160,11 +160,11 @@ export default function AhorroPage() {
                     value={abonoAmt}
                     onChange={(e) => setAbonoAmt(e.target.value)}
                     placeholder="Abonar..."
-                    className="flex-1 border border-[#ffd6e0] rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#ff2d78]/30 bg-[#fff8f9]"
+                    className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 bg-[#ffedfa]"
                   />
                   <button
                     onClick={() => { abonar(b.id, parseFloat(abonoAmt) || 0); setAbonoAmt(""); }}
-                    className="bg-[#ff2d78] text-white text-xs px-4 py-2 rounded-xl font-semibold hover:bg-[#e0255f]"
+                    className="bg-[#ec7fa9] text-white text-xs px-4 py-2 rounded-xl font-semibold hover:bg-[#d96d97]"
                   >
                     + Abonar
                   </button>

@@ -18,7 +18,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="max-w-lg mx-auto pt-8">
-      <div className="bg-white rounded-3xl border border-[#ffd6e0] p-8 text-center shadow-xl">
+      <div className="bg-white rounded-3xl border border-[#ffb8e0] p-8 text-center shadow-xl">
         <p className="text-5xl mb-4">💕</p>
         <h1
           className="text-2xl font-bold text-[#1a1a2e] mb-2"
@@ -30,8 +30,8 @@ export default function CheckoutPage() {
           Accede a todas las herramientas de Finance BFFs y toma el control de tu dinero.
         </p>
 
-        <div className="bg-[#fff0f3] border border-[#ffd6e0] rounded-2xl p-6 mb-8 text-left">
-          <p className="text-xs text-[#ff2d78] font-semibold uppercase tracking-wide mb-3">Incluye</p>
+        <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl p-6 mb-8 text-left">
+          <p className="text-xs text-[#ec7fa9] font-semibold uppercase tracking-wide mb-3">Incluye</p>
           {[
             "📋 Dashboard mensual con cálculos automáticos",
             "📅 Tracking de gastos diario por categoría",
@@ -40,14 +40,14 @@ export default function CheckoutPage() {
             "📐 Método 60/30/10 automático",
             "✅ Checklist mensual de finanzas",
           ].map((item) => (
-            <p key={item} className="text-sm text-[#1a1a2e]/80 py-1.5 border-b border-[#ffd6e0] last:border-0">
+            <p key={item} className="text-sm text-[#1a1a2e]/80 py-1.5 border-b border-[#ffb8e0] last:border-0">
               {item}
             </p>
           ))}
         </div>
 
         <div className="mb-6">
-          <p className="text-4xl font-bold text-[#ff2d78]" style={{ fontFamily: "var(--font-playfair)" }}>
+          <p className="text-4xl font-bold text-[#ec7fa9]" style={{ fontFamily: "var(--font-playfair)" }}>
             $X<span className="text-lg text-[#1a1a2e]/50 font-normal">/mes</span>
           </p>
           <p className="text-xs text-[#1a1a2e]/40 mt-1">Cancela cuando quieras</p>
@@ -56,7 +56,7 @@ export default function CheckoutPage() {
         <button
           onClick={handleCheckout}
           disabled={loading}
-          className="w-full bg-[#ff2d78] hover:bg-[#e0255f] disabled:opacity-60 text-white font-semibold py-4 rounded-xl transition-colors shadow-lg shadow-pink-200"
+          className="w-full bg-[#ec7fa9] hover:bg-[#d96d97] disabled:opacity-60 text-white font-semibold py-4 rounded-xl transition-colors shadow-lg shadow-pink-200"
         >
           {loading ? "Redirigiendo..." : "Activar mi cuenta 💕"}
         </button>
