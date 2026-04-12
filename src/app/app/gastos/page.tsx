@@ -3,184 +3,172 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-const CATEGORIES = [
-  "Vivienda", "Comida", "Transporte", "Salud", "Educación",
-  "Entretenimiento", "Ropa", "Belleza", "Suscripciones", "Cafés",
-  "Domicilios", "Compras impulsivas", "Otros"
-];
+const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-type Gasto = {
-  id: string;
-  fecha: string;
-  categoria: string;
-  descripcion: string;
-  valor: number;
+const CATEGORY_EMOJIS: Record<string, string> = {
+  "Vivienda": "🏠", "Comida": "🍽️", "Transporte": "🚗", "Salud": "💊",
+  "Educación": "📚", "Entretenimiento": "🎬", "Ropa": "👗", "Belleza": "💄",
+  "Suscripciones": "📱", "Cafés": "☕", "Domicilios": "🛵", "Compras impulsivas": "🛍️", "Otros": "📦",
 };
 
-export default function GastosPage() {
+const TIPS = [
+  { icon: "💡", title: "La regla del 24 horas", desc: "Antes de una compra no planeada, espera 24 horas. Si al día siguiente sigues queriéndola, evalúa si está en tu presupuesto." },
+  { icon: "📊", title: "Conoce tus patrones", desc: "Ver en qué categoría gastas más te da poder. No para juzgarte, sino para tomar decisiones conscientes." },
+  { icon: "🎯", title: "Gasto vs. valor", desc: "Pregúntate: ¿este gasto me dio el valor que esperaba? Si la respuesta es no frecuentemente en una categoría, ahí está la oportunidad." },
+  { icon: "🛒", title: "Lista antes de comprar", desc: "Ir al mercado con lista reduce el gasto en promedio un 23%. Aplica para cualquier tienda, no solo supermercados." },
+];
+
+type Gasto = { id: string; fecha: string; categoria: string; descripcion: string; valor: number };
+
+export default function GastosVisualPage() {
   const [gastos, setGastos] = useState<Gasto[]>([]);
-  const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
-  const [categoria, setCategoria] = useState(CATEGORIES[0]);
-  const [descripcion, setDescripcion] = useState("");
-  const [valor, setValor] = useState("");
-  const [filtro, setFiltro] = useState("Todas");
   const [loading, setLoading] = useState(true);
+  const [month, setMonth] = useState(new Date().getMonth());
+  const [year] = useState(new Date().getFullYear());
 
   useEffect(() => {
     async function load() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase
-        .from("gastos")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("fecha", { ascending: false });
+      const { data } = await supabase.from("gastos").select("*").eq("user_id", user.id).order("fecha", { ascending: false });
       if (data) setGastos(data);
       setLoading(false);
     }
     load();
   }, []);
 
-  async function addGasto(e: React.FormEvent) {
-    e.preventDefault();
-    if (!valor || !descripcion) return;
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const newGasto = { user_id: user.id, fecha: fecha || new Date().toISOString().split("T")[0], categoria, descripcion, valor: parseFloat(valor) };
-    const { data } = await supabase.from("gastos").insert(newGasto).select().single();
-    if (data) setGastos([data, ...gastos]);
-    setDescripcion("");
-    setValor("");
-  }
-
-  async function removeGasto(id: string) {
-    const supabase = createClient();
-    await supabase.from("gastos").delete().eq("id", id);
-    setGastos(gastos.filter((g) => g.id !== id));
-  }
-
-  const filtered = filtro === "Todas" ? gastos : gastos.filter((g) => g.categoria === filtro);
-  const total = filtered.reduce((sum, g) => sum + g.valor, 0);
-
   function fmt(n: number) {
     return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
   }
 
-  const byCategory = CATEGORIES.map((cat) => ({
-    cat,
-    total: gastos.filter((g) => g.categoria === cat).reduce((s, g) => s + g.valor, 0),
-  })).filter((c) => c.total > 0).sort((a, b) => b.total - a.total);
+  // Filter by selected month
+  const filtered = gastos.filter((g) => {
+    const d = new Date(g.fecha + "T00:00:00");
+    return d.getMonth() === month && d.getFullYear() === year;
+  });
+
+  const total = filtered.reduce((s, g) => s + g.valor, 0);
+
+  // Group by category
+  const byCategory = Object.entries(
+    filtered.reduce((acc, g) => {
+      acc[g.categoria] = (acc[g.categoria] || 0) + g.valor;
+      return acc;
+    }, {} as Record<string, number>)
+  ).sort((a, b) => b[1] - a[1]);
+
+  const maxCat = byCategory[0]?.[1] || 1;
+  const tip = TIPS[month % TIPS.length];
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
-          Mis gastos 📅
-        </h1>
-        <p className="text-[#1a1a2e]/50 text-sm mt-1">Registra y conoce en qué se va tu dinero</p>
+    <div className="max-w-4xl mx-auto">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
+            Mis gastos 📊
+          </h1>
+          <p className="text-[#1a1a2e]/50 text-sm mt-1">Conoce en qué se va tu dinero</p>
+        </div>
+        <select value={month} onChange={(e) => setMonth(Number(e.target.value))}
+          className="border border-[#ffb8e0] rounded-xl px-4 py-2 text-sm bg-white text-[#1a1a2e] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30">
+          {MONTHS.map((m, i) => <option key={i} value={i}>{m} {year}</option>)}
+        </select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6 mb-6">
-            <h2 className="font-semibold text-[#1a1a2e] mb-4">Registrar gasto</h2>
-            <form onSubmit={addGasto} className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-[#1a1a2e]/60 mb-1 block">Fecha <span className="text-[#1a1a2e]/30">(opcional)</span></label>
-                <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)}
-                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]" />
-              </div>
-              <div>
-                <label className="text-xs text-[#1a1a2e]/60 mb-1 block">Categoría</label>
-                <select value={categoria} onChange={(e) => setCategoria(e.target.value)}
-                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]">
-                  {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-[#1a1a2e]/60 mb-1 block">Descripción</label>
-                <input type="text" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Ej: Mercado semanal"
-                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]" />
-              </div>
-              <div>
-                <label className="text-xs text-[#1a1a2e]/60 mb-1 block">Valor</label>
-                <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0"
-                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]" />
-              </div>
-              <div className="col-span-2">
-                <button type="submit" className="w-full bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
-                  + Agregar gasto
-                </button>
-              </div>
-            </form>
+      {loading ? (
+        <div className="text-center py-20 text-[#1a1a2e]/30">Cargando...</div>
+      ) : (
+        <div className="flex flex-col gap-6">
+
+          {/* Summary */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5 col-span-1">
+              <p className="text-xs text-[#1a1a2e]/50 mb-1">Total gastado</p>
+              <p className="text-2xl font-bold text-[#ec7fa9]">{fmt(total)}</p>
+              <p className="text-xs text-[#1a1a2e]/40 mt-1">{MONTHS[month]}</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
+              <p className="text-xs text-[#1a1a2e]/50 mb-1">Transacciones</p>
+              <p className="text-2xl font-bold text-[#1a1a2e]">{filtered.length}</p>
+              <p className="text-xs text-[#1a1a2e]/40 mt-1">este mes</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
+              <p className="text-xs text-[#1a1a2e]/50 mb-1">Categoría top</p>
+              <p className="text-lg font-bold text-[#1a1a2e] truncate">{byCategory[0] ? `${CATEGORY_EMOJIS[byCategory[0][0]] || "📦"} ${byCategory[0][0]}` : "—"}</p>
+              <p className="text-xs text-[#1a1a2e]/40 mt-1">{byCategory[0] ? fmt(byCategory[0][1]) : ""}</p>
+            </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-[#1a1a2e]">
-                Gastos registrados <span className="text-[#ec7fa9]">({filtered.length})</span>
-              </h2>
-              <select value={filtro} onChange={(e) => setFiltro(e.target.value)}
-                className="border border-[#ffb8e0] rounded-xl px-3 py-1.5 text-xs bg-[#ffedfa] outline-none">
-                <option>Todas</option>
-                {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-              </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Category breakdown */}
+            <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
+              <h2 className="font-semibold text-[#1a1a2e] mb-5">Por categoría</h2>
+              {byCategory.length === 0 ? (
+                <div className="text-center py-10 text-[#1a1a2e]/30">
+                  <p className="text-3xl mb-2">📭</p>
+                  <p className="text-sm">Sin gastos registrados este mes</p>
+                  <p className="text-xs mt-1 text-[#1a1a2e]/20">Registra tus gastos en el Dashboard</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {byCategory.map(([cat, val]) => (
+                    <div key={cat}>
+                      <div className="flex justify-between text-xs mb-1.5">
+                        <span className="text-[#1a1a2e]/70 flex items-center gap-1.5">
+                          <span>{CATEGORY_EMOJIS[cat] || "📦"}</span> {cat}
+                        </span>
+                        <span className="font-semibold text-[#ec7fa9]">{fmt(val)}</span>
+                      </div>
+                      <div className="h-2 bg-[#ffb8e0] rounded-full overflow-hidden">
+                        <div className="h-full bg-[#ec7fa9] rounded-full transition-all duration-700"
+                          style={{ width: `${(val / maxCat) * 100}%` }} />
+                      </div>
+                      <p className="text-xs text-[#1a1a2e]/30 mt-0.5 text-right">
+                        {total > 0 ? ((val / total) * 100).toFixed(0) : 0}% del total
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {loading ? (
-              <div className="text-center py-12 text-[#1a1a2e]/30 text-sm">Cargando...</div>
-            ) : filtered.length === 0 ? (
-              <div className="text-center py-12 text-[#1a1a2e]/30">
-                <p className="text-3xl mb-2">📭</p>
-                <p className="text-sm">Aún no has registrado gastos</p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {filtered.map((g) => (
-                  <div key={g.id} className="flex items-center justify-between p-3 rounded-xl bg-[#ffedfa] border border-[#ffb8e0]">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#1a1a2e] truncate">{g.descripcion}</p>
-                      <p className="text-xs text-[#1a1a2e]/50">{g.fecha} · {g.categoria}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-bold text-[#ec7fa9]">{fmt(g.valor)}</span>
-                      <button onClick={() => removeGasto(g.id)} className="text-[#1a1a2e]/30 hover:text-red-400 transition-colors text-xs">✕</button>
-                    </div>
-                  </div>
-                ))}
-                <div className="pt-3 border-t border-[#ffb8e0] flex justify-between">
-                  <span className="text-sm font-semibold text-[#1a1a2e]/70">Total</span>
-                  <span className="text-base font-bold text-[#ec7fa9]">{fmt(total)}</span>
+            {/* Recent transactions */}
+            <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
+              <h2 className="font-semibold text-[#1a1a2e] mb-5">Últimas transacciones</h2>
+              {filtered.length === 0 ? (
+                <div className="text-center py-10 text-[#1a1a2e]/30">
+                  <p className="text-3xl mb-2">📭</p>
+                  <p className="text-sm">Sin gastos este mes</p>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="flex flex-col gap-2 max-h-80 overflow-y-auto">
+                  {filtered.slice(0, 15).map((g) => (
+                    <div key={g.id} className="flex items-center justify-between py-2 border-b border-[#ffb8e0]/40 last:border-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-base flex-shrink-0">{CATEGORY_EMOJIS[g.categoria] || "📦"}</span>
+                        <div className="min-w-0">
+                          <p className="text-sm text-[#1a1a2e] truncate">{g.descripcion}</p>
+                          <p className="text-xs text-[#1a1a2e]/40">{g.fecha}</p>
+                        </div>
+                      </div>
+                      <span className="text-sm font-semibold text-[#ec7fa9] flex-shrink-0 ml-3">{fmt(g.valor)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6 h-fit">
-          <h2 className="font-semibold text-[#1a1a2e] mb-4">Por categoría</h2>
-          {byCategory.length === 0 ? (
-            <p className="text-xs text-[#1a1a2e]/40 text-center py-8">Sin datos aún</p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {byCategory.map(({ cat, total: t }) => (
-                <div key={cat}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-[#1a1a2e]/70">{cat}</span>
-                    <span className="font-semibold text-[#ec7fa9]">{fmt(t)}</span>
-                  </div>
-                  <div className="h-1.5 bg-[#ffb8e0] rounded-full">
-                    <div className="h-full bg-[#ec7fa9] rounded-full"
-                      style={{ width: `${Math.min((t / (byCategory[0]?.total || 1)) * 100, 100)}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Tip */}
+          <div className="bg-[#ec7fa9] rounded-2xl p-6 text-white">
+            <p className="text-xs font-bold uppercase tracking-widest mb-3 text-white/70">💡 Tip del mes</p>
+            <h3 className="font-bold text-lg mb-2">{tip.icon} {tip.title}</h3>
+            <p className="text-white/80 text-sm leading-relaxed">{tip.desc}</p>
+          </div>
+
         </div>
-      </div>
+      )}
     </div>
   );
 }
