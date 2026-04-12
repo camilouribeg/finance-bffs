@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 const CATEGORIES = [
   "Vivienda", "Comida", "Transporte", "Salud", "Educación",
@@ -23,19 +24,40 @@ export default function GastosPage() {
   const [descripcion, setDescripcion] = useState("");
   const [valor, setValor] = useState("");
   const [filtro, setFiltro] = useState("Todas");
+  const [loading, setLoading] = useState(true);
 
-  function addGasto(e: React.FormEvent) {
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("gastos")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("fecha", { ascending: false });
+      if (data) setGastos(data);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  async function addGasto(e: React.FormEvent) {
     e.preventDefault();
     if (!valor || !descripcion) return;
-    setGastos([
-      { id: crypto.randomUUID(), fecha, categoria, descripcion, valor: parseFloat(valor) },
-      ...gastos,
-    ]);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const newGasto = { user_id: user.id, fecha, categoria, descripcion, valor: parseFloat(valor) };
+    const { data } = await supabase.from("gastos").insert(newGasto).select().single();
+    if (data) setGastos([data, ...gastos]);
     setDescripcion("");
     setValor("");
   }
 
-  function removeGasto(id: string) {
+  async function removeGasto(id: string) {
+    const supabase = createClient();
+    await supabase.from("gastos").delete().eq("id", id);
     setGastos(gastos.filter((g) => g.id !== id));
   }
 
@@ -46,7 +68,6 @@ export default function GastosPage() {
     return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
   }
 
-  // Group by category for summary
   const byCategory = CATEGORIES.map((cat) => ({
     cat,
     total: gastos.filter((g) => g.categoria === cat).reduce((s, g) => s + g.valor, 0),
@@ -62,79 +83,55 @@ export default function GastosPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Add expense form */}
         <div className="md:col-span-2">
           <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6 mb-6">
             <h2 className="font-semibold text-[#1a1a2e] mb-4">Registrar gasto</h2>
             <form onSubmit={addGasto} className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-[#1a1a2e]/60 mb-1 block">Fecha</label>
-                <input
-                  type="date"
-                  value={fecha}
-                  onChange={(e) => setFecha(e.target.value)}
-                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]"
-                />
+                <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)}
+                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]" />
               </div>
               <div>
                 <label className="text-xs text-[#1a1a2e]/60 mb-1 block">Categoría</label>
-                <select
-                  value={categoria}
-                  onChange={(e) => setCategoria(e.target.value)}
-                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]"
-                >
+                <select value={categoria} onChange={(e) => setCategoria(e.target.value)}
+                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]">
                   {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-xs text-[#1a1a2e]/60 mb-1 block">Descripción</label>
-                <input
-                  type="text"
-                  value={descripcion}
-                  onChange={(e) => setDescripcion(e.target.value)}
-                  placeholder="Ej: Mercado semanal"
-                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]"
-                />
+                <input type="text" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Ej: Mercado semanal"
+                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]" />
               </div>
               <div>
                 <label className="text-xs text-[#1a1a2e]/60 mb-1 block">Valor</label>
-                <input
-                  type="number"
-                  value={valor}
-                  onChange={(e) => setValor(e.target.value)}
-                  placeholder="0"
-                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]"
-                />
+                <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0"
+                  className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa]" />
               </div>
               <div className="col-span-2">
-                <button
-                  type="submit"
-                  className="w-full bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
-                >
+                <button type="submit" className="w-full bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
                   + Agregar gasto
                 </button>
               </div>
             </form>
           </div>
 
-          {/* Filter + list */}
           <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-[#1a1a2e]">
-                Gastos registrados{" "}
-                <span className="text-[#ec7fa9]">({filtered.length})</span>
+                Gastos registrados <span className="text-[#ec7fa9]">({filtered.length})</span>
               </h2>
-              <select
-                value={filtro}
-                onChange={(e) => setFiltro(e.target.value)}
-                className="border border-[#ffb8e0] rounded-xl px-3 py-1.5 text-xs bg-[#ffedfa] outline-none"
-              >
+              <select value={filtro} onChange={(e) => setFiltro(e.target.value)}
+                className="border border-[#ffb8e0] rounded-xl px-3 py-1.5 text-xs bg-[#ffedfa] outline-none">
                 <option>Todas</option>
                 {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
               </select>
             </div>
 
-            {filtered.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-12 text-[#1a1a2e]/30 text-sm">Cargando...</div>
+            ) : filtered.length === 0 ? (
               <div className="text-center py-12 text-[#1a1a2e]/30">
                 <p className="text-3xl mb-2">📭</p>
                 <p className="text-sm">Aún no has registrado gastos</p>
@@ -162,7 +159,6 @@ export default function GastosPage() {
           </div>
         </div>
 
-        {/* By category summary */}
         <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6 h-fit">
           <h2 className="font-semibold text-[#1a1a2e] mb-4">Por categoría</h2>
           {byCategory.length === 0 ? (
@@ -176,10 +172,8 @@ export default function GastosPage() {
                     <span className="font-semibold text-[#ec7fa9]">{fmt(t)}</span>
                   </div>
                   <div className="h-1.5 bg-[#ffb8e0] rounded-full">
-                    <div
-                      className="h-full bg-[#ec7fa9] rounded-full"
-                      style={{ width: `${Math.min((t / (byCategory[0]?.total || 1)) * 100, 100)}%` }}
-                    />
+                    <div className="h-full bg-[#ec7fa9] rounded-full"
+                      style={{ width: `${Math.min((t / (byCategory[0]?.total || 1)) * 100, 100)}%` }} />
                   </div>
                 </div>
               ))}
