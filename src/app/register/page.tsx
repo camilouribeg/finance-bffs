@@ -37,13 +37,12 @@ export default function RegisterPage() {
     });
 
     if (error) {
-      setError("Hubo un error al registrarte. Intenta de nuevo.");
+      setError(error.message);
       setLoading(false);
       return;
     }
 
-    // After register → go to checkout to activate subscription
-    router.push("/app/checkout");
+    router.push("/app");
   }
 
   return (
