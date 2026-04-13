@@ -114,12 +114,16 @@ export default function LandingPage() {
             ))}
           </ul>
 
-          <a
-            href="/register"
-            className="hidden md:inline-flex items-center gap-2 bg-[#ec7fa9] hover:bg-[#d96d97] text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-colors shadow-sm"
-          >
-            Crear mi cuenta ✨
-          </a>
+          <div className="hidden md:flex items-center gap-3">
+            <a href="/login"
+              className="text-sm font-semibold text-[#ec7fa9] hover:text-[#d96d97] transition-colors px-4 py-2.5">
+              Iniciar sesión
+            </a>
+            <a href="/register"
+              className="inline-flex items-center gap-2 bg-[#ec7fa9] hover:bg-[#d96d97] text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-colors shadow-sm">
+              Crear mi cuenta ✨
+            </a>
+          </div>
 
           <button className="md:hidden p-2 text-[#ec7fa9]" onClick={() => setMenuOpen(!menuOpen)}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -137,6 +141,9 @@ export default function LandingPage() {
                 {l.label}
               </a>
             ))}
+            <a href="/login" className="text-sm font-semibold text-[#ec7fa9] text-center" onClick={() => setMenuOpen(false)}>
+              Iniciar sesión
+            </a>
             <a href="/register" className="bg-[#ec7fa9] text-white text-sm font-semibold px-5 py-2.5 rounded-full text-center" onClick={() => setMenuOpen(false)}>
               Crear mi cuenta ✨
             </a>

@@ -101,7 +101,8 @@ export default function DashboardPage() {
 
     // Load real gastos for this month from transactions
     const startDate = `${y}-${String(m + 1).padStart(2, "0")}-01`;
-    const endDate = `${y}-${String(m + 1).padStart(2, "0")}-31`;
+    const lastDay = new Date(y, m + 1, 0).getDate();
+    const endDate = `${y}-${String(m + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
     const { data: gastosData } = await supabase.from("gastos")
       .select("valor").eq("user_id", user.id).gte("fecha", startDate).lte("fecha", endDate);
     setTotalGastosReales(gastosData?.reduce((s, g) => s + g.valor, 0) ?? 0);
@@ -128,17 +129,20 @@ export default function DashboardPage() {
 
   async function saveData() {
     setSaving(true);
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    await supabase.from("dashboard_mensual").upsert({
-      user_id: user.id, month, year,
-      ingreso_fijo: parseFloat(ingresoFijo) || 0,
-      ingresos_otros: ingresosOtros,
-      gastos_fijos_items: gastosFijosItems,
-      gastos_fijos: gastosFijosItems.reduce((s, i) => s + i.valor, 0),
-    }, { onConflict: "user_id,month,year" });
-    setSaving(false);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase.from("dashboard_mensual").upsert({
+        user_id: user.id, month, year,
+        ingreso_fijo: parseFloat(ingresoFijo) || 0,
+        ingresos_otros: ingresosOtros,
+        gastos_fijos_items: gastosFijosItems,
+        gastos_fijos: gastosFijosItems.reduce((s, i) => s + i.valor, 0),
+      }, { onConflict: "user_id,month,year" });
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function addDeuda(e: React.FormEvent) {

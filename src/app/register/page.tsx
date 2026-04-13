@@ -113,7 +113,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <form onSubmit={step === 1 ? (e) => { e.preventDefault(); setStep(2); } : handleRegister} className="flex flex-col gap-4">
+            <form onSubmit={step === 1 ? (e) => { e.preventDefault(); setError(""); setStep(2); } : handleRegister} className="flex flex-col gap-4">
               {step === 1 && (
                 <>
                   <div className="grid grid-cols-2 gap-3">
