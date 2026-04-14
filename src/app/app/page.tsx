@@ -209,7 +209,9 @@ export default function DashboardPage() {
   const totalGastosFijos = gastosFijosItems.reduce((s, i) => s + i.valor, 0);
   const totalGastos = totalGastosFijos + totalGastosReales;
   const totalCuotas = deudas.reduce((s, d) => s + d.cuota_mensual, 0);
+  const totalDeudaPendiente = deudas.reduce((s, d) => s + d.total_pendiente, 0);
   const totalAhorro = bolsillos.reduce((s, b) => s + b.actual, 0);
+  const totalMetaAhorro = bolsillos.reduce((s, b) => s + b.meta, 0);
   const disponible = totalIngresos - totalGastos - totalCuotas;
   const pctGastos = totalIngresos > 0 ? (totalGastos / totalIngresos) * 100 : 0;
   const pctDisponible = totalIngresos > 0 ? (disponible / totalIngresos) * 100 : 0;
@@ -235,12 +237,72 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      {/* Hero metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {/* Dinero disponible */}
+        <div className={`rounded-2xl p-6 border-2 ${disponible >= 0 ? "bg-white border-[#ec7fa9]" : "bg-red-50 border-red-200"}`}>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-1 ${disponible >= 0 ? 'text-[#ec7fa9]' : 'text-red-400'}">
+            <span className={disponible >= 0 ? "text-[#ec7fa9]" : "text-red-400"}>✨ Dinero disponible</span>
+          </p>
+          <p className={`text-3xl font-bold mt-1 ${disponible >= 0 ? "text-[#1a1a2e]" : "text-red-500"}`}>
+            {fmt(disponible)}
+          </p>
+          <p className="text-xs text-[#1a1a2e]/40 mt-2">
+            Ingresos − gastos − cuotas deudas
+          </p>
+          {totalIngresos > 0 && (
+            <div className="mt-3 h-1.5 bg-[#ffb8e0] rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${disponible >= 0 ? "bg-[#ec7fa9]" : "bg-red-400"}`}
+                style={{ width: `${Math.min(Math.max(pctDisponible, 0), 100)}%` }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Total ahorro */}
+        <div className="bg-white rounded-2xl border-2 border-[#ffb8e0] p-6">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#ec7fa9] mb-1">🐷 Total ahorro</p>
+          <p className="text-3xl font-bold text-[#1a1a2e] mt-1">{fmt(totalAhorro)}</p>
+          {totalMetaAhorro > 0 && (
+            <>
+              <p className="text-xs text-[#1a1a2e]/40 mt-2">Meta total: {fmt(totalMetaAhorro)}</p>
+              <div className="mt-3 h-1.5 bg-[#ffb8e0] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#ec7fa9] rounded-full transition-all"
+                  style={{ width: `${Math.min((totalAhorro / totalMetaAhorro) * 100, 100)}%` }}
+                />
+              </div>
+            </>
+          )}
+          {totalMetaAhorro === 0 && (
+            <p className="text-xs text-[#1a1a2e]/40 mt-2">Sin bolsillos de ahorro aún</p>
+          )}
+        </div>
+
+        {/* Deudas pendientes */}
+        <div className="bg-white rounded-2xl border-2 border-[#ffb8e0] p-6">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#ec7fa9] mb-1">💳 Deudas pendientes</p>
+          <p className="text-3xl font-bold text-[#1a1a2e] mt-1">{fmt(totalDeudaPendiente)}</p>
+          <p className="text-xs text-[#1a1a2e]/40 mt-2">
+            {deudas.length > 0
+              ? `${deudas.filter(d => d.total_pendiente > 0).length} deuda${deudas.filter(d => d.total_pendiente > 0).length !== 1 ? "s" : ""} · ${fmt(totalCuotas)}/mes`
+              : "Sin deudas registradas"}
+          </p>
+          {totalDeudaPendiente > 0 && (
+            <div className="mt-3 h-1.5 bg-[#ffb8e0] rounded-full overflow-hidden">
+              <div className="h-full bg-[#ffb8e0] rounded-full w-full" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Secondary metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
         <SummaryCard label="Total ingresos" value={fmt(totalIngresos)} color="green" icon="💰" />
-        <SummaryCard label="Total gastos" value={fmt(totalGastos)} color="red" icon="💸" />
-        <SummaryCard label="Cuotas deudas" value={fmt(totalCuotas)} color="pink" icon="💳" />
-        <SummaryCard label="Disponible" value={fmt(disponible)} color={disponible >= 0 ? "blue" : "red"} icon="✨" />
+        <SummaryCard label="Gastos fijos" value={fmt(totalGastosFijos)} color="red" icon="📌" />
+        <SummaryCard label="Gastos del mes" value={fmt(totalGastosReales)} color="red" icon="💸" />
+        <SummaryCard label="% disponible" value={`${Math.max(pctDisponible, 0).toFixed(0)}%`} color={disponible >= 0 ? "blue" : "red"} icon="📊" />
       </div>
 
       {loading ? (
