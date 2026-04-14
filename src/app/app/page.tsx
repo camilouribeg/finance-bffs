@@ -115,6 +115,15 @@ export default function DashboardPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      // Redirect to onboarding if not completed
+      const { data: profile } = await supabase
+        .from("profiles").select("onboarding_completed").eq("id", user.id).single();
+      if (profile && profile.onboarding_completed === false) {
+        window.location.href = "/onboarding";
+        return;
+      }
+
       const [{ data: d }, { data: b }] = await Promise.all([
         supabase.from("deudas").select("*").eq("user_id", user.id).order("created_at"),
         supabase.from("bolsillos").select("*").eq("user_id", user.id).order("created_at"),

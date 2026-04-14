@@ -90,6 +90,7 @@ export default function RegisterPage() {
             <span className="text-xs text-[#1a1a2e]/40 font-medium ml-2">by Finance BFFs 💕</span>
           </Link>
           <p className="text-[#1a1a2e]/50 text-sm mt-2">Tu mejor amiga en las finanzas</p>
+          <p className="text-[#ec7fa9] text-xs font-medium mt-1">✓ Registro 100% gratis · Sin tarjeta de crédito</p>
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl border border-[#ffb8e0] overflow-hidden">
