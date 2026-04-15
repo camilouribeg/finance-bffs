@@ -349,9 +349,9 @@ export default function OnboardingPage() {
                 Empecemos por tu dinero 💰
               </h2>
               <div className="text-sm text-[#1a1a2e]/60 leading-relaxed mb-6 space-y-2">
-                <p>Aquí vas a anotar todo lo que te entra en el mes.</p>
-                <p>Puede ser tu salario, ingresos extra o cualquier otra entrada.</p>
-                <p className="text-[#ec7fa9] font-medium">Si solo tienes un ingreso, no pasa nada. Es más común de lo que crees.</p>
+                <p>Aquí vas a anotar todos tus ingresos del mes.</p>
+                <p>Puede ser tu salario, ingresos extra o cualquier otro ingreso.</p>
+                <p className="text-[#ec7fa9] font-medium">Si solo tienes uno, no pasa nada. Es más común de lo que crees.</p>
               </div>
 
               <div className="space-y-4">
@@ -471,7 +471,9 @@ export default function OnboardingPage() {
                   Siguiente →
                 </button>
               </div>
-              <p className="text-xs text-[#1a1a2e]/30 text-center mt-2">Puedes continuar sin agregar gastos si prefieres</p>
+              <p className="text-xs text-[#1a1a2e]/50 text-center mt-2 bg-[#ffedfa] rounded-xl px-3 py-2">
+                💡 Si no recuerdas todos ahora, no te preocupes — puedes editarlos después
+              </p>
             </div>
           )}
 
@@ -513,25 +515,36 @@ export default function OnboardingPage() {
                   {DEUDA_TIPOS.map(t => <option key={t}>{t}</option>)}
                 </select>
                 <div className="grid grid-cols-2 gap-2">
-                  <input type="number" value={dCuota} onChange={(e) => setDCuota(e.target.value)}
-                    placeholder="Cuota mensual"
-                    className={inputCls} />
-                  <input type="number" value={dTotal} onChange={(e) => setDTotal(e.target.value)}
-                    placeholder="Total pendiente"
-                    className={inputCls} />
+                  <div>
+                    <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Cuánto pagas al mes?</label>
+                    <input type="number" value={dCuota} onChange={(e) => setDCuota(e.target.value)}
+                      placeholder="Ej: 300.000"
+                      className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Cuánto debes en total?</label>
+                    <input type="number" value={dTotal} onChange={(e) => setDTotal(e.target.value)}
+                      placeholder="Ej: 5.000.000"
+                      className={inputCls} />
+                  </div>
                 </div>
                 {mostrarTasa ? (
-                  <div className="flex items-center gap-2">
-                    <input type="number" value={dTasa} onChange={(e) => setDTasa(e.target.value)}
-                      placeholder="Tasa de interés % (opcional)"
-                      className={`${inputCls} flex-1`} />
-                    <button type="button" onClick={() => { setMostrarTasa(false); setDTasa(""); }}
-                      className="text-xs text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 whitespace-nowrap">Ocultar</button>
+                  <div>
+                    <label className="text-xs text-[#1a1a2e]/50 mb-1 block">
+                      Tasa de interés % — es el porcentaje que te cobra el banco por prestarte el dinero
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input type="number" value={dTasa} onChange={(e) => setDTasa(e.target.value)}
+                        placeholder="Ej: 2.5"
+                        className={`${inputCls} flex-1`} />
+                      <button type="button" onClick={() => { setMostrarTasa(false); setDTasa(""); }}
+                        className="text-xs text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 whitespace-nowrap">Ocultar</button>
+                    </div>
                   </div>
                 ) : (
                   <button type="button" onClick={() => setMostrarTasa(true)}
                     className="text-xs text-[#ec7fa9] hover:underline">
-                    + Agregar tasa de interés (opcional)
+                    + ¿Sabes tu tasa de interés? (opcional — si no la sabes, no importa)
                   </button>
                 )}
               </div>
@@ -558,7 +571,9 @@ export default function OnboardingPage() {
                   Siguiente →
                 </button>
               </div>
-              <p className="text-xs text-[#1a1a2e]/30 text-center mt-2">Puedes continuar sin deudas si no tienes ninguna</p>
+              <p className="text-sm text-[#ec7fa9] font-medium text-center mt-2 bg-[#ffedfa] rounded-xl px-3 py-2">
+                ¿No tienes deudas? ¡Qué bien! Puedes saltar este paso sin problema →
+              </p>
             </div>
           )}
 
@@ -575,10 +590,12 @@ export default function OnboardingPage() {
                 Puedes elegir la que mejor se adapte a ti.
               </p>
 
-              <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm mb-6">
-                <span className="text-[#1a1a2e]/60">Tu capacidad disponible: </span>
+              <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm mb-4">
+                <span className="text-[#1a1a2e]/60">Lo que te sobra después de gastos y deudas: </span>
                 <span className="font-bold text-[#ec7fa9]">{fmt(capacidad)}/mes</span>
               </div>
+
+              <p className="text-sm font-semibold text-[#1a1a2e] mb-4">Selecciona la opción que más te guste 👇</p>
 
               <div className="space-y-3 mb-6">
                 {savingsOptions.map((opt) => {

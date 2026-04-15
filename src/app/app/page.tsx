@@ -90,7 +90,7 @@ export default function DashboardPage() {
 
     // Load monthly plan
     const { data } = await supabase.from("dashboard_mensual")
-      .select("*").eq("user_id", user.id).eq("month", m).eq("year", y).single();
+      .select("*").eq("user_id", user.id).eq("mes", m + 1).eq("año", y).single();
     if (data) {
       setIngresoFijo(data.ingreso_fijo ? String(data.ingreso_fijo) : "");
       setIngresosOtros(data.ingresos_otros ?? []);
@@ -143,12 +143,12 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       await supabase.from("dashboard_mensual").upsert({
-        user_id: user.id, month, year,
+        user_id: user.id, mes: month + 1, año: year,
         ingreso_fijo: parseFloat(ingresoFijo) || 0,
         ingresos_otros: ingresosOtros,
         gastos_fijos_items: gastosFijosItems,
         gastos_fijos: gastosFijosItems.reduce((s, i) => s + i.valor, 0),
-      }, { onConflict: "user_id,month,year" });
+      }, { onConflict: "user_id,mes,año" });
     } finally {
       setSaving(false);
     }
@@ -221,7 +221,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
-            Mi dashboard 📋
+            Mis finanzas 📋
           </h1>
           <p className="text-[#1a1a2e]/50 text-sm mt-1">Todo tu dinero en un solo lugar</p>
         </div>
@@ -372,31 +372,6 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* 60/30/10 + disponible */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
-              <h2 className="font-semibold text-[#1a1a2e] mb-1">📐 Método 60/30/10</h2>
-              <p className="text-xs text-[#1a1a2e]/50 mb-4">Así va la distribución de tu dinero</p>
-              <div className="flex flex-col gap-4">
-                <ProgressBar label="Gastos (fijos + variables)" pct={pctGastos} target={60} value={fmt(totalGastos)} color="#ec7fa9" />
-                <ProgressBar label="Libre / disponible" pct={Math.max(0, pctDisponible)} target={30} value={fmt(Math.max(0, disponible))} color="#3b82f6" />
-              </div>
-            </div>
-            <div className={`rounded-2xl border p-6 flex flex-col justify-center items-center text-center ${
-              disponible >= 0 ? "bg-[#f0fdf4] border-green-200" : "bg-[#ffedfa] border-[#ffb8e0]"
-            }`}>
-              <p className="text-4xl mb-3">{disponible >= 0 ? "✨" : "😰"}</p>
-              <p className="text-lg font-bold text-[#1a1a2e] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
-                {disponible >= 0 ? "Dinero disponible" : "Estás en déficit"}
-              </p>
-              <p className={`text-3xl font-bold ${disponible >= 0 ? "text-green-600" : "text-[#ec7fa9]"}`}>
-                {fmt(disponible)}
-              </p>
-              <p className="text-xs text-[#1a1a2e]/50 mt-2">
-                {disponible >= 0 ? "¡Vas muy bien! Úsalo con intención 💕" : "Revisa tus gastos fijos y variables"}
-              </p>
-            </div>
-          </div>
 
           {/* Deudas */}
           <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">

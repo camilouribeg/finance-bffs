@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
 
 const NAV = [
-  { href: "/app", label: "Dashboard", icon: "📋" },
+  { href: "/app", label: "Mis finanzas", icon: "📋" },
   { href: "/app/gastos", label: "Mis gastos", icon: "📅" },
   { href: "/app/ahorro", label: "Bolsillos de ahorro", icon: "🐷" },
   { href: "/app/deudas", label: "Deudas", icon: "💳" },
@@ -41,9 +41,9 @@ export default function AppSidebar({
             className="text-xl font-bold text-[#ec7fa9]"
             style={{ fontFamily: "var(--font-playfair)" }}
           >
-            Finance BFFs
+            Finly
           </span>
-          <span>💕</span>
+          <span className="text-xs text-[#1a1a2e]/40 font-medium">by Finance BFFs 💕</span>
         </Link>
         <p className="text-xs text-[#1a1a2e]/40 mt-1">Hola, {firstName} 👋</p>
       </div>
@@ -106,7 +106,7 @@ export default function AppSidebar({
           className="text-lg font-bold text-[#ec7fa9]"
           style={{ fontFamily: "var(--font-playfair)" }}
         >
-          Finance BFFs 💕
+          Finly <span className="text-xs text-[#1a1a2e]/40 font-normal">by Finance BFFs 💕</span>
         </span>
         <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 text-[#ec7fa9]">
           <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

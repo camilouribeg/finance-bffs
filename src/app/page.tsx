@@ -4,8 +4,8 @@ import { useState } from "react";
 
 const NAV_LINKS = [
   { label: "¿Para quién?", href: "#para-quien" },
-  { label: "Qué incluye", href: "#que-incluye" },
-  { label: "Cómo funciona", href: "#como-funciona" },
+  { label: "¿Qué incluye?", href: "#que-incluye" },
+  { label: "¿Cómo funciona?", href: "#como-funciona" },
   { label: "Precios", href: "#precios" },
 ];
 
@@ -34,7 +34,7 @@ const HOW_STEPS = [
   {
     num: "02",
     title: "Registras tu mes",
-    desc: "Anotas lo que te entra y lo que gastas. Finly hace los cálculos por ti. Además, te muestra cómo ahorrar mejor y, si tienes deudas, cómo empezar a salir de ellas.",
+    desc: "Anotas tus ingresos y lo que gastas. Finly hace los cálculos por ti. Además, te muestra cómo ahorrar mejor y, si tienes deudas, cómo empezar a salir de ellas.",
   },
   {
     num: "03",
@@ -49,8 +49,8 @@ const HOW_STEPS = [
 ];
 
 const PRESALE_PERKS = [
-  "Precio bloqueado para siempre — nunca sube aunque el precio general suba",
-  "Acceso prioritario a nuevas funciones antes que nadie",
+  "Tu tarifa inicial se mantiene para siempre — aunque los precios suban, la tuya no",
+  "Acceso prioritario a nuevas funciones antes que cualquier otra persona",
   "Comunidad privada de Finance BFFs 💕",
   "Soporte directo con el equipo",
 ];
@@ -60,8 +60,8 @@ const PLANS = [
     name: "Acceso 1 mes",
     price: "$7.99",
     period: "pago único",
-    desc: "Pruébalo sin compromiso",
-    features: ["Acceso completo por 1 mes", "Dashboard mensual", "Tracking de gastos", "Bolsillos de ahorro"],
+    desc: "Pruébalo por un mes completo",
+    features: ["Acceso completo por 1 mes", "Resumen visual de tus finanzas", "Registro de gastos día a día", "Bolsillos de ahorro"],
     cta: "Empezar ahora",
     highlight: false,
     presale: "Precio de preventa",
@@ -71,17 +71,17 @@ const PLANS = [
     price: "$5.99",
     period: "/ mes",
     desc: "La opción más flexible",
-    features: ["Todo lo del acceso 1 mes", "Historial de meses anteriores", "Cancela cuando quieras", "Actualizaciones incluidas"],
+    features: ["Todo lo incluido en el acceso de 1 mes", "Historial de meses anteriores", "Cancela cuando quieras", "Actualizaciones incluidas"],
     cta: "Elegir mensual",
     highlight: true,
-    presale: "Precio bloqueado en preventa",
+    presale: "Tu tarifa se mantiene en preventa",
   },
   {
     name: "Plan anual",
     price: "$49.99",
     period: "/ año",
     desc: "Ahorra más de $21 USD",
-    features: ["Todo lo del plan mensual", "Precio bloqueado por 1 año", "Prioridad en soporte", "Acceso a nuevas funciones"],
+    features: ["Todo lo incluido en el plan mensual", "Tu tarifa no cambia durante 1 año", "Prioridad en soporte", "Acceso a nuevas funciones"],
     cta: "Elegir anual",
     highlight: false,
     presale: "Mejor precio del año",
@@ -212,10 +212,10 @@ export default function LandingPage() {
             Una herramienta mensual donde organizas tu dinero sin enredos.
           </p>
           <p className="text-lg text-[#1a1a2e]/70 leading-relaxed mb-4">
-            Registras lo que te entra y lo que gastas, y automáticamente ves todo claro: en qué se va tu dinero, cuánto puedes ahorrar y cómo organizarte mejor.
+            Registras tus ingresos y tus gastos, y automáticamente ves todo claro: en qué se va tu dinero, cuánto puedes ahorrar y cómo organizarte mejor.
           </p>
           <p className="text-lg text-[#1a1a2e]/70 leading-relaxed mb-8">
-            Incluye dashboards, guías simples y métodos de ahorro, todo pensado para que no tengas que entender fórmulas ni complicarte.
+            Incluye pantallas visuales, guías simples y métodos de ahorro, todo pensado para que no tengas que entender fórmulas ni complicarte.
           </p>
           <div className="inline-block bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl px-8 py-4">
             <p className="text-[#1a1a2e] font-semibold text-lg">
@@ -311,7 +311,7 @@ export default function LandingPage() {
               ))}
             </div>
             <p className="text-white/70 text-xs mt-4 text-center">
-              Plazas limitadas — el precio de preventa no se mantendrá para siempre
+              Plazas limitadas — estos precios son exclusivos de preventa y pueden cambiar en cualquier momento
             </p>
           </div>
 
