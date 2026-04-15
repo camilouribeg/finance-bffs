@@ -55,6 +55,7 @@ type Step =
   | "welcome"
   | "ingresos"
   | "gastos"
+  | "finly_detective"
   | "deudas"
   | "ahorro_puede"
   | "no_puede_intro"
@@ -194,15 +195,21 @@ export default function OnboardingPage() {
 
   function goToDeudas() {
     showReinforcement("Esto ya te da más claridad 💡");
-    setStep("deudas");
+    // Finly Detective: if gastos > 65% of income (less than 35% left after GF)
+    const disponiblePostGF = totalIngresos - totalGastos;
+    if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
+      setStep("finly_detective");
+    } else {
+      setStep("deudas");
+    }
   }
 
   function goToAhorro() {
     showReinforcement("Lo estás haciendo mejor de lo que crees 💪");
-    if (capacidad > 0) {
-      setStep("ahorro_puede");
-    } else {
+    if (capacidad <= 0) {
       setStep("no_puede_intro");
+    } else {
+      setStep("ahorro_puede");
     }
   }
 
@@ -276,6 +283,7 @@ export default function OnboardingPage() {
   const stepNum = step === "welcome" ? 0
     : step === "ingresos" ? 1
     : step === "gastos" ? 2
+    : step === "finly_detective" ? 2
     : step === "deudas" ? 3
     : 4;
 
@@ -471,9 +479,55 @@ export default function OnboardingPage() {
                   Siguiente →
                 </button>
               </div>
-              <p className="text-xs text-[#1a1a2e]/50 text-center mt-2 bg-[#ffedfa] rounded-xl px-3 py-2">
-                💡 Si no recuerdas todos ahora, no te preocupes — puedes editarlos después
+              <div className="mt-2 bg-[#ffedfa] rounded-xl px-3 py-2 text-xs text-[#1a1a2e]/60">
+                💡 Aquí van los que pagas <strong>todos los meses</strong>. No incluyas cuotas de deudas ni gastos anuales como seguros o impuestos — para esos tenemos una sección especial.
+              </div>
+            </div>
+          )}
+
+          {/* ─── FINLY DETECTIVE ─── */}
+          {step === "finly_detective" && (
+            <div className="p-8">
+              <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5 mb-4">
+                <span className="text-blue-600 text-sm font-bold">🔍 Finly Detective</span>
+              </div>
+              <h2 className="text-xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
+                Tus gastos fijos están tomando mucho espacio
+              </h2>
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-5 text-sm text-[#1a1a2e]/70 leading-relaxed space-y-2">
+                <p>¡Oops! Con lo que registraste, tus gastos fijos están usando más del 65% de tus ingresos.</p>
+                <p>Eso deja muy poco margen para deudas, ahorro y gastos del día a día.</p>
+                <p className="text-blue-700 font-medium">Pero no te preocupes — para eso existe Finly Detective: vamos a revisar juntas cada gasto y encontrar dónde puede haber un respiro.</p>
+              </div>
+              <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm mb-5">
+                <div className="flex justify-between">
+                  <span className="text-[#1a1a2e]/60">Tus ingresos</span>
+                  <span className="font-semibold text-[#ec7fa9]">{(parseFloat(String(totalIngresos)) || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}</span>
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="text-[#1a1a2e]/60">Gastos fijos</span>
+                  <span className="font-semibold text-red-400">{totalGastos.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}</span>
+                </div>
+                <div className="flex justify-between mt-1 pt-1 border-t border-[#ffb8e0]">
+                  <span className="text-[#1a1a2e]/60">Disponible después de GF</span>
+                  <span className={`font-bold ${totalIngresos - totalGastos < 0 ? "text-red-500" : "text-[#ec7fa9]"}`}>
+                    {(totalIngresos - totalGastos).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-[#1a1a2e]/50 mb-5 text-center">
+                Puedes volver atrás y revisar tus gastos, o continuar y hacerlo después desde la app.
               </p>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setStep("gastos")}
+                  className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
+                  ← Revisar gastos
+                </button>
+                <button onClick={() => setStep("deudas")}
+                  className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-3.5 rounded-xl text-sm transition-colors">
+                  Entendido, continuar →
+                </button>
+              </div>
             </div>
           )}
 
@@ -647,18 +701,21 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ─── NO PUEDE AHORRAR: INTRO ─── */}
+          {/* ─── NO PUEDE AHORRAR: FINLY ROMPE-DEUDAS ─── */}
           {step === "no_puede_intro" && (
             <div className="p-8">
+              <div className="inline-flex items-center gap-2 bg-red-50 border border-red-200 rounded-full px-4 py-1.5 mb-4">
+                <span className="text-red-600 text-sm font-bold">💪 Finly Rompe-deudas</span>
+              </div>
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-4" style={{ fontFamily: "var(--font-playfair)" }}>
                 Primero, vamos a ordenar esto juntas 🤝
               </h2>
               <div className="text-sm text-[#1a1a2e]/70 leading-relaxed space-y-3 mb-6 bg-[#ffedfa] rounded-2xl p-5">
-                <p>Por ahora, tus gastos y deudas superan lo que te entra.</p>
+                <p>Por ahora, tus gastos y deudas superan tus ingresos.</p>
                 <p><strong>Y no pasa nada. Esto es más común de lo que crees.</strong></p>
                 <p>En este momento, no tiene sentido presionarte a ahorrar.</p>
-                <p>Lo que sí vamos a hacer es enfocarnos en algo más importante: <strong>salir de tus deudas de forma inteligente.</strong></p>
-                <p>Finly te va a mostrar diferentes formas de hacerlo, para que elijas la que mejor se adapte a ti.</p>
+                <p>Lo que sí vamos a hacer es enfocarnos en algo más importante: <strong>salir de tus deudas de forma inteligente.</strong> Eso es libertad.</p>
+                <p>Finly Rompe-deudas te va a mostrar el mejor camino para ti.</p>
               </div>
               <button
                 onClick={() => setStep("deuda_quiz")}

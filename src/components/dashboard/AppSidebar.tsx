@@ -8,6 +8,7 @@ import { useState } from "react";
 const NAV = [
   { href: "/app", label: "Mis finanzas", icon: "📋" },
   { href: "/app/gastos", label: "Mis gastos", icon: "📅" },
+  { href: "/app/cajitas", label: "Cajitas", icon: "📦" },
   { href: "/app/ahorro", label: "Bolsillos de ahorro", icon: "🐷" },
   { href: "/app/deudas", label: "Deudas", icon: "💳" },
 ];

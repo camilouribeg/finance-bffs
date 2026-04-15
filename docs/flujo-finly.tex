@@ -1,0 +1,443 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[margin=2cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,backgrounds,shadows.blur}
+\usepackage{xcolor}
+\usepackage{lmodern}
+\usepackage{mdframed}
+\usepackage{enumitem}
+\usepackage{multicol}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{colorlinks=false,pdfborder={0 0 0}}
+
+% ── Brand colors ─────────────────────────────────────────────
+\definecolor{cpink}{HTML}{EC7FA9}
+\definecolor{clpink}{HTML}{FFB8E0}
+\definecolor{cbg}{HTML}{FFEDFA}
+\definecolor{cdark}{HTML}{1A1A2E}
+\definecolor{cgreen}{HTML}{16A34A}
+\definecolor{corange}{HTML}{EA580C}
+\definecolor{cred}{HTML}{DC2626}
+\definecolor{cblue}{HTML}{2563EB}
+\definecolor{cyellow}{HTML}{CA8A04}
+
+% ── TikZ styles ──────────────────────────────────────────────
+\tikzset{
+  bloque/.style={
+    rectangle, rounded corners=7pt,
+    minimum width=5.2cm, minimum height=0.95cm,
+    text centered, text width=5cm,
+    fill=cbg, draw=clpink, line width=1.2pt,
+    font=\small\bfseries, text=cdark
+  },
+  decision/.style={
+    diamond, aspect=2.8,
+    minimum width=6.2cm, minimum height=1.1cm,
+    text centered, text width=5.8cm,
+    fill=white, draw=cpink, line width=1.5pt,
+    font=\small\bfseries, text=cdark
+  },
+  alertbox/.style={
+    rectangle, rounded corners=7pt,
+    minimum width=4.8cm, minimum height=0.95cm,
+    text centered, text width=4.6cm,
+    fill=cred!8, draw=cred!40, line width=1.2pt,
+    font=\small\bfseries, text=cred!80!black
+  },
+  detectbox/.style={
+    rectangle, rounded corners=7pt,
+    minimum width=4.8cm, minimum height=0.95cm,
+    text centered, text width=4.6cm,
+    fill=cblue!8, draw=cblue!40, line width=1.2pt,
+    font=\small\bfseries, text=cblue!70!black
+  },
+  savebox/.style={
+    rectangle, rounded corners=7pt,
+    minimum width=5.2cm, minimum height=0.95cm,
+    text centered, text width=5cm,
+    fill=cgreen!8, draw=cgreen!40, line width=1.2pt,
+    font=\small\bfseries, text=cgreen!70!black
+  },
+  resultbox/.style={
+    rectangle, rounded corners=9pt,
+    minimum width=6.5cm, minimum height=1.1cm,
+    text centered, text width=6.3cm,
+    fill=cpink, draw=cpink!80, line width=1.5pt,
+    font=\small\bfseries, text=white
+  },
+  notebox/.style={
+    rectangle, rounded corners=5pt,
+    text width=3.8cm, font=\scriptsize,
+    text=cdark!70, fill=cyellow!10,
+    draw=cyellow!40, line width=0.8pt, inner sep=5pt
+  },
+  arr/.style={-{Stealth[length=5pt]}, line width=1.1pt, color=cdark!55},
+  arrp/.style={-{Stealth[length=5pt]}, line width=1.1pt, color=cpink},
+  lbl/.style={font=\footnotesize\bfseries, text=cpink}
+}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+% ══════════════════════════════════════════════════════════
+% PORTADA
+% ══════════════════════════════════════════════════════════
+\begin{center}
+  {\color{cpink}\rule{\linewidth}{2pt}}\\[6pt]
+  {\fontsize{30}{36}\selectfont\bfseries\color{cpink}Finly}
+  \quad
+  {\large\color{cdark!40}by Finance BFFs \textcolor{cpink}{$\heartsuit$}}\\[4pt]
+  {\Large\bfseries\color{cdark}Flujo de Onboarding \& Metodolog\'ia de Ahorro}\\[4pt]
+  {\small\color{cdark!50}Versi\'on de trabajo --- Abril 2026}\\[6pt]
+  {\color{cpink}\rule{\linewidth}{2pt}}
+\end{center}
+
+\vspace{0.4cm}
+
+\begin{mdframed}[backgroundcolor=cbg,linecolor=clpink,linewidth=1.2pt,roundcorner=8pt,
+  innertopmargin=8pt,innerbottommargin=8pt]
+\textbf{\color{cpink}F\'ormula central:}\\[4pt]
+\begin{center}
+\colorbox{cpink}{\color{white}\textbf{%
+  Ingresos $-$ Gastos Fijos $-$ Cajitas $-$ Bolsitas $-$ Cuotas Deudas
+  $=$ Dinero libre mensual}}
+\end{center}
+\vspace{4pt}
+\textcolor{cdark!70}{\small
+Finly gu\'ia a la usuaria en 5 bloques. Seg\'un su situaci\'on financiera,
+activa modos especiales: \textbf{Finly Detective} (gastos altos)
+o \textbf{Finly Rompe-deudas} (deudas mayores que ingresos).
+}
+\end{mdframed}
+
+\vspace{0.5cm}
+
+% ══════════════════════════════════════════════════════════
+% DIAGRAMA
+% ══════════════════════════════════════════════════════════
+\begin{center}
+{\large\bfseries\color{cdark}Diagrama de Flujo Principal}
+\end{center}
+\vspace{0.2cm}
+
+\begin{center}
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=0.65cm and 2.5cm]
+
+%% ── [1] INGRESOS ─────────────────────────────────────────
+\node[bloque] (ingresos) {
+  \textcolor{cpink}{[1]} Ingresos\\[-1pt]
+  \scriptsize Ingreso fijo + otros = Total ingresos
+};
+
+%% ── [2] GASTOS FIJOS ─────────────────────────────────────
+\node[bloque, below=of ingresos] (gastos) {
+  \textcolor{cpink}{[2]} Gastos Fijos\\[-1pt]
+  \scriptsize Lista editable mensual
+};
+\draw[arr] (ingresos) -- (gastos);
+
+%% ── DECISION 1 ───────────────────────────────────────────
+\node[decision, below=0.75cm of gastos] (d1) {
+  \footnotesize Ingr $-$ GF $<$ 35\% ingresos?\\[-2pt]
+  \scriptsize (gastos fijos $>$65\% del ingreso)
+};
+\draw[arr] (gastos) -- (d1);
+
+%% ── FINLY DETECTIVE ──────────────────────────────────────
+\node[detectbox, left=2.5cm of d1] (detective) {
+  \textcolor{cblue!70!black}{\textbf{Finly Detective}}\\[-1pt]
+  \scriptsize Revisa gasto por gasto\\[-2pt]
+  \scriptsize busca reducciones
+};
+\draw[arr] (d1.west) -- node[lbl,above]{\footnotesize S\'I} (detective.east);
+
+%% Convergencia después de Detective ──────────────────────
+\coordinate (postd1) at ($(d1.south)+(0,-0.65)$);
+\draw[arr] (d1.south) -- node[lbl,right]{\footnotesize NO} (postd1);
+\draw[arr] (detective.south) -- ++(0,-0.3) -| (postd1);
+
+%% ── [3] DEUDAS ───────────────────────────────────────────
+\node[bloque, below=0.05cm of postd1] (deudas) {
+  \textcolor{cpink}{[3]} Deudas\\[-1pt]
+  \scriptsize Test: snowball · avalancha · equilibrado
+};
+\draw[arr] (postd1) -- (deudas);
+
+%% ── DECISION 2 ───────────────────────────────────────────
+\node[decision, below=0.75cm of deudas] (d2) {
+  \footnotesize Ingr $-$ GF $-$ Deudas $\leq$ 0?
+};
+\draw[arr] (deudas) -- (d2);
+
+%% ── FINLY ROMPE-DEUDAS ───────────────────────────────────
+\node[alertbox, left=2.5cm of d2] (exter) {
+  \textcolor{cred!70!black}{\textbf{Finly Rompe-deudas}}\\[-1pt]
+  \scriptsize Foco total en deudas\\[-2pt]
+  \scriptsize Sin cajitas ni bolsitas
+};
+\draw[arr] (d2.west) -- node[lbl,above]{\footnotesize S\'I} (exter.east);
+
+%% ── DECISION 3: muy pequeño ──────────────────────────────
+\node[decision, below=0.9cm of d2] (d3) {
+  \footnotesize Resultado $<$ 10\% ingresos?\\[-2pt]
+  \scriptsize (margen muy ajustado)
+};
+\draw[arr] (d2.south) -- node[lbl,right]{\footnotesize NO} (d3);
+
+%% ── AVISO ────────────────────────────────────────────────
+\node[notebox, right=1.8cm of d3] (aviso) {
+  \textcolor{corange}{\textbf{Aviso motivacional}}\\[2pt]
+  ``Estamos justas,\\pero vamos bien.\\Empieza con poco.''
+};
+\draw[arrp] (d3.east) -- node[lbl,above]{\footnotesize S\'I} (aviso.west);
+
+%% Convergencia después de D3 ─────────────────────────────
+\coordinate (postd3) at ($(d3.south)+(0,-0.65)$);
+\draw[arr] (d3.south) -- node[lbl,right]{\footnotesize NO} (postd3);
+\draw[arrp] (aviso.south) -- ++(0,-0.25) -| (postd3);
+
+%% ── [4] CAJITAS ──────────────────────────────────────────
+\node[bloque, below=0.05cm of postd3] (cajitas) {
+  \textcolor{cpink}{[4]} Cajitas \textbf{\small\color{cdark!50}{[caritas]}}\,\textbf{\scriptsize\color{cdark!50}{Gastos peri\'odicos}}\\[-1pt]
+  \scriptsize Nombre + monto + fecha\quad Finly calcula cuota mensual
+};
+\draw[arr] (postd3) -- (cajitas);
+
+%% ── [5] BOLSITAS ─────────────────────────────────────────
+\node[savebox, below=0.65cm of cajitas] (bolsitas) {
+  \textcolor{cgreen!70!black}{[5]} Bolsitas de Ahorro\\[-1pt]
+  \scriptsize Opci\'on A: monto \'unico general\\[-2pt]
+  \scriptsize Opci\'on B: bolsitas por importancia \textbf{($\bigstar$ 1--5)}
+};
+\draw[arr] (cajitas) -- (bolsitas);
+
+%% ── RESULTADO ────────────────────────────────────────────
+\node[resultbox, below=0.65cm of bolsitas] (result) {
+  Dinero libre para gastar este mes \textcolor{white!60}{$\heartsuit$}\\[2pt]
+  \scriptsize Ingr $-$ GF $-$ Cajitas $-$ Bolsitas $-$ Deudas
+};
+\draw[arr] (bolsitas) -- (result);
+
+\end{tikzpicture}%
+}% end resizebox
+\end{center}
+
+\newpage
+
+% ══════════════════════════════════════════════════════════
+% DETALLE DE BLOQUES
+% ══════════════════════════════════════════════════════════
+\begin{center}
+{\large\bfseries\color{cdark}Detalle de Bloques}
+\end{center}
+\vspace{0.3cm}
+
+%% ── MODOS ESPECIALES ─────────────────────────────────────
+\begin{mdframed}[backgroundcolor=cblue!5,linecolor=cblue!30,linewidth=1pt,roundcorner=6pt]
+\textbf{\color{cblue!70!black}Finly Detective}
+\hfill\textit{\scriptsize Activa cuando: Ingr $-$ GF $<$ 35\% de ingresos}\\[4pt]
+\textcolor{cdark!70}{\small
+``¡Oops! Tus gastos fijos est\'an tomando mucho espacio. Pero no te preocupes,
+para eso existe Finly Detective: te ayudamos a revisar cada gasto juntas y
+encontrar d\'onde puede haber un respiro.''}\\[4pt]
+\textbf{\color{cdark!60}\small Objetivo:}
+\textcolor{cdark!60}{\small Identificar gastos fijos que se puedan reducir o eliminar.
+El an\'alisis detallado se construye en una pr\'oxima versi\'on.}
+\end{mdframed}
+
+\vspace{0.3cm}
+
+\begin{mdframed}[backgroundcolor=cred!5,linecolor=cred!30,linewidth=1pt,roundcorner=6pt]
+\textbf{\color{cred!70!black}Finly Rompe-deudas}
+\hfill\textit{\scriptsize Activa cuando: Ingr $-$ GF $-$ Deudas $\leq$ 0}\\[4pt]
+\textcolor{cdark!70}{\small
+``Tu situaci\'on actual est\'a enfocada en salir de deudas, y eso es exactamente
+lo que vamos a hacer. No hablamos de ahorro todav\'ia --- nos concentramos en
+libertad.''}\\[4pt]
+\textbf{\color{cdark!60}\small Muestra:} \textcolor{cdark!60}{\small Solo el test de metodolog\'ia de deuda.
+Sin cajitas ni bolsitas.}
+\end{mdframed}
+
+\vspace{0.4cm}
+
+%% ── CAJITAS ──────────────────────────────────────────────
+\begin{mdframed}[backgroundcolor=cbg,linecolor=clpink,linewidth=1pt,roundcorner=6pt]
+\textbf{\color{cpink}[4] Cajitas --- Gastos Peri\'odicos}\\[4pt]
+
+\textcolor{cdark!70}{\small ``Hay gastos que no llegan cada mes, pero cuando llegan duelen si no
+estamos preparadas. Las cajitas reservan un poquito cada mes para que no te sorprendan y
+evitar deudas a futuro.''}
+
+\vspace{6pt}
+\begin{minipage}[t]{0.47\textwidth}
+\textbf{\color{cdark!70}\small Datos que pide Finly:}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+  \item[\color{cpink}$\bullet$] {\small Nombre del gasto}
+  \item[\color{cpink}$\bullet$] {\small Monto total a pagar}
+  \item[\color{cpink}$\bullet$] {\small Fecha de pago}
+  \item[\color{cpink}$\bullet$] {\small Finly calcula cuota mensual a reservar}
+  \item[\color{cpink}$\bullet$] {\small Notificaci\'on antes del vencimiento}
+  \item[\color{cpink}$\bullet$] {\small Al pagar: celebraci\'on + rec\'alculo}
+\end{itemize}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.47\textwidth}
+\textbf{\color{cdark!70}\small Ejemplos predefinidos:}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+  \item[\color{cpink}$\bullet$] {\small SOAT}
+  \item[\color{cpink}$\bullet$] {\small Impuesto vehicular / predial}
+  \item[\color{cpink}$\bullet$] {\small Seguro del carro / de vida}
+  \item[\color{cpink}$\bullet$] {\small Revisi\'on t\'ecnico-mec\'anica}
+  \item[\color{cpink}$\bullet$] {\small Matr\'icula escolar / universitaria}
+  \item[\color{cpink}$\bullet$] {\small Regalos de navidad y cumplea\~nos}
+  \item[\color{cpink}$\bullet$] {\small Membres\'ia anual (gimnasio, etc.)}
+  \item[\color{cpink}$\bullet$] {\small Vacaciones anuales}
+  \item[\color{cpink}$\bullet$] {\small Mantenimiento del hogar}
+\end{itemize}
+\end{minipage}
+\end{mdframed}
+
+\vspace{0.4cm}
+
+%% ── BOLSITAS ─────────────────────────────────────────────
+\begin{mdframed}[backgroundcolor=cgreen!3,linecolor=cgreen!30,linewidth=1pt,roundcorner=6pt]
+\textbf{\color{cgreen!60!black}[5] Bolsitas de Ahorro}\\[4pt]
+\textcolor{cdark!70}{\small``Ahorrar no es guardar dinero en un caj\'on.
+Es darle un prop\'osito a cada peso que decides reservar.''}\\[3pt]
+\textcolor{cdark!60}{\scriptsize \textit{Nota: Finly calcula y recomienda. La usuaria crea las cuentas/bolsillos en su banco real
+--- los montos m\'inimos los define cada banco.}}
+
+\vspace{6pt}
+\textbf{\color{cdark!70}\small Modo A --- Sin bolsitas (ahorro general):}\\[2pt]
+\textcolor{cdark!60}{\small La usuaria define un monto \'unico de ahorro mensual. Simple y sin categor\'ias.}
+
+\vspace{6pt}
+\textbf{\color{cdark!70}\small Modo B --- Con bolsitas (ahorro por prop\'osito):}\\[4pt]
+
+\begin{minipage}[t]{0.47\textwidth}
+\textbf{\color{cdark!70}\small Mis fondos \textnormal{\scriptsize(bolsitas permanentes)}}\\[2pt]
+\textcolor{cdark!60}{\scriptsize Siempre est\'an contigo. Se llenan mes a mes sin fecha de cierre.}\\[4pt]
+\textbf{\color{cdark!60}\scriptsize Predefinidas:}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+  \item[\color{cgreen!60!black}$\bullet$] {\small Skincare / belleza}
+  \item[\color{cgreen!60!black}$\bullet$] {\small Regalos}
+  \item[\color{cgreen!60!black}$\bullet$] {\small Emergencias del hogar}
+  \item[\color{cgreen!60!black}$\bullet$] {\small Emergencias del carro}
+  \item[\color{cgreen!60!black}$\bullet$] {\small Salud / medicamentos}
+  \item[\color{cgreen!60!black}$\bullet$] {\small + Agregar personalizada}
+\end{itemize}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.47\textwidth}
+\textbf{\color{cdark!70}\small Mis metas \textnormal{\scriptsize(bolsitas con fecha)}}\\[2pt]
+\textcolor{cdark!60}{\scriptsize Tienen costo total y fecha. Finly calcula el ahorro mensual necesario.}\\[4pt]
+\textbf{\color{cdark!60}\scriptsize Ejemplos:}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+  \item[\color{cgreen!60!black}$\bullet$] {\small Viaje (Disney, Cartagena...)}
+  \item[\color{cgreen!60!black}$\bullet$] {\small Celular nuevo}
+  \item[\color{cgreen!60!black}$\bullet$] {\small Computador}
+  \item[\color{cgreen!60!black}$\bullet$] {\small Bolso / ropa especial}
+  \item[\color{cgreen!60!black}$\bullet$] {\small Keratina / tratamiento}
+  \item[\color{cgreen!60!black}$\bullet$] {\small Carro / moto}
+\end{itemize}
+\end{minipage}
+
+\vspace{6pt}
+\begin{center}
+\begin{tabular}{>{\small}p{4.5cm} >{\small\color{cdark!60}}p{9cm}}
+\toprule
+\textbf{Variable} & \textbf{Descripci\'on} \\
+\midrule
+Importancia & Estrellas 1--5 $\bigstar$ --- Finly asigna \% de distribuci\'on seg\'un nivel \\
+Visual & Bolsita se llena visualmente seg\'un \% alcanzado \\
+C\'alculo Mis metas & Costo total $\div$ meses hasta la fecha = ahorro mensual \\
+Distribuci\'on & Finly sugiere \% entre bolsitas seg\'un importancia \\
+\midrule
+\multicolumn{2}{l}{\textbf{\color{cgreen!60!black}Al completar una meta (100\%):}} \\[2pt]
+\multicolumn{2}{p{13.5cm}}{\textcolor{cdark!70}{\small
+  Finly manda una notificaci\'on de celebraci\'on $\heartsuit$ y le ofrece dos opciones:
+  (1)~Reasignar el dinero a otra bolsita existente, o
+  (2)~Crear una nueva bolsita/meta con ese dinero.}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{mdframed}
+
+\vspace{0.4cm}
+
+%% ── NOTA GASTOS FIJOS ────────────────────────────────────
+\begin{mdframed}[backgroundcolor=cyellow!8,linecolor=cyellow!50,linewidth=1pt,roundcorner=6pt]
+\textbf{\color{cyellow!70!black}Nota en el bloque de Gastos Fijos}\\[4pt]
+\textcolor{cdark!70}{\small
+``Aqu\'i van los gastos que pagas \textbf{todos los meses}. Por favor no incluyas
+tu cuota de deudas (eso lo vemos despu\'es), ni tampoco gastos que pagas solo una
+o dos veces al a\~no --- como seguros o impuestos. Para esos tenemos una secci\'on
+especial m\'as adelante.''
+}
+\end{mdframed}
+
+\vspace{0.4cm}
+
+%% ── TABLA DE DECISIONES ──────────────────────────────────
+\begin{mdframed}[backgroundcolor=cbg,linecolor=clpink,linewidth=1pt,roundcorner=6pt]
+\textbf{\color{cpink}\'Arbol de decisiones --- resumen}\\[6pt]
+
+\begin{tabular}{>{\small}p{5.5cm} >{\small\color{cdark!70}}p{8cm}}
+\toprule
+\textbf{Condici\'on} & \textbf{Acci\'on} \\
+\midrule
+Ingr $-$ GF $<$ 35\% ingresos
+  & \textcolor{cblue!70!black}{\textbf{Finly Detective}} --- revisar y reducir gastos \\
+\addlinespace
+Tiene deudas
+  & Test metodolog\'ia (snowball / avalancha / equilibrado) \\
+\addlinespace
+Ingr $-$ GF $-$ Deudas $\leq$ 0
+  & \textcolor{cred!70!black}{\textbf{Finly Rompe-deudas}} --- solo deudas, sin ahorro \\
+\addlinespace
+Resultado entre 0--10\% ingresos
+  & Aviso motivacional. Contin\'ua con montos peque\~nos \\
+\addlinespace
+Resultado $>$ 10\% ingresos
+  & Flujo completo: cajitas $\to$ bolsitas $\to$ dinero libre \\
+\bottomrule
+\end{tabular}
+\end{mdframed}
+
+\vspace{0.4cm}
+
+%% ── PENDIENTES ───────────────────────────────────────────
+\begin{mdframed}[backgroundcolor=cdark!5,linecolor=cdark!20,linewidth=1pt,roundcorner=6pt]
+\textbf{\color{cdark!70}Decisiones pendientes a confirmar}\\[4pt]
+\begin{enumerate}[leftmargin=*,itemsep=3pt]
+  \item {\small \textbf{Umbral ``margen muy ajustado'':}
+    Usamos 10\% como referencia --- \textit{?`Ajustar?}}
+  \item {\small \textbf{Umbral Finly Detective:}
+    Usamos 35\% disponible --- \textit{?`Ajustar?}}
+  \item {\small \textbf{Notificaciones (fase futura):}
+    Cajitas antes del vencimiento $\cdot$ Mis metas al llegar al 100\% $\cdot$ celebraci\'on + reasignaci\'on}
+  \item {\small \textbf{An\'alisis Finly Detective:}
+    El diagn\'ostico gasto por gasto se construye en siguiente iteraci\'on}
+  \item {\small \textbf{Cu\'ando pedir el pago:}
+    A\'un sin definir --- ?`Al terminar el onboarding o al ver el plan de deudas?}
+\end{enumerate}
+\end{mdframed}
+
+\vspace{0.5cm}
+\begin{center}
+{\color{cpink}\rule{\linewidth}{1.5pt}}\\[4pt]
+{\small\color{cdark!50}Finly by Finance BFFs
+\textcolor{cpink}{$\heartsuit$} $\cdot$ Documento interno $\cdot$ Abril 2026}
+\end{center}
+
+\end{document}

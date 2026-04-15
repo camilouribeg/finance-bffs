@@ -9,8 +9,9 @@ const currentMonth = new Date().getMonth();
 const currentYear = new Date().getFullYear();
 
 type LineItem = { id: string; descripcion: string; valor: number };
-type Bolsillo = { id: string; nombre: string; meta: number; actual: number; emoji: string };
+type Bolsillo = { id: string; nombre: string; meta: number; actual: number; emoji: string; tipo?: string; cuota_mensual?: number; fecha_meta?: string };
 type Deuda = { id: string; nombre: string; tipo: string; cuota_mensual: number; total_pendiente: number };
+type Cajita = { id: string; nombre: string; monto_total: number; fecha_pago: string; emoji: string; actual: number };
 
 const TIPOS_DEUDA = ["Tarjeta de crédito", "Préstamo personal", "Crédito hipotecario", "Crédito de vehículo", "Deuda familiar", "Otro"];
 const DEFAULT_EMOJIS = ["🐷","✈️","🏠","🚨","🎓","💻","👗","💍","🎉","🐾","🌱"];
@@ -76,6 +77,7 @@ export default function DashboardPage() {
   const [deudaCuota, setDeudaCuota] = useState("");
   const [deudaTotal, setDeudaTotal] = useState("");
 
+  const [cajitas, setCajitas] = useState<Cajita[]>([]);
   const [bolsillos, setBolsillos] = useState<Bolsillo[]>([]);
   const [showBolsilloForm, setShowBolsilloForm] = useState(false);
   const [bolsilloNombre, setBolsilloNombre] = useState("");
@@ -124,12 +126,14 @@ export default function DashboardPage() {
         return;
       }
 
-      const [{ data: d }, { data: b }] = await Promise.all([
+      const [{ data: d }, { data: b }, { data: c }] = await Promise.all([
         supabase.from("deudas").select("*").eq("user_id", user.id).order("created_at"),
         supabase.from("bolsillos").select("*").eq("user_id", user.id).order("created_at"),
+        supabase.from("cajitas").select("*").eq("user_id", user.id).order("fecha_pago"),
       ]);
       if (d) setDeudas(d);
       if (b) setBolsillos(b);
+      if (c) setCajitas(c);
     }
     loadPermanent();
   }, []);
@@ -205,14 +209,31 @@ export default function DashboardPage() {
     return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
   }
 
+  function monthsUntilDate(fechaStr: string): number {
+    const now = new Date();
+    const fecha = new Date(fechaStr + "T12:00:00");
+    const diff = (fecha.getFullYear() - now.getFullYear()) * 12 + (fecha.getMonth() - now.getMonth());
+    return Math.max(1, diff);
+  }
+
   const totalIngresos = (parseFloat(ingresoFijo) || 0) + ingresosOtros.reduce((s, i) => s + i.valor, 0);
   const totalGastosFijos = gastosFijosItems.reduce((s, i) => s + i.valor, 0);
-  const totalGastos = totalGastosFijos + totalGastosReales;
   const totalCuotas = deudas.reduce((s, d) => s + d.cuota_mensual, 0);
   const totalDeudaPendiente = deudas.reduce((s, d) => s + d.total_pendiente, 0);
   const totalAhorro = bolsillos.reduce((s, b) => s + b.actual, 0);
   const totalMetaAhorro = bolsillos.reduce((s, b) => s + b.meta, 0);
-  const disponible = totalIngresos - totalGastos - totalCuotas;
+  const totalCajitasMensual = cajitas.reduce((s, c) => {
+    const falta = Math.max(0, c.monto_total - c.actual);
+    return s + Math.ceil(falta / monthsUntilDate(c.fecha_pago));
+  }, 0);
+  const totalBolsitasMensual = bolsillos.reduce((s, b) => {
+    if (b.tipo === "metas" && b.fecha_meta && b.meta > 0) {
+      return s + Math.ceil(Math.max(0, b.meta - b.actual) / monthsUntilDate(b.fecha_meta));
+    }
+    return s + (b.cuota_mensual || 0);
+  }, 0);
+  const disponible = totalIngresos - totalGastosFijos - totalCajitasMensual - totalBolsitasMensual - totalCuotas;
+  const totalGastos = totalGastosFijos + totalGastosReales;
   const pctGastos = totalIngresos > 0 ? (totalGastos / totalIngresos) * 100 : 0;
   const pctDisponible = totalIngresos > 0 ? (disponible / totalIngresos) * 100 : 0;
 
@@ -248,7 +269,7 @@ export default function DashboardPage() {
             {fmt(disponible)}
           </p>
           <p className="text-xs text-[#1a1a2e]/40 mt-2">
-            Ingresos − gastos − cuotas deudas
+            Ingresos − GF − Cajitas − Bolsitas − Deudas
           </p>
           {totalIngresos > 0 && (
             <div className="mt-3 h-1.5 bg-[#ffb8e0] rounded-full overflow-hidden">
