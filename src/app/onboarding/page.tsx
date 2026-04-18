@@ -113,7 +113,8 @@ export default function OnboardingPage() {
   const [dTotal, setDTotal] = useState("");
   const [dTasa, setDTasa] = useState("");
   const [mostrarTasa, setMostrarTasa] = useState(false);
-  const [tasaTipo, setTasaTipo] = useState<"mensual" | "EA">("mensual");
+  const [tasaTipo, setTasaTipo] = useState("NMV");
+  const [mostrarOtrasTasas, setMostrarOtrasTasas] = useState(false);
 
   // Step 4a: Selected savings amount
   const [selectedAhorro, setSelectedAhorro] = useState<number | null>(null);
@@ -618,12 +619,29 @@ export default function OnboardingPage() {
                       <input type="number" value={dTasa} onChange={(e) => setDTasa(e.target.value)}
                         placeholder="Ej: 2.5"
                         className={`${inputCls} flex-1`} />
-                      <select value={tasaTipo} onChange={(e) => setTasaTipo(e.target.value as "mensual" | "EA")}
+                      <select value={tasaTipo} onChange={(e) => { setTasaTipo(e.target.value); if (e.target.value === "otras") setMostrarOtrasTasas(true); }}
                         className="border border-[#ffb8e0] rounded-xl px-3 py-3 text-sm bg-[#ffedfa] outline-none">
-                        <option value="mensual">% mensual</option>
-                        <option value="EA">% EA</option>
+                        <optgroup label="Más comunes">
+                          <option value="NMV">% mensual (N.M.V.)</option>
+                          <option value="EA">% E.A.</option>
+                          <option value="NAMV">% nominal anual (N.A.M.V.)</option>
+                          <option value="NTV">% trimestral (N.T.V.)</option>
+                        </optgroup>
+                        {mostrarOtrasTasas && (
+                          <optgroup label="Otras">
+                            <option value="EM">% efectiva mensual (E.M.)</option>
+                            <option value="ET">% efectiva trimestral (E.T.)</option>
+                            <option value="ES">% efectiva semestral (E.S.)</option>
+                            <option value="NATV">% nominal anual trimestre vencido (N.A.T.V.)</option>
+                            <option value="NASV">% nominal anual semestre vencido (N.A.S.V.)</option>
+                            <option value="NSV">% nominal semestral (N.S.V.)</option>
+                          </optgroup>
+                        )}
+                        {!mostrarOtrasTasas && (
+                          <option value="otras">Otras tasas ▼</option>
+                        )}
                       </select>
-                      <button type="button" onClick={() => { setMostrarTasa(false); setDTasa(""); }}
+                      <button type="button" onClick={() => { setMostrarTasa(false); setDTasa(""); setTasaTipo("NMV"); setMostrarOtrasTasas(false); }}
                         className="text-xs text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 whitespace-nowrap">✕</button>
                     </div>
                   </div>
