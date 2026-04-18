@@ -572,9 +572,13 @@ export default function OnboardingPage() {
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
                 Tus deudas, sin miedo 💳
               </h2>
-              <div className="text-sm text-[#1a1a2e]/60 leading-relaxed mb-6 space-y-2">
-                <p>Aquí vamos a poner todo lo que debes. Puede ser a un banco, una tarjeta o incluso a una persona.</p>
-                <p className="text-[#ec7fa9] font-medium">No te preocupes si no tienes toda la información clara, puedes empezar con lo que sabes.</p>
+              <div className="text-sm text-[#1a1a2e]/60 leading-relaxed mb-4 space-y-2">
+                <p>Tener deudas no es malo — muchas veces son las que nos ayudan a cumplir metas que de otra forma tomarían años: una casa, un carro, estudiar o empezar un proyecto.</p>
+                <p><strong className="text-[#1a1a2e]/80">El problema no es tenerlas, sino no tener un plan para pagarlas.</strong></p>
+                <p className="text-[#ec7fa9] font-medium">Y para eso estamos aquí. Si tienes deudas, te vamos a ayudar a salir de ellas más rápido usando metodologías financieras probadas — y vamos a elegir juntas la que más se adapte a ti. 🎯</p>
+              </div>
+              <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-xs text-[#1a1a2e]/60 mb-5">
+                💡 Aquí van todas tus deudas: tarjetas, créditos, préstamos o lo que le debas a alguien. No te preocupes si no tienes todos los datos exactos — empieza con lo que sabes.
               </div>
 
               {deudas.length > 0 && (
