@@ -22,7 +22,7 @@ const COUNTRY_CODES = [
 ];
 
 export default function RegisterPage() {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [dialCode, setDialCode] = useState("+57");
@@ -64,7 +64,14 @@ export default function RegisterPage() {
       }
 
       if (data.user) {
-        window.location.href = "/app";
+        if (data.session) {
+          // Email confirmation disabled — session active
+          window.location.href = "/onboarding";
+        } else {
+          // Email confirmation required
+          setStep(3);
+          setLoading(false);
+        }
       } else {
         setError("Algo salió mal. Intenta de nuevo.");
         setLoading(false);
@@ -103,146 +110,173 @@ export default function RegisterPage() {
           </div>
 
           <div className="p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-2xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
-                  {step === 1 ? "Cuéntanos de ti ✨" : "Crea tu acceso 🔐"}
+
+            {/* ── STEP 3: Check email ── */}
+            {step === 3 && (
+              <div className="text-center py-4">
+                <div className="text-5xl mb-4">📩</div>
+                <h1 className="text-2xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
+                  Revisa tu correo
                 </h1>
-                <p className="text-[#1a1a2e]/50 text-sm mt-1">
-                  {step === 1 ? "Paso 1 de 2 — tus datos" : "Paso 2 de 2 — tu cuenta"}
+                <p className="text-[#1a1a2e]/60 text-sm leading-relaxed mb-1">
+                  Te enviamos un enlace de confirmación a
                 </p>
+                <p className="font-semibold text-[#ec7fa9] text-sm mb-5">{email}</p>
+                <p className="text-[#1a1a2e]/50 text-xs leading-relaxed mb-6">
+                  Haz clic en el enlace del correo para activar tu cuenta y empezar a usar Finly. Si no lo ves, revisa tu carpeta de spam.
+                </p>
+                <a href="/login"
+                  className="inline-block bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold px-8 py-3 rounded-xl text-sm transition-colors">
+                  Ya confirmé, iniciar sesión →
+                </a>
               </div>
-            </div>
+            )}
 
-            <form onSubmit={step === 1 ? (e) => { e.preventDefault(); setError(""); setStep(2); } : handleRegister} className="flex flex-col gap-4">
-              {step === 1 && (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Nombre</label>
-                      <input
-                        type="text"
-                        required
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        placeholder="María"
-                        className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Apellido</label>
-                      <input
-                        type="text"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        placeholder="García"
-                        className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
-                      />
-                    </div>
-                  </div>
-
+            {/* ── STEPS 1 & 2 ── */}
+            {step !== 3 && (
+              <>
+                <div className="flex items-center justify-between mb-6">
                   <div>
-                    <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">
-                      Teléfono <span className="text-[#1a1a2e]/30 font-normal">(opcional)</span>
-                    </label>
-                    <div className="flex gap-2">
-                      <select
-                        value={dialCode}
-                        onChange={(e) => setDialCode(e.target.value)}
-                        className="border border-[#ffb8e0] rounded-xl px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 bg-[#ffedfa] w-32 flex-shrink-0"
-                      >
-                        {COUNTRY_CODES.map((c) => (
-                          <option key={c.code} value={c.code}>
-                            {c.flag} {c.code}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="300 000 0000"
-                        className="flex-1 border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={!firstName}
-                    className="w-full bg-[#ec7fa9] hover:bg-[#d96d97] disabled:opacity-40 text-white font-semibold py-3.5 rounded-xl transition-colors mt-2"
-                  >
-                    Continuar →
-                  </button>
-                </>
-              )}
-
-              {step === 2 && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Correo electrónico</label>
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="tu@correo.com"
-                      className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Contraseña</label>
-                    <input
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Mínimo 6 caracteres"
-                      className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
-                    />
-                  </div>
-
-                  {error && (
-                    <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                      {error}
+                    <h1 className="text-2xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
+                      {step === 1 ? "Cuéntanos de ti ✨" : "Crea tu acceso 🔐"}
+                    </h1>
+                    <p className="text-[#1a1a2e]/50 text-sm mt-1">
+                      {step === 1 ? "Paso 1 de 2 — tus datos" : "Paso 2 de 2 — tu cuenta"}
                     </p>
+                  </div>
+                </div>
+
+                <form onSubmit={step === 1 ? (e) => { e.preventDefault(); setError(""); setStep(2); } : handleRegister} className="flex flex-col gap-4">
+                  {step === 1 && (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Nombre</label>
+                          <input
+                            type="text"
+                            required
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            placeholder="María"
+                            className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Apellido</label>
+                          <input
+                            type="text"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            placeholder="García"
+                            className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">
+                          Teléfono <span className="text-[#1a1a2e]/30 font-normal">(opcional)</span>
+                        </label>
+                        <div className="flex gap-2">
+                          <select
+                            value={dialCode}
+                            onChange={(e) => setDialCode(e.target.value)}
+                            className="border border-[#ffb8e0] rounded-xl px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 bg-[#ffedfa] w-32 flex-shrink-0"
+                          >
+                            {COUNTRY_CODES.map((c) => (
+                              <option key={c.code} value={c.code}>
+                                {c.flag} {c.code}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="300 000 0000"
+                            className="flex-1 border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={!firstName}
+                        className="w-full bg-[#ec7fa9] hover:bg-[#d96d97] disabled:opacity-40 text-white font-semibold py-3.5 rounded-xl transition-colors mt-2"
+                      >
+                        Continuar →
+                      </button>
+                    </>
                   )}
 
-                  <div className="flex gap-3 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => setStep(1)}
-                      className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl transition-colors hover:bg-[#ffedfa] text-sm"
-                    >
-                      ← Atrás
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition-colors text-sm"
-                    >
-                      {loading ? "Creando cuenta..." : "Crear mi cuenta →"}
-                    </button>
-                  </div>
-                </>
-              )}
-            </form>
+                  {step === 2 && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Correo electrónico</label>
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="tu@correo.com"
+                          className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
+                        />
+                      </div>
 
-            {/* Presale badge */}
-            <div className="mt-6 bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl p-4 text-center">
-              <p className="text-xs text-[#ec7fa9] font-semibold">🎉 PRECIO DE PREVENTA ACTIVO</p>
-              <p className="text-[#1a1a2e]/70 text-sm mt-1">
-                Precio bloqueado para siempre al unirte hoy
-              </p>
-            </div>
+                      <div>
+                        <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Contraseña</label>
+                        <input
+                          type="password"
+                          required
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="Mínimo 6 caracteres"
+                          className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
+                        />
+                      </div>
 
-            <p className="text-center text-sm text-[#1a1a2e]/50 mt-4">
-              ¿Ya tienes cuenta?{" "}
-              <Link href="/login" className="text-[#ec7fa9] font-medium hover:underline">
-                Inicia sesión
-              </Link>
-            </p>
+                      {error && (
+                        <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                          {error}
+                        </p>
+                      )}
+
+                      <div className="flex gap-3 mt-2">
+                        <button
+                          type="button"
+                          onClick={() => setStep(1)}
+                          className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl transition-colors hover:bg-[#ffedfa] text-sm"
+                        >
+                          ← Atrás
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={loading}
+                          className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition-colors text-sm"
+                        >
+                          {loading ? "Creando cuenta..." : "Crear mi cuenta →"}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </form>
+
+                <div className="mt-6 bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl p-4 text-center">
+                  <p className="text-xs text-[#ec7fa9] font-semibold">🎉 PRECIO DE PREVENTA ACTIVO</p>
+                  <p className="text-[#1a1a2e]/70 text-sm mt-1">
+                    Precio bloqueado para siempre al unirte hoy
+                  </p>
+                </div>
+
+                <p className="text-center text-sm text-[#1a1a2e]/50 mt-4">
+                  ¿Ya tienes cuenta?{" "}
+                  <Link href="/login" className="text-[#ec7fa9] font-medium hover:underline">
+                    Inicia sesión
+                  </Link>
+                </p>
+              </>
+            )}
+
           </div>
         </div>
       </div>

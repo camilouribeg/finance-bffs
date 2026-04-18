@@ -113,6 +113,7 @@ export default function OnboardingPage() {
   const [dTotal, setDTotal] = useState("");
   const [dTasa, setDTasa] = useState("");
   const [mostrarTasa, setMostrarTasa] = useState(false);
+  const [tasaTipo, setTasaTipo] = useState<"mensual" | "EA">("mensual");
 
   // Step 4a: Selected savings amount
   const [selectedAhorro, setSelectedAhorro] = useState<number | null>(null);
@@ -195,21 +196,40 @@ export default function OnboardingPage() {
 
   function goToDeudas() {
     showReinforcement("Esto ya te da más claridad 💡");
-    // Finly Detective: if gastos > 65% of income (less than 35% left after GF)
-    const disponiblePostGF = totalIngresos - totalGastos;
-    if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
-      setStep("finly_detective");
-    } else {
-      setStep("deudas");
-    }
+    setStep("deudas");
   }
 
   function goToAhorro() {
+    // Auto-add debt if form fields are filled but user forgot to click "+ Agregar"
+    let finalDeudas = deudas;
+    if (dNombre && dCuota && dTotal) {
+      const pendingDeuda = {
+        id: Date.now().toString(),
+        nombre: dNombre, tipo: dTipo,
+        cuota_mensual: parseFloat(dCuota),
+        total_pendiente: parseFloat(dTotal),
+        tasa: dTasa,
+      };
+      finalDeudas = [...deudas, pendingDeuda];
+      setDeudas(finalDeudas);
+      setDNombre(""); setDCuota(""); setDTotal(""); setDTasa(""); setMostrarTasa(false);
+    }
+
+    const finalTotalDeudas = finalDeudas.reduce((s, d) => s + d.cuota_mensual, 0);
+    const finalCapacidad = totalIngresos - totalGastos - finalTotalDeudas;
+
     showReinforcement("Lo estás haciendo mejor de lo que crees 💪");
-    if (capacidad <= 0) {
+
+    if (finalCapacidad <= 0) {
       setStep("no_puede_intro");
     } else {
-      setStep("ahorro_puede");
+      // Check Finly Detective: gastos fijos > 65% of income
+      const disponiblePostGF = totalIngresos - totalGastos;
+      if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
+        setStep("finly_detective");
+      } else {
+        setStep("ahorro_puede");
+      }
     }
   }
 
@@ -523,7 +543,7 @@ export default function OnboardingPage() {
                   className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
                   ← Revisar gastos
                 </button>
-                <button onClick={() => setStep("deudas")}
+                <button onClick={() => setStep("ahorro_puede")}
                   className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-3.5 rounded-xl text-sm transition-colors">
                   Entendido, continuar →
                 </button>
@@ -585,14 +605,19 @@ export default function OnboardingPage() {
                 {mostrarTasa ? (
                   <div>
                     <label className="text-xs text-[#1a1a2e]/50 mb-1 block">
-                      Tasa de interés % — es el porcentaje que te cobra el banco por prestarte el dinero
+                      Tasa de interés — el porcentaje que te cobra el banco
                     </label>
                     <div className="flex items-center gap-2">
                       <input type="number" value={dTasa} onChange={(e) => setDTasa(e.target.value)}
                         placeholder="Ej: 2.5"
                         className={`${inputCls} flex-1`} />
+                      <select value={tasaTipo} onChange={(e) => setTasaTipo(e.target.value as "mensual" | "EA")}
+                        className="border border-[#ffb8e0] rounded-xl px-3 py-3 text-sm bg-[#ffedfa] outline-none">
+                        <option value="mensual">% mensual</option>
+                        <option value="EA">% EA</option>
+                      </select>
                       <button type="button" onClick={() => { setMostrarTasa(false); setDTasa(""); }}
-                        className="text-xs text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 whitespace-nowrap">Ocultar</button>
+                        className="text-xs text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 whitespace-nowrap">✕</button>
                     </div>
                   </div>
                 ) : (
@@ -654,6 +679,7 @@ export default function OnboardingPage() {
               <div className="space-y-3 mb-6">
                 {savingsOptions.map((opt) => {
                   const monto = Math.round(capacidad * opt.pct);
+                  const restante = capacidad - monto;
                   const isSelected = selectedAhorro === monto;
                   return (
                     <button
@@ -669,14 +695,17 @@ export default function OnboardingPage() {
                       }`}
                     >
                       <div className="flex items-start justify-between">
-                        <div>
+                        <div className="flex-1">
                           <p className="text-xs font-semibold text-[#ec7fa9] uppercase tracking-wide mb-1">
                             {opt.label} {opt.highlight && "⭐"}
                           </p>
                           <p className="text-lg font-bold text-[#1a1a2e]">Ahorrar {fmt(monto)} al mes</p>
                           <p className="text-xs text-[#1a1a2e]/50 mt-1">{opt.desc}</p>
+                          <p className="text-xs text-green-600 font-medium mt-2">
+                            Te quedan {fmt(restante)} libres para el mes
+                          </p>
                         </div>
-                        <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-1 flex items-center justify-center ${
+                        <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-1 ml-3 flex items-center justify-center ${
                           isSelected ? "border-[#ec7fa9] bg-[#ec7fa9]" : "border-[#ffb8e0]"
                         }`}>
                           {isSelected && <span className="text-white text-xs">✓</span>}
@@ -691,13 +720,19 @@ export default function OnboardingPage() {
                 Puedes cambiar esto más adelante. Lo importante es empezar.
               </p>
 
-              <button
-                onClick={() => selectedAhorro !== null && finalSave({ ahorroMonto: selectedAhorro })}
-                disabled={selectedAhorro === null || saving}
-                className={`${btnPink} w-full`}
-              >
-                {saving ? "Guardando..." : "¡Empecemos! →"}
-              </button>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setStep("deudas")}
+                  className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
+                  ← Atrás
+                </button>
+                <button
+                  onClick={() => selectedAhorro !== null && finalSave({ ahorroMonto: selectedAhorro })}
+                  disabled={selectedAhorro === null || saving}
+                  className={`${btnPink} flex-[2]`}
+                >
+                  {saving ? "Guardando..." : "¡Empecemos! →"}
+                </button>
+              </div>
             </div>
           )}
 
