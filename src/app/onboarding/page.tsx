@@ -57,6 +57,7 @@ type Step =
   | "gastos"
   | "finly_detective"
   | "deudas"
+  | "deuda_intro"
   | "ahorro_puede"
   | "no_puede_intro"
   | "deuda_quiz"
@@ -225,8 +226,8 @@ export default function OnboardingPage() {
       // Sin capacidad → Rompe-deudas intro → quiz
       setStep("no_puede_intro");
     } else if (finalDeudas.length > 0) {
-      // Tiene deudas pero sí puede ahorrar → quiz directo
-      setStep("deuda_quiz");
+      // Tiene deudas pero sí puede ahorrar → intro antes del quiz
+      setStep("deuda_intro");
     } else {
       // Sin deudas → ahorro (con detector de gastos altos)
       const disponiblePostGF = totalIngresos - totalGastos;
@@ -311,6 +312,10 @@ export default function OnboardingPage() {
     : step === "gastos" ? 2
     : step === "finly_detective" ? 2
     : step === "deudas" ? 3
+    : step === "deuda_intro" ? 3
+    : step === "deuda_quiz" ? 3
+    : step === "deuda_resultado" ? 3
+    : step === "no_puede_intro" ? 3
     : 4;
 
   const inputCls = "w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] bg-[#ffedfa] transition-all";
@@ -786,6 +791,33 @@ export default function OnboardingPage() {
                 className={`${btnPink} w-full`}
               >
                 Vamos a encontrar la mejor forma para ti →
+              </button>
+            </div>
+          )}
+
+          {/* ─── DEUDA INTRO (cuando puede ahorrar pero tiene deudas) ─── */}
+          {step === "deuda_intro" && (
+            <div className="p-8">
+              <div className="text-4xl mb-5 text-center">💳✨</div>
+              <h2 className="text-xl font-bold text-[#1a1a2e] mb-4 text-center" style={{ fontFamily: "var(--font-playfair)" }}>
+                Tener deudas no es malo
+              </h2>
+              <div className="text-sm text-[#1a1a2e]/70 leading-relaxed space-y-3 mb-6 bg-[#ffedfa] rounded-2xl p-5">
+                <p>Las deudas muchas veces nos ayudan a cumplir metas que de otra forma tomarían años: una casa, un carro, estudios o un proyecto de vida.</p>
+                <p>El problema no es tenerlas — <strong>el problema es no tener un plan para pagarlas.</strong></p>
+                <p className="text-[#ec7fa9] font-medium">Y para eso existe Finly. Vamos a ayudarte a salir de tus deudas más rápido usando metodologías financieras probadas.</p>
+                <p>Pero primero, necesitamos entender cómo eres tú. Porque no todas las personas manejan sus finanzas igual, y el mejor método depende de tu personalidad.</p>
+              </div>
+              <div className="bg-white border border-[#ffb8e0] rounded-2xl px-5 py-4 mb-6 text-center">
+                <p className="text-xs text-[#1a1a2e]/50 mb-1">Vamos a hacer un test rápido</p>
+                <p className="text-sm font-semibold text-[#1a1a2e]">3 preguntas · menos de 1 minuto</p>
+                <p className="text-xs text-[#ec7fa9] mt-1">para encontrar la estrategia perfecta para ti 🎯</p>
+              </div>
+              <button
+                onClick={() => setStep("deuda_quiz")}
+                className={`${btnPink} w-full`}
+              >
+                Hacer el test →
               </button>
             </div>
           )}
