@@ -121,7 +121,7 @@ export default function LandingPage() {
             </a>
             <a href="/register"
               className="inline-flex items-center gap-2 bg-[#ec7fa9] hover:bg-[#d96d97] text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-colors shadow-sm">
-              Registrarse gratis ✨
+              Regístrate gratis ✨
             </a>
           </div>
 
@@ -145,7 +145,7 @@ export default function LandingPage() {
               Iniciar sesión
             </a>
             <a href="/register" className="bg-[#ec7fa9] text-white text-sm font-semibold px-5 py-2.5 rounded-full text-center" onClick={() => setMenuOpen(false)}>
-              Registrarse gratis ✨
+              Regístrate gratis ✨
             </a>
           </div>
         )}
@@ -183,7 +183,7 @@ export default function LandingPage() {
               href="/register"
               className="inline-flex items-center justify-center gap-2 bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold text-base px-8 py-4 rounded-full transition-colors shadow-lg"
             >
-              Registrarse gratis 💕
+              Regístrate gratis 💕
             </a>
             <a
               href="/login"
