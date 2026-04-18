@@ -92,11 +92,20 @@ export default function DashboardPage() {
 
     // Load monthly plan
     const { data } = await supabase.from("dashboard_mensual")
-      .select("*").eq("user_id", user.id).eq("mes", m + 1).eq("año", y).single();
+      .select("*").eq("user_id", user.id).eq("month", m + 1).eq("year", y).single();
     if (data) {
       setIngresoFijo(data.ingreso_fijo ? String(data.ingreso_fijo) : "");
-      setIngresosOtros(data.ingresos_otros ?? []);
-      setGastosFijosItems(data.gastos_fijos_items ?? []);
+      // Normalize items: DB may store {nombre, valor} (saved by onboarding) or {descripcion, valor} (saved by dashboard)
+      setIngresosOtros((data.ingresos_otros ?? []).map((i: Record<string, unknown>) => ({
+        id: i.id as string ?? crypto.randomUUID(),
+        descripcion: (i.descripcion ?? i.nombre ?? "") as string,
+        valor: i.valor as number,
+      })));
+      setGastosFijosItems((data.gastos_fijos_items ?? []).map((i: Record<string, unknown>) => ({
+        id: i.id as string ?? crypto.randomUUID(),
+        descripcion: (i.descripcion ?? i.nombre ?? "") as string,
+        valor: i.valor as number,
+      })));
     } else {
       setIngresoFijo(""); setIngresosOtros([]); setGastosFijosItems([]);
     }
@@ -147,12 +156,12 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       await supabase.from("dashboard_mensual").upsert({
-        user_id: user.id, mes: month + 1, año: year,
+        user_id: user.id, month: month + 1, year,
         ingreso_fijo: parseFloat(ingresoFijo) || 0,
         ingresos_otros: ingresosOtros,
         gastos_fijos_items: gastosFijosItems,
         gastos_fijos: gastosFijosItems.reduce((s, i) => s + i.valor, 0),
-      }, { onConflict: "user_id,mes,año" });
+      }, { onConflict: "user_id,month,year" });
     } finally {
       setSaving(false);
     }

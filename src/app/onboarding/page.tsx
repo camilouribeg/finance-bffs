@@ -260,13 +260,14 @@ export default function OnboardingPage() {
     try {
       await supabase.from("dashboard_mensual").upsert({
         user_id: userId,
-        mes: now.getMonth() + 1,
-        año: now.getFullYear(),
+        month: now.getMonth() + 1,
+        year: now.getFullYear(),
         ingreso_fijo: parseFloat(ingresoFijo) || 0,
-        ingresos_otros: ingresosOtros,
-        gastos_fijos_items: gastosFijos,
+        ingresos_otros: ingresosOtros.map(i => ({ id: i.id, descripcion: i.nombre, valor: i.valor })),
+        gastos_fijos: gastosFijos.reduce((s, g) => s + g.valor, 0),
+        gastos_fijos_items: gastosFijos.map(g => ({ id: g.id, descripcion: g.nombre, valor: g.valor })),
         gastos_variables_items: [],
-      }, { onConflict: "user_id,mes,año" });
+      }, { onConflict: "user_id,month,year" });
 
       if (deudas.length > 0) {
         await supabase.from("deudas").insert(
