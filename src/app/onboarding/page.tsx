@@ -515,7 +515,7 @@ export default function OnboardingPage() {
                 </button>
               </div>
               <div className="mt-2 bg-[#ffedfa] rounded-xl px-3 py-2 text-xs text-[#1a1a2e]/60">
-                💡 Aquí van los que pagas <strong>todos los meses</strong>. No incluyas cuotas de deudas ni gastos anuales como seguros o impuestos — para esos tenemos una sección especial.
+                💡 Aquí van los que pagas <strong>todos los meses</strong>. No incluyas cuotas de deudas ni gastos anuales como seguros o impuestos, para esos tenemos una sección especial.
               </div>
             </div>
           )}
@@ -532,7 +532,7 @@ export default function OnboardingPage() {
               <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-5 text-sm text-[#1a1a2e]/70 leading-relaxed space-y-2">
                 <p>¡Oops! Con lo que registraste, tus gastos fijos están usando más del 65% de tus ingresos.</p>
                 <p>Eso deja muy poco margen para deudas, ahorro y gastos del día a día.</p>
-                <p className="text-blue-700 font-medium">Pero no te preocupes — para eso existe Finly Detective: vamos a revisar juntas cada gasto y encontrar dónde puede haber un respiro.</p>
+                <p className="text-blue-700 font-medium">Pero no te preocupes, para eso existe Finly Detective: vamos a revisar juntas cada gasto y encontrar dónde puede haber un respiro.</p>
               </div>
               <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm mb-5">
                 <div className="flex justify-between">
@@ -570,15 +570,10 @@ export default function OnboardingPage() {
           {step === "deudas" && (
             <div className="p-8">
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
-                Tus deudas, sin miedo 💳
+                Tus deudas, sin miedo
               </h2>
-              <div className="text-sm text-[#1a1a2e]/60 leading-relaxed mb-4 space-y-2">
-                <p>Tener deudas no es malo — muchas veces son las que nos ayudan a cumplir metas que de otra forma tomarían años: una casa, un carro, estudiar o empezar un proyecto.</p>
-                <p><strong className="text-[#1a1a2e]/80">El problema no es tenerlas, sino no tener un plan para pagarlas.</strong></p>
-                <p className="text-[#ec7fa9] font-medium">Y para eso estamos aquí. Si tienes deudas, te vamos a ayudar a salir de ellas más rápido usando metodologías financieras probadas — y vamos a elegir juntas la que más se adapte a ti. 🎯</p>
-              </div>
               <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-xs text-[#1a1a2e]/60 mb-5">
-                💡 Aquí van todas tus deudas: tarjetas, créditos, préstamos o lo que le debas a alguien. No te preocupes si no tienes todos los datos exactos — empieza con lo que sabes.
+                💡 Aquí van todas tus deudas: tarjetas, créditos, préstamos o lo que le debas a alguien. No te preocupes si no tienes todos los datos exactos, empieza con lo que sabes.
               </div>
 
               {deudas.length > 0 && (
@@ -626,7 +621,7 @@ export default function OnboardingPage() {
                 {mostrarTasa ? (
                   <div>
                     <label className="text-xs text-[#1a1a2e]/50 mb-1 block">
-                      Tasa de interés — el porcentaje que te cobra el banco
+                      Tasa de interés, el porcentaje que te cobra el banco
                     </label>
                     <div className="flex items-center gap-2">
                       <input type="number" value={dTasa} onChange={(e) => setDTasa(e.target.value)}
@@ -661,7 +656,7 @@ export default function OnboardingPage() {
                 ) : (
                   <button type="button" onClick={() => setMostrarTasa(true)}
                     className="text-xs text-[#ec7fa9] hover:underline">
-                    + ¿Sabes tu tasa de interés? (opcional — si no la sabes, no importa)
+                    + ¿Sabes tu tasa de interés? (opcional, si no la sabes no importa)
                   </button>
                 )}
               </div>
@@ -802,26 +797,42 @@ export default function OnboardingPage() {
           {/* ─── DEUDA INTRO (cuando puede ahorrar pero tiene deudas) ─── */}
           {step === "deuda_intro" && (
             <div className="p-8">
-              <div className="text-4xl mb-5 text-center">💳✨</div>
-              <h2 className="text-xl font-bold text-[#1a1a2e] mb-4 text-center" style={{ fontFamily: "var(--font-playfair)" }}>
+              <div className="inline-flex items-center gap-2 bg-red-50 border border-red-200 rounded-full px-4 py-1.5 mb-4">
+                <span className="text-red-600 text-sm font-bold">💪 Finly Rompe-deudas</span>
+              </div>
+              <h2 className="text-xl font-bold text-[#1a1a2e] mb-4" style={{ fontFamily: "var(--font-playfair)" }}>
                 Tener deudas no es malo
               </h2>
               <div className="text-sm text-[#1a1a2e]/70 leading-relaxed space-y-3 mb-6 bg-[#ffedfa] rounded-2xl p-5">
                 <p>Las deudas muchas veces nos ayudan a cumplir metas que de otra forma tomarían años: una casa, un carro, estudios o un proyecto de vida.</p>
-                <p>El problema no es tenerlas — <strong>el problema es no tener un plan para pagarlas.</strong></p>
-                <p className="text-[#ec7fa9] font-medium">Y para eso existe Finly. Vamos a ayudarte a salir de tus deudas más rápido usando metodologías financieras probadas.</p>
-                <p>Pero primero, necesitamos entender cómo eres tú. Porque no todas las personas manejan sus finanzas igual, y el mejor método depende de tu personalidad.</p>
+                <p>El problema no es tenerlas. <strong>El problema es no tener un plan para pagarlas.</strong></p>
+                <p className="text-[#ec7fa9] font-medium">Para eso existe Finly Rompe-deudas. Vamos a ayudarte a salir de tus deudas más rápido usando metodologías financieras probadas.</p>
+                <p>Pero primero, necesitamos entender cómo eres tú. Porque no todas las personas manejan sus finanzas igual y el mejor método depende de tu personalidad.</p>
               </div>
-              <div className="bg-white border border-[#ffb8e0] rounded-2xl px-5 py-4 mb-6 text-center">
+              <div className="bg-white border border-[#ffb8e0] rounded-2xl px-5 py-4 mb-4 text-center">
                 <p className="text-xs text-[#1a1a2e]/50 mb-1">Vamos a hacer un test rápido</p>
                 <p className="text-sm font-semibold text-[#1a1a2e]">3 preguntas · menos de 1 minuto</p>
                 <p className="text-xs text-[#ec7fa9] mt-1">para encontrar la estrategia perfecta para ti 🎯</p>
               </div>
               <button
                 onClick={() => setStep("deuda_quiz")}
-                className={`${btnPink} w-full`}
+                className={`${btnPink} w-full mb-3`}
               >
                 Hacer el test →
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const disponiblePostGF = totalIngresos - totalGastos;
+                  if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
+                    setStep("finly_detective");
+                  } else {
+                    setStep("ahorro_puede");
+                  }
+                }}
+                className="w-full text-center text-sm text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-2 transition-colors"
+              >
+                Omitir por ahora, hacer el test después
               </button>
             </div>
           )}
