@@ -402,6 +402,8 @@ export default function OnboardingPage() {
                         <span className="text-sm text-[#1a1a2e]">{item.nombre}</span>
                         <div className="flex items-center gap-3">
                           <span className="text-sm font-semibold text-[#ec7fa9]">{fmt(item.valor)}</span>
+                          <button onClick={() => { setNuevoIngNombre(item.nombre); setNuevoIngValor(String(item.valor)); setIngresosOtros(ingresosOtros.filter(i => i.id !== item.id)); }}
+                            className="text-[#1a1a2e]/30 hover:text-[#ec7fa9] text-xs">✏️</button>
                           <button onClick={() => setIngresosOtros(ingresosOtros.filter(i => i.id !== item.id))}
                             className="text-[#1a1a2e]/20 hover:text-red-400 text-xs">✕</button>
                         </div>
@@ -462,6 +464,8 @@ export default function OnboardingPage() {
                       <span className="text-sm text-[#1a1a2e]">{item.nombre}</span>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-semibold text-[#ec7fa9]">{fmt(item.valor)}</span>
+                        <button onClick={() => { setNuevoGastNombre(item.nombre); setNuevoGastValor(String(item.valor)); setGastosFijos(gastosFijos.filter(g => g.id !== item.id)); }}
+                          className="text-[#1a1a2e]/30 hover:text-[#ec7fa9] text-xs">✏️</button>
                         <button onClick={() => setGastosFijos(gastosFijos.filter(g => g.id !== item.id))}
                           className="text-[#1a1a2e]/20 hover:text-red-400 text-xs">✕</button>
                       </div>
@@ -573,6 +577,8 @@ export default function OnboardingPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-semibold text-[#ec7fa9]">{fmt(d.total_pendiente)}</span>
+                        <button onClick={() => { setDNombre(d.nombre); setDTipo(d.tipo); setDCuota(String(d.cuota_mensual)); setDTotal(String(d.total_pendiente)); setDTasa(d.tasa || ""); if (d.tasa) setMostrarTasa(true); setDeudas(deudas.filter(x => x.id !== d.id)); }}
+                          className="text-[#1a1a2e]/30 hover:text-[#ec7fa9] text-xs">✏️</button>
                         <button onClick={() => setDeudas(deudas.filter(x => x.id !== d.id))}
                           className="text-[#1a1a2e]/20 hover:text-red-400 text-xs">✕</button>
                       </div>
