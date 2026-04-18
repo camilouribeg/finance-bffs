@@ -225,9 +225,17 @@ export default function OnboardingPage() {
     if (finalCapacidad <= 0) {
       // Sin capacidad → Rompe-deudas intro → quiz
       setStep("no_puede_intro");
-    } else if (finalDeudas.length > 0) {
-      // Tiene deudas pero sí puede ahorrar → intro antes del quiz
+    } else if (finalDeudas.length > 1) {
+      // Más de una deuda → intro + quiz para elegir metodología
       setStep("deuda_intro");
+    } else if (finalDeudas.length === 1) {
+      // Una sola deuda → no tiene sentido el quiz, saltar directo
+      const disponiblePostGF = totalIngresos - totalGastos;
+      if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
+        setStep("finly_detective");
+      } else {
+        setStep("ahorro_puede");
+      }
     } else {
       // Sin deudas → ahorro (con detector de gastos altos)
       const disponiblePostGF = totalIngresos - totalGastos;
