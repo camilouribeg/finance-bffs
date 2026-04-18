@@ -1,8 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import {
+  TrendingUp,
+  Receipt,
+  ShoppingBag,
+  CreditCard,
+  PiggyBank,
+  BarChart3,
+  X,
+  Pencil,
+} from "lucide-react";
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const currentMonth = new Date().getMonth();
@@ -251,7 +261,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
-            Mis finanzas 📋
+            Mis finanzas
           </h1>
           <p className="text-[#1a1a2e]/50 text-sm mt-1">Todo tu dinero en un solo lugar</p>
         </div>
@@ -262,7 +272,7 @@ export default function DashboardPage() {
           </select>
           <button onClick={saveData} disabled={saving}
             className="bg-[#ec7fa9] hover:bg-[#d96d97] disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors">
-            {saving ? "Guardando..." : "Guardar 💾"}
+            {saving ? "Guardando..." : "Guardar"}
           </button>
         </div>
       </div>
@@ -272,7 +282,7 @@ export default function DashboardPage() {
         {/* Dinero disponible */}
         <div className={`rounded-2xl p-6 border-2 ${disponible >= 0 ? "bg-white border-[#ec7fa9]" : "bg-red-50 border-red-200"}`}>
           <p className="text-xs font-semibold uppercase tracking-widest mb-1 ${disponible >= 0 ? 'text-[#ec7fa9]' : 'text-red-400'}">
-            <span className={disponible >= 0 ? "text-[#ec7fa9]" : "text-red-400"}>✨ Dinero disponible</span>
+            <span className={disponible >= 0 ? "text-[#ec7fa9]" : "text-red-400"}>Dinero disponible</span>
           </p>
           <p className={`text-3xl font-bold mt-1 ${disponible >= 0 ? "text-[#1a1a2e]" : "text-red-500"}`}>
             {fmt(disponible)}
@@ -292,7 +302,7 @@ export default function DashboardPage() {
 
         {/* Total ahorro */}
         <div className="bg-white rounded-2xl border-2 border-[#ffb8e0] p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#ec7fa9] mb-1">🐷 Total ahorro</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#ec7fa9] mb-1 flex items-center gap-1.5"><PiggyBank size={13} />Total ahorro</p>
           <p className="text-3xl font-bold text-[#1a1a2e] mt-1">{fmt(totalAhorro)}</p>
           {totalMetaAhorro > 0 && (
             <>
@@ -312,7 +322,7 @@ export default function DashboardPage() {
 
         {/* Deudas pendientes */}
         <div className="bg-white rounded-2xl border-2 border-[#ffb8e0] p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#ec7fa9] mb-1">💳 Deudas pendientes</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#ec7fa9] mb-1 flex items-center gap-1.5"><CreditCard size={13} />Deudas pendientes</p>
           <p className="text-3xl font-bold text-[#1a1a2e] mt-1">{fmt(totalDeudaPendiente)}</p>
           <p className="text-xs text-[#1a1a2e]/40 mt-2">
             {deudas.length > 0
@@ -329,10 +339,10 @@ export default function DashboardPage() {
 
       {/* Secondary metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-        <SummaryCard label="Total ingresos" value={fmt(totalIngresos)} color="green" icon="💰" />
-        <SummaryCard label="Gastos fijos" value={fmt(totalGastosFijos)} color="red" icon="📌" />
-        <SummaryCard label="Gastos del mes" value={fmt(totalGastosReales)} color="red" icon="💸" />
-        <SummaryCard label="% disponible" value={`${Math.max(pctDisponible, 0).toFixed(0)}%`} color={disponible >= 0 ? "blue" : "red"} icon="📊" />
+        <SummaryCard label="Total ingresos" value={fmt(totalIngresos)} color="green" icon={<TrendingUp size={16} />} />
+        <SummaryCard label="Gastos fijos" value={fmt(totalGastosFijos)} color="red" icon={<Receipt size={16} />} />
+        <SummaryCard label="Gastos del mes" value={fmt(totalGastosReales)} color="red" icon={<ShoppingBag size={16} />} />
+        <SummaryCard label="% disponible" value={`${Math.max(pctDisponible, 0).toFixed(0)}%`} color={disponible >= 0 ? "blue" : "red"} icon={<BarChart3 size={16} />} />
       </div>
 
       {loading ? (
@@ -342,7 +352,7 @@ export default function DashboardPage() {
 
           {/* Ingresos */}
           <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
-            <h2 className="font-semibold text-[#1a1a2e] mb-5 text-lg">💰 Ingresos del mes</h2>
+            <h2 className="font-semibold text-[#1a1a2e] mb-5 text-lg flex items-center gap-2"><TrendingUp size={18} className="text-[#ec7fa9]" />Ingresos del mes</h2>
             <div className="flex flex-col gap-5">
               <div>
                 <label className="text-sm font-medium text-[#1a1a2e]/70 mb-2 block">Ingreso fijo (salario)</label>
@@ -365,7 +375,7 @@ export default function DashboardPage() {
 
           {/* Gastos fijos */}
           <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
-            <h2 className="font-semibold text-[#1a1a2e] mb-1 text-lg">📌 Gastos fijos</h2>
+            <h2 className="font-semibold text-[#1a1a2e] mb-1 text-lg flex items-center gap-2"><Receipt size={18} className="text-[#ec7fa9]" />Gastos fijos</h2>
             <p className="text-xs text-[#1a1a2e]/40 mb-4">Los que pagas igual todos los meses — arriendo, servicios, etc.</p>
             <ListInput items={gastosFijosItems}
               onAdd={(item) => setGastosFijosItems([...gastosFijosItems, item])}
@@ -380,7 +390,7 @@ export default function DashboardPage() {
           {/* Gastos reales del mes */}
           <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
             <div className="flex items-center justify-between mb-1">
-              <h2 className="font-semibold text-[#1a1a2e] text-lg">🛍️ Gastos del mes</h2>
+              <h2 className="font-semibold text-[#1a1a2e] text-lg flex items-center gap-2"><ShoppingBag size={18} className="text-[#ec7fa9]" />Gastos del mes</h2>
               <Link href="/app/gastos"
                 className="text-xs text-[#ec7fa9] font-semibold hover:underline">
                 Ver y registrar →
@@ -407,7 +417,7 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="font-semibold text-[#1a1a2e] text-lg">💳 Mis deudas</h2>
+                <h2 className="font-semibold text-[#1a1a2e] text-lg flex items-center gap-2"><CreditCard size={18} className="text-[#ec7fa9]" />Mis deudas</h2>
                 <p className="text-xs text-[#1a1a2e]/40 mt-0.5">Cuotas totales: <span className="font-semibold text-[#ec7fa9]">{fmt(totalCuotas)}/mes</span></p>
               </div>
               <button onClick={() => setShowDeudaForm(!showDeudaForm)}
@@ -437,7 +447,7 @@ export default function DashboardPage() {
               </form>
             )}
             {deudas.length === 0 ? (
-              <div className="text-center py-8 text-[#1a1a2e]/30"><p className="text-2xl mb-2">🎉</p><p className="text-sm">¡Sin deudas registradas!</p></div>
+              <div className="text-center py-8 text-[#1a1a2e]/30"><p className="text-sm">¡Sin deudas registradas!</p></div>
             ) : (
               <div className="flex flex-col gap-3">{deudas.map((d) => <DeudaRow key={d.id} d={d} onRemove={removeDeuda} fmt={fmt} />)}</div>
             )}
@@ -447,7 +457,7 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="font-semibold text-[#1a1a2e] text-lg">🐷 Bolsillos de ahorro</h2>
+                <h2 className="font-semibold text-[#1a1a2e] text-lg flex items-center gap-2"><PiggyBank size={18} className="text-[#ec7fa9]" />Bolsillos de ahorro</h2>
                 <p className="text-xs text-[#1a1a2e]/40 mt-0.5">Total ahorrado: <span className="font-semibold text-green-600">{fmt(totalAhorro)}</span></p>
               </div>
               <button onClick={() => setShowBolsilloForm(!showBolsilloForm)}
@@ -470,11 +480,11 @@ export default function DashboardPage() {
                 <div><label className="text-xs text-[#1a1a2e]/60 mb-1 block">Meta de ahorro</label>
                   <input type="number" value={bolsilloMeta} onChange={(e) => setBolsilloMeta(e.target.value)} placeholder="0"
                     className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" /></div>
-                <button type="submit" className="bg-[#ec7fa9] text-white font-semibold py-2 rounded-xl text-sm hover:bg-[#d96d97]">Crear bolsillo 🐷</button>
+                <button type="submit" className="bg-[#ec7fa9] text-white font-semibold py-2 rounded-xl text-sm hover:bg-[#d96d97]">Crear bolsillo</button>
               </form>
             )}
             {bolsillos.length === 0 ? (
-              <div className="text-center py-8 text-[#1a1a2e]/30"><p className="text-2xl mb-2">🐷</p><p className="text-sm">Crea tu primer bolsillo de ahorro</p></div>
+              <div className="text-center py-8 text-[#1a1a2e]/30"><PiggyBank size={28} className="mx-auto mb-2 opacity-30" /><p className="text-sm">Crea tu primer bolsillo de ahorro</p></div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {bolsillos.map((b) => <BolsilloRow key={b.id} b={b} onAbonar={abonarBolsillo} onRemove={removeBolsillo} fmt={fmt} />)}
@@ -488,11 +498,11 @@ export default function DashboardPage() {
   );
 }
 
-function SummaryCard({ label, value, color, icon }: { label: string; value: string; color: string; icon: string }) {
+function SummaryCard({ label, value, color, icon }: { label: string; value: string; color: string; icon: React.ReactNode }) {
   const colors: Record<string, string> = { green: "text-green-600", red: "text-red-500", pink: "text-[#ec7fa9]", blue: "text-blue-600" };
   return (
     <div className="bg-white rounded-2xl border border-[#ffb8e0] p-4">
-      <p className="text-xl mb-2">{icon}</p>
+      <div className="text-[#ec7fa9] mb-2">{icon}</div>
       <p className="text-xs text-[#1a1a2e]/50 mb-1">{label}</p>
       <p className={`text-lg font-bold ${colors[color]}`}>{value}</p>
     </div>
@@ -522,7 +532,7 @@ function DeudaRow({ d, onRemove, fmt }: { d: Deuda; onRemove: (id: string) => vo
   return (
     <div className="flex items-center justify-between bg-[#ffedfa] rounded-xl px-4 py-3">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-[#1a1a2e] truncate">💳 {d.nombre}</p>
+        <p className="text-sm font-semibold text-[#1a1a2e] truncate">{d.nombre}</p>
         <p className="text-xs text-[#1a1a2e]/50">{d.tipo}</p>
       </div>
       <div className="flex items-center gap-4 flex-shrink-0 ml-4">

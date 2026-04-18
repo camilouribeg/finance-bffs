@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Archive, Lightbulb, Check, X, PartyPopper } from "lucide-react";
 
 type Cajita = {
   id: string;
@@ -116,7 +117,7 @@ export default function CajitasPage() {
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
-            Cajitas 📦
+            Cajitas
           </h1>
           <p className="text-[#1a1a2e]/50 text-sm mt-1">Gastos grandes que no llegan cada mes — pero que puedes preparar</p>
         </div>
@@ -187,7 +188,7 @@ export default function CajitasPage() {
               </button>
               <button type="submit"
                 className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
-                Guardar cajita ✓
+                Guardar cajita
               </button>
             </div>
           </form>
@@ -198,7 +199,7 @@ export default function CajitasPage() {
         <div className="text-center py-20 text-[#1a1a2e]/30">Cargando...</div>
       ) : cajitas.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-2xl border border-[#ffb8e0]">
-          <p className="text-4xl mb-3">📦</p>
+          <Archive size={36} className="mx-auto mb-3 text-[#ec7fa9] opacity-40" />
           <p className="font-semibold text-[#1a1a2e]">Aún no tienes cajitas</p>
           <p className="text-sm text-[#1a1a2e]/50 mt-1 mb-4">Agrégalas para prepararte con anticipación</p>
           <button onClick={() => setShowForm(true)}
@@ -242,10 +243,10 @@ export default function CajitasPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${lista ? "bg-green-100 text-green-600" : "bg-[#ffedfa] text-[#ec7fa9]"}`}>
-                        {lista ? "✓ Lista" : `${fmt(cuota)}/mes`}
+                        {lista ? <span className="flex items-center gap-1"><Check size={11} />Lista</span> : `${fmt(cuota)}/mes`}
                       </span>
                       <button onClick={() => removeCajita(cajita.id)}
-                        className="text-[#1a1a2e]/20 hover:text-red-400 text-xs ml-1">✕</button>
+                        className="text-[#1a1a2e]/20 hover:text-red-400 ml-1 flex items-center"><X size={14} /></button>
                     </div>
                   </div>
                   <div className="mb-3">
@@ -260,10 +261,10 @@ export default function CajitasPage() {
                   </div>
                   {lista ? (
                     <div className="flex items-center gap-3">
-                      <p className="text-sm font-semibold text-green-600 flex-1">🎉 ¡Lista para pagar!</p>
+                      <p className="text-sm font-semibold text-green-600 flex-1 flex items-center gap-1.5"><PartyPopper size={14} />¡Lista para pagar!</p>
                       <button onClick={() => marcarPagada(cajita.id)}
-                        className="text-xs border border-green-300 text-green-600 font-medium px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors">
-                        Ya la pagué ✓
+                        className="text-xs border border-green-300 text-green-600 font-medium px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors flex items-center gap-1">
+                        <Check size={12} />Ya la pagué
                       </button>
                     </div>
                   ) : (
@@ -274,9 +275,9 @@ export default function CajitasPage() {
                             placeholder="Monto a abonar" autoFocus
                             className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
                           <button onClick={() => abonar(cajita.id)}
-                            className="bg-[#ec7fa9] text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-[#d96d97]">✓</button>
+                            className="bg-[#ec7fa9] text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-[#d96d97] flex items-center"><Check size={14} /></button>
                           <button onClick={() => { setAbonarId(null); setAbonarMonto(""); }}
-                            className="border border-[#ffb8e0] text-[#1a1a2e]/50 text-sm px-3 py-2 rounded-xl">✕</button>
+                            className="border border-[#ffb8e0] text-[#1a1a2e]/50 text-sm px-3 py-2 rounded-xl flex items-center"><X size={14} /></button>
                         </div>
                       ) : (
                         <button onClick={() => setAbonarId(cajita.id)}
@@ -294,7 +295,7 @@ export default function CajitasPage() {
       )}
 
       <div className="mt-6 bg-[#ffedfa] rounded-2xl border border-[#ffb8e0] p-5">
-        <p className="font-semibold text-[#1a1a2e] mb-2">💡 ¿Qué son las cajitas?</p>
+        <p className="font-semibold text-[#1a1a2e] mb-2 flex items-center gap-2"><Lightbulb size={15} className="text-[#ec7fa9]" />¿Qué son las cajitas?</p>
         <p className="text-sm text-[#1a1a2e]/60 leading-relaxed">
           Hay gastos que no llegan cada mes, pero cuando llegan duelen si no estás preparada.
           Las cajitas reservan una parte de tu dinero cada mes para que no te sorprendan.

@@ -4,13 +4,22 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  Archive,
+  PiggyBank,
+  CreditCard,
+  LogOut,
+  Heart,
+} from "lucide-react";
 
 const NAV = [
-  { href: "/app", label: "Mis finanzas", icon: "📋" },
-  { href: "/app/gastos", label: "Mis gastos", icon: "📅" },
-  { href: "/app/cajitas", label: "Cajitas", icon: "📦" },
-  { href: "/app/ahorro", label: "Bolsillos de ahorro", icon: "🐷" },
-  { href: "/app/deudas", label: "Deudas", icon: "💳" },
+  { href: "/app", label: "Mis finanzas", icon: LayoutDashboard },
+  { href: "/app/gastos", label: "Mis gastos", icon: ShoppingCart },
+  { href: "/app/cajitas", label: "Cajitas", icon: Archive },
+  { href: "/app/ahorro", label: "Bolsillos de ahorro", icon: PiggyBank },
+  { href: "/app/deudas", label: "Deudas", icon: CreditCard },
 ];
 
 export default function AppSidebar({
@@ -44,15 +53,18 @@ export default function AppSidebar({
           >
             Finly
           </span>
-          <span className="text-xs text-[#1a1a2e]/40 font-medium">by Finance BFFs 💕</span>
+          <span className="flex items-center gap-1 text-xs text-[#1a1a2e]/40 font-medium">
+            by Finance BFFs <Heart size={10} className="fill-[#ec7fa9] text-[#ec7fa9]" />
+          </span>
         </Link>
-        <p className="text-xs text-[#1a1a2e]/40 mt-1">Hola, {firstName} 👋</p>
+        <p className="text-xs text-[#1a1a2e]/40 mt-1">Hola, {firstName}</p>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
         {NAV.map((item) => {
           const active = pathname === item.href;
+          const Icon = item.icon;
           return (
             <Link
               key={item.href}
@@ -64,7 +76,7 @@ export default function AppSidebar({
                   : "text-[#1a1a2e]/70 hover:bg-[#ffedfa] hover:text-[#ec7fa9]"
               }`}
             >
-              <span className="text-lg">{item.icon}</span>
+              <Icon size={17} strokeWidth={1.75} />
               {item.label}
             </Link>
           );
@@ -87,7 +99,7 @@ export default function AppSidebar({
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-[#1a1a2e]/50 hover:bg-[#ffedfa] hover:text-[#ec7fa9] transition-colors"
         >
-          <span className="text-lg">🚪</span>
+          <LogOut size={17} strokeWidth={1.75} />
           Cerrar sesión
         </button>
       </div>
@@ -107,7 +119,7 @@ export default function AppSidebar({
           className="text-lg font-bold text-[#ec7fa9]"
           style={{ fontFamily: "var(--font-playfair)" }}
         >
-          Finly <span className="text-xs text-[#1a1a2e]/40 font-normal">by Finance BFFs 💕</span>
+          Finly <span className="text-xs text-[#1a1a2e]/40 font-normal">by Finance BFFs</span>
         </span>
         <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 text-[#ec7fa9]">
           <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

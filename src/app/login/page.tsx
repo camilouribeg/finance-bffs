@@ -56,7 +56,7 @@ export default function LoginPage() {
             className="text-2xl font-bold text-[#1a1a2e] mb-1"
             style={{ fontFamily: "var(--font-playfair)" }}
           >
-            Bienvenida de nuevo 👋
+            Bienvenida de nuevo
           </h1>
           <p className="text-[#1a1a2e]/50 text-sm mb-8">
             Entra a tu cuenta para continuar

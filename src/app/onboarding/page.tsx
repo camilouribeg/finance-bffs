@@ -4,8 +4,11 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Pencil, X, Search, Zap, Archive, PiggyBank, Target } from "lucide-react";
 
 type ListItem = { id: string; nombre: string; valor: number };
+type CajitaOB = { id: string; nombre: string; emoji: string; monto_total: number; meses: number; };
+type BolsitaOB = { id: string; nombre: string; emoji: string; tipo: "fondos" | "metas"; cuota_mensual?: number; meta?: number; fecha_meta?: string; importancia: number; };
 type DeudaItem = {
   id: string;
   nombre: string;
@@ -14,6 +17,17 @@ type DeudaItem = {
   total_pendiente: number;
   tasa: string;
 };
+
+const CAJITAS_SUGERIDAS = [
+  { nombre: "SOAT", emoji: "🚗", monto: 400000, meses: 12 },
+  { nombre: "Impuesto vehicular", emoji: "🚙", monto: 500000, meses: 12 },
+  { nombre: "Seguro del carro", emoji: "🛡️", monto: 1200000, meses: 12 },
+  { nombre: "Impuesto predial", emoji: "🏠", monto: 800000, meses: 12 },
+  { nombre: "Matrícula escolar", emoji: "🎓", monto: 2000000, meses: 12 },
+  { nombre: "Vacaciones", emoji: "✈️", monto: 3000000, meses: 12 },
+];
+
+const EMOJIS_BOLSITA = ["🐷","✈️","🏠","🎓","💻","👗","💍","🎉","🐾","🌱","🚑","🎸","🏋️","📚","🛍️"];
 
 const DEUDA_TIPOS = [
   "Tarjeta de crédito",
@@ -58,10 +72,13 @@ type Step =
   | "finly_detective"
   | "deudas"
   | "deuda_intro"
-  | "ahorro_puede"
   | "no_puede_intro"
   | "deuda_quiz"
   | "deuda_resultado"
+  | "cajitas_onboarding"
+  | "ahorro_puede"
+  | "ahorro_tipo"
+  | "bolsitas_crear"
   | "guardando";
 
 const METHOD_INFO = {
@@ -117,13 +134,30 @@ export default function OnboardingPage() {
   const [tasaTipo, setTasaTipo] = useState("NMV");
   const [mostrarOtrasTasas, setMostrarOtrasTasas] = useState(false);
 
-  // Step 4a: Selected savings amount
-  const [selectedAhorro, setSelectedAhorro] = useState<number | null>(null);
-
-  // Step 4b: Quiz
+  // Step 4a: Quiz
   const [quizStep, setQuizStep] = useState(0);
   const [quizAnswers, setQuizAnswers] = useState<string[]>([]);
   const [debtMethod, setDebtMethod] = useState<"snowball" | "avalanche" | "balanced" | null>(null);
+
+  // Step 4b: Cajitas onboarding
+  const [cajitasOB, setCajitasOB] = useState<CajitaOB[]>([]);
+  const [cajNombre, setCajNombre] = useState("");
+  const [cajEmoji, setCajEmoji] = useState("📦");
+  const [cajMonto, setCajMonto] = useState("");
+  const [cajMeses, setCajMeses] = useState("12");
+
+  // Step 4c: Ahorro
+  const [selectedAhorro, setSelectedAhorro] = useState<number | null>(null);
+
+  // Step 4d: Bolsitas onboarding
+  const [bolsitasOB, setBolsitasOB] = useState<BolsitaOB[]>([]);
+  const [bolTipo, setBolTipo] = useState<"fondos" | "metas">("fondos");
+  const [bolNombre, setBolNombre] = useState("");
+  const [bolEmoji, setBolEmoji] = useState("🐷");
+  const [bolCuota, setBolCuota] = useState("");
+  const [bolMeta, setBolMeta] = useState("");
+  const [bolFecha, setBolFecha] = useState("");
+  const [bolImportancia, setBolImportancia] = useState(3);
 
   const [saving, setSaving] = useState(false);
 
@@ -229,22 +263,26 @@ export default function OnboardingPage() {
       // Más de una deuda → intro + quiz para elegir metodología
       setStep("deuda_intro");
     } else if (finalDeudas.length === 1) {
-      // Una sola deuda → no tiene sentido el quiz, saltar directo
+      // Una sola deuda → sin quiz, ir a cajitas
       const disponiblePostGF = totalIngresos - totalGastos;
       if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
         setStep("finly_detective");
       } else {
-        setStep("ahorro_puede");
+        setStep("cajitas_onboarding");
       }
     } else {
-      // Sin deudas → ahorro (con detector de gastos altos)
+      // Sin deudas → ir a cajitas (con detector de gastos altos)
       const disponiblePostGF = totalIngresos - totalGastos;
       if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
         setStep("finly_detective");
       } else {
-        setStep("ahorro_puede");
+        setStep("cajitas_onboarding");
       }
     }
+  }
+
+  function goCajitasToAhorro() {
+    setStep("cajitas_onboarding");
   }
 
   function answerQuiz(answer: string) {
@@ -264,7 +302,7 @@ export default function OnboardingPage() {
     }
   }
 
-  async function finalSave(opts: { ahorroMonto?: number; method?: string }) {
+  async function finalSave(opts: { ahorroMonto?: number; method?: string; cajitas?: CajitaOB[]; bolsillos?: BolsitaOB[]; }) {
     if (!userId) return;
     setSaving(true);
     setStep("guardando");
@@ -295,12 +333,35 @@ export default function OnboardingPage() {
         );
       }
 
-      if (opts.ahorroMonto) {
+      // Save cajitas
+      if (opts.cajitas && opts.cajitas.length > 0) {
+        const now2 = new Date();
+        await supabase.from("cajitas").insert(
+          opts.cajitas.map(c => {
+            const fechaPago = new Date(now2.getFullYear(), now2.getMonth() + c.meses, 1);
+            return { user_id: userId, nombre: c.nombre, emoji: c.emoji, monto_total: c.monto_total, actual: 0, fecha_pago: fechaPago.toISOString().split("T")[0] };
+          })
+        );
+      }
+
+      // Save bolsillos
+      if (opts.bolsillos && opts.bolsillos.length > 0) {
+        await supabase.from("bolsillos").insert(
+          opts.bolsillos.map(b => ({
+            user_id: userId, nombre: b.nombre, emoji: b.emoji, tipo: b.tipo,
+            meta: b.meta || 0, actual: 0,
+            cuota_mensual: b.cuota_mensual || null,
+            fecha_meta: b.fecha_meta || null,
+            importancia: b.importancia,
+            celebrado: false,
+          }))
+        );
+      } else if (opts.ahorroMonto) {
+        // Bolsita general de ahorro
         await supabase.from("bolsillos").insert({
-          user_id: userId,
-          nombre: "Ahorro mensual",
-          meta: opts.ahorroMonto,
-          actual: 0,
+          user_id: userId, nombre: "Ahorro mensual", emoji: "🐷",
+          tipo: "fondos", meta: opts.ahorroMonto * 12,
+          actual: 0, cuota_mensual: opts.ahorroMonto, importancia: 3, celebrado: false,
         });
       }
 
@@ -313,6 +374,29 @@ export default function OnboardingPage() {
     } catch {
       setSaving(false);
     }
+  }
+
+  const totalCajitasOBMensual = cajitasOB.reduce((s, c) => s + Math.ceil(c.monto_total / Math.max(1, c.meses)), 0);
+  const capacidadNeta = capacidad - totalCajitasOBMensual;
+
+  function addCajitaOB() {
+    if (!cajNombre || !cajMonto) return;
+    setCajitasOB([...cajitasOB, { id: Date.now().toString(), nombre: cajNombre, emoji: cajEmoji, monto_total: parseFloat(cajMonto), meses: parseInt(cajMeses) || 12 }]);
+    setCajNombre(""); setCajMonto(""); setCajEmoji("📦"); setCajMeses("12");
+  }
+
+  function addBolsitaOB() {
+    if (!bolNombre) return;
+    if (bolTipo === "fondos" && !bolCuota) return;
+    if (bolTipo === "metas" && (!bolMeta || !bolFecha)) return;
+    setBolsitasOB([...bolsitasOB, {
+      id: Date.now().toString(), nombre: bolNombre, emoji: bolEmoji, tipo: bolTipo,
+      cuota_mensual: bolTipo === "fondos" ? parseFloat(bolCuota) : undefined,
+      meta: bolTipo === "metas" ? parseFloat(bolMeta) : undefined,
+      fecha_meta: bolTipo === "metas" ? bolFecha : undefined,
+      importancia: bolImportancia,
+    }]);
+    setBolNombre(""); setBolEmoji("🐷"); setBolCuota(""); setBolMeta(""); setBolFecha(""); setBolImportancia(3);
   }
 
   const stepNum = step === "welcome" ? 0
@@ -370,7 +454,7 @@ export default function OnboardingPage() {
           {/* ─── WELCOME ─── */}
           {step === "welcome" && (
             <div className="p-8 text-center">
-              <div className="text-5xl mb-5">💕</div>
+              <div className="mb-5 flex justify-center"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ec7fa9" opacity="0.8"/></svg></div>
               <h1 className="text-2xl font-bold text-[#1a1a2e] mb-4" style={{ fontFamily: "var(--font-playfair)" }}>
                 ¡Bienvenida!
               </h1>
@@ -393,7 +477,7 @@ export default function OnboardingPage() {
           {step === "ingresos" && (
             <div className="p-8">
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
-                Empecemos por tu dinero 💰
+                Empecemos por tu dinero
               </h2>
               <div className="text-sm text-[#1a1a2e]/60 leading-relaxed mb-6 space-y-2">
                 <p>Aquí vas a anotar todos tus ingresos del mes.</p>
@@ -421,9 +505,9 @@ export default function OnboardingPage() {
                         <div className="flex items-center gap-3">
                           <span className="text-sm font-semibold text-[#ec7fa9]">{fmt(item.valor)}</span>
                           <button onClick={() => { setNuevoIngNombre(item.nombre); setNuevoIngValor(String(item.valor)); setIngresosOtros(ingresosOtros.filter(i => i.id !== item.id)); }}
-                            className="text-[#1a1a2e]/30 hover:text-[#ec7fa9] text-xs">✏️</button>
+                            className="text-[#1a1a2e]/30 hover:text-[#ec7fa9] flex items-center"><Pencil size={12} /></button>
                           <button onClick={() => setIngresosOtros(ingresosOtros.filter(i => i.id !== item.id))}
-                            className="text-[#1a1a2e]/20 hover:text-red-400 text-xs">✕</button>
+                            className="text-[#1a1a2e]/20 hover:text-red-400 flex items-center"><X size={12} /></button>
                         </div>
                       </div>
                     ))}
@@ -468,7 +552,7 @@ export default function OnboardingPage() {
           {step === "gastos" && (
             <div className="p-8">
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
-                Ahora, lo que pagas cada mes 📋
+                Ahora, lo que pagas cada mes
               </h2>
               <div className="text-sm text-[#1a1a2e]/60 leading-relaxed mb-6 space-y-2">
                 <p>Estos son los gastos que pagas todos los meses, casi siempre por el mismo valor.</p>
@@ -483,9 +567,9 @@ export default function OnboardingPage() {
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-semibold text-[#ec7fa9]">{fmt(item.valor)}</span>
                         <button onClick={() => { setNuevoGastNombre(item.nombre); setNuevoGastValor(String(item.valor)); setGastosFijos(gastosFijos.filter(g => g.id !== item.id)); }}
-                          className="text-[#1a1a2e]/30 hover:text-[#ec7fa9] text-xs">✏️</button>
+                          className="text-[#1a1a2e]/30 hover:text-[#ec7fa9] flex items-center"><Pencil size={12} /></button>
                         <button onClick={() => setGastosFijos(gastosFijos.filter(g => g.id !== item.id))}
-                          className="text-[#1a1a2e]/20 hover:text-red-400 text-xs">✕</button>
+                          className="text-[#1a1a2e]/20 hover:text-red-400 flex items-center"><X size={12} /></button>
                       </div>
                     </div>
                   ))}
@@ -532,7 +616,7 @@ export default function OnboardingPage() {
           {step === "finly_detective" && (
             <div className="p-8">
               <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5 mb-4">
-                <span className="text-blue-600 text-sm font-bold">🔍 Finly Detective</span>
+                <span className="text-blue-600 text-sm font-bold flex items-center gap-1.5"><Search size={13} />Finly Detective</span>
               </div>
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
                 Tus gastos fijos están tomando mucho espacio
@@ -566,7 +650,7 @@ export default function OnboardingPage() {
                   className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
                   ← Revisar gastos
                 </button>
-                <button onClick={() => setStep("ahorro_puede")}
+                <button onClick={() => setStep("cajitas_onboarding")}
                   className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-3.5 rounded-xl text-sm transition-colors">
                   Entendido, continuar →
                 </button>
@@ -595,9 +679,9 @@ export default function OnboardingPage() {
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-semibold text-[#ec7fa9]">{fmt(d.total_pendiente)}</span>
                         <button onClick={() => { setDNombre(d.nombre); setDTipo(d.tipo); setDCuota(String(d.cuota_mensual)); setDTotal(String(d.total_pendiente)); setDTasa(d.tasa || ""); if (d.tasa) setMostrarTasa(true); setDeudas(deudas.filter(x => x.id !== d.id)); }}
-                          className="text-[#1a1a2e]/30 hover:text-[#ec7fa9] text-xs">✏️</button>
+                          className="text-[#1a1a2e]/30 hover:text-[#ec7fa9] flex items-center"><Pencil size={12} /></button>
                         <button onClick={() => setDeudas(deudas.filter(x => x.id !== d.id))}
-                          className="text-[#1a1a2e]/20 hover:text-red-400 text-xs">✕</button>
+                          className="text-[#1a1a2e]/20 hover:text-red-400 flex items-center"><X size={12} /></button>
                       </div>
                     </div>
                   ))}
@@ -701,7 +785,7 @@ export default function OnboardingPage() {
           {step === "ahorro_puede" && (
             <div className="p-8">
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
-                Este es tu punto de partida 🌱
+                Este es tu punto de partida
               </h2>
               <p className="text-sm text-[#1a1a2e]/60 mb-2 leading-relaxed">
                 Con lo que registraste, Finly analizó tu situación y te propone diferentes formas de ahorrar.
@@ -710,17 +794,29 @@ export default function OnboardingPage() {
                 Puedes elegir la que mejor se adapte a ti.
               </p>
 
-              <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm mb-4">
-                <span className="text-[#1a1a2e]/60">Lo que te sobra después de gastos y deudas: </span>
-                <span className="font-bold text-[#ec7fa9]">{fmt(capacidad)}/mes</span>
+              <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm mb-4 space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-[#1a1a2e]/60">Después de gastos y deudas</span>
+                  <span className="font-semibold text-[#1a1a2e]">{fmt(capacidad)}/mes</span>
+                </div>
+                {totalCajitasOBMensual > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-[#1a1a2e]/60">Reserva cajitas mensuales</span>
+                    <span className="font-semibold text-orange-400">- {fmt(totalCajitasOBMensual)}/mes</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t border-[#ffb8e0] pt-1 mt-1">
+                  <span className="text-[#1a1a2e]/60 font-medium">Disponible para ahorrar</span>
+                  <span className="font-bold text-[#ec7fa9]">{fmt(capacidadNeta)}/mes</span>
+                </div>
               </div>
 
               <p className="text-sm font-semibold text-[#1a1a2e] mb-4">Selecciona la opción que más te guste 👇</p>
 
               <div className="space-y-3 mb-6">
                 {savingsOptions.map((opt) => {
-                  const monto = Math.round(capacidad * opt.pct);
-                  const restante = capacidad - monto;
+                  const monto = Math.round(capacidadNeta * opt.pct);
+                  const restante = capacidadNeta - monto;
                   const isSelected = selectedAhorro === monto;
                   return (
                     <button
@@ -738,7 +834,7 @@ export default function OnboardingPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <p className="text-xs font-semibold text-[#ec7fa9] uppercase tracking-wide mb-1">
-                            {opt.label} {opt.highlight && "⭐"}
+                            {opt.label} {opt.highlight && "✦"}
                           </p>
                           <p className="text-lg font-bold text-[#1a1a2e]">Ahorrar {fmt(monto)} al mes</p>
                           <p className="text-xs text-[#1a1a2e]/50 mt-1">{opt.desc}</p>
@@ -762,16 +858,16 @@ export default function OnboardingPage() {
               </p>
 
               <div className="flex gap-3">
-                <button type="button" onClick={() => setStep("deudas")}
+                <button type="button" onClick={() => setStep("cajitas_onboarding")}
                   className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
                   ← Atrás
                 </button>
                 <button
-                  onClick={() => selectedAhorro !== null && finalSave({ ahorroMonto: selectedAhorro, method: debtMethod ?? undefined })}
-                  disabled={selectedAhorro === null || saving}
+                  onClick={() => selectedAhorro !== null && setStep("ahorro_tipo")}
+                  disabled={selectedAhorro === null}
                   className={`${btnPink} flex-[2]`}
                 >
-                  {saving ? "Guardando..." : "¡Empecemos! →"}
+                  Siguiente →
                 </button>
               </div>
             </div>
@@ -781,7 +877,7 @@ export default function OnboardingPage() {
           {step === "no_puede_intro" && (
             <div className="p-8">
               <div className="inline-flex items-center gap-2 bg-red-50 border border-red-200 rounded-full px-4 py-1.5 mb-4">
-                <span className="text-red-600 text-sm font-bold">💪 Finly Rompe-deudas</span>
+                <span className="text-red-600 text-sm font-bold flex items-center gap-1.5"><Zap size={13} />Finly Rompe-deudas</span>
               </div>
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-4" style={{ fontFamily: "var(--font-playfair)" }}>
                 Primero, vamos a ordenar esto juntas 🤝
@@ -806,7 +902,7 @@ export default function OnboardingPage() {
           {step === "deuda_intro" && (
             <div className="p-8">
               <div className="inline-flex items-center gap-2 bg-red-50 border border-red-200 rounded-full px-4 py-1.5 mb-4">
-                <span className="text-red-600 text-sm font-bold">💪 Finly Rompe-deudas</span>
+                <span className="text-red-600 text-sm font-bold flex items-center gap-1.5"><Zap size={13} />Finly Rompe-deudas</span>
               </div>
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-4" style={{ fontFamily: "var(--font-playfair)" }}>
                 Tener deudas no es malo
@@ -835,7 +931,7 @@ export default function OnboardingPage() {
                   if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
                     setStep("finly_detective");
                   } else {
-                    setStep("ahorro_puede");
+                    setStep("cajitas_onboarding");
                   }
                 }}
                 className="w-full text-center text-sm text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-2 transition-colors"
@@ -945,7 +1041,7 @@ export default function OnboardingPage() {
                     if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
                       setStep("finly_detective");
                     } else {
-                      setStep("ahorro_puede");
+                      setStep("cajitas_onboarding");
                     }
                   }}
                   className={`${btnPink} w-full`}
@@ -956,10 +1052,230 @@ export default function OnboardingPage() {
             </div>
           )}
 
+          {/* ─── CAJITAS ONBOARDING ─── */}
+          {step === "cajitas_onboarding" && (
+            <div className="p-8">
+              <h2 className="text-xl font-bold text-[#1a1a2e] mb-1 flex items-center gap-2" style={{ fontFamily: "var(--font-playfair)" }}>
+                <Archive size={20} className="text-[#ec7fa9]" />¿Tienes gastos grandes una vez al año?
+              </h2>
+              <p className="text-sm text-[#1a1a2e]/60 mb-5 leading-relaxed">
+                Cosas como el SOAT, impuestos, seguros o vacaciones. Con las cajitas reservas un poquito cada mes para que no te pillen por sorpresa.
+              </p>
+
+              {cajitasOB.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  {cajitasOB.map((c) => (
+                    <div key={c.id} className="flex items-center justify-between bg-[#ffedfa] rounded-xl px-4 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <span>{c.emoji}</span>
+                        <div>
+                          <p className="text-sm font-medium text-[#1a1a2e]">{c.nombre}</p>
+                          <p className="text-xs text-[#1a1a2e]/40">{fmt(c.monto_total)} en {c.meses} meses · {fmt(Math.ceil(c.monto_total / c.meses))}/mes</p>
+                        </div>
+                      </div>
+                      <button onClick={() => setCajitasOB(cajitasOB.filter(x => x.id !== c.id))} className="text-[#1a1a2e]/20 hover:text-red-400 text-xs">✕</button>
+                    </div>
+                  ))}
+                  <div className="flex justify-between px-1 text-xs text-[#1a1a2e]/50 font-medium pt-1">
+                    <span>Reserva mensual total</span>
+                    <span className="text-[#ec7fa9] font-bold">{fmt(totalCajitasOBMensual)}/mes</span>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-xs text-[#1a1a2e]/50 font-semibold mb-2">Sugerencias rápidas</p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {CAJITAS_SUGERIDAS.filter(s => !cajitasOB.find(c => c.nombre === s.nombre)).map((s) => (
+                  <button key={s.nombre} type="button"
+                    onClick={() => setCajitasOB([...cajitasOB, { id: Date.now().toString(), nombre: s.nombre, emoji: s.emoji, monto_total: s.monto, meses: s.meses }])}
+                    className="flex items-center gap-1.5 bg-white border border-[#ffb8e0] rounded-full px-3 py-1.5 text-xs text-[#1a1a2e]/70 hover:border-[#ec7fa9] hover:text-[#ec7fa9] transition-all">
+                    {s.emoji} {s.nombre}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-2 mb-4 bg-[#ffedfa] rounded-2xl p-4">
+                <p className="text-xs font-semibold text-[#1a1a2e]/60 mb-2">Agregar cajita personalizada</p>
+                <div className="flex gap-2">
+                  <select value={cajEmoji} onChange={e => setCajEmoji(e.target.value)}
+                    className="border border-[#ffb8e0] rounded-xl px-2 py-2.5 text-sm bg-white outline-none w-16">
+                    {["📦","🚗","🏠","✈️","🎓","🛡️","🏋️","🎁","💊","🐾"].map(e => <option key={e} value={e}>{e}</option>)}
+                  </select>
+                  <input value={cajNombre} onChange={e => setCajNombre(e.target.value)} placeholder="Nombre" className={`${inputCls} flex-1`} />
+                </div>
+                <div className="flex gap-2">
+                  <input type="number" value={cajMonto} onChange={e => setCajMonto(e.target.value)} placeholder="Monto total" className={`${inputCls} flex-1`} />
+                  <select value={cajMeses} onChange={e => setCajMeses(e.target.value)}
+                    className="border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-white outline-none w-36">
+                    <option value="3">3 meses</option>
+                    <option value="6">6 meses</option>
+                    <option value="12">12 meses</option>
+                  </select>
+                </div>
+                <button type="button" onClick={addCajitaOB} disabled={!cajNombre || !cajMonto}
+                  className="w-full border border-[#ec7fa9] text-[#ec7fa9] font-semibold py-2 rounded-xl text-sm hover:bg-white disabled:opacity-40 transition-colors">
+                  + Agregar cajita
+                </button>
+              </div>
+
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setStep("deudas")}
+                  className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
+                  ← Atrás
+                </button>
+                <button onClick={goCajitasToAhorro} className={`${btnPink} flex-[2] text-sm`}>
+                  {cajitasOB.length === 0 ? "No tengo, continuar →" : "Continuar →"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ─── AHORRO TIPO ─── */}
+          {step === "ahorro_tipo" && (
+            <div className="p-8">
+              <h2 className="text-xl font-bold text-[#1a1a2e] mb-2 flex items-center gap-2" style={{ fontFamily: "var(--font-playfair)" }}>
+                <PiggyBank size={20} className="text-[#ec7fa9]" />¿Cómo quieres organizar tu ahorro?
+              </h2>
+              <p className="text-sm text-[#1a1a2e]/60 mb-6 leading-relaxed">
+                Vas a ahorrar <strong className="text-[#ec7fa9]">{fmt(selectedAhorro ?? 0)}/mes</strong>. Elige cómo quieres manejarlo.
+              </p>
+
+              <div className="space-y-4 mb-6">
+                <button type="button" onClick={() => setStep("bolsitas_crear")}
+                  className="w-full text-left border-2 border-[#ffb8e0] rounded-2xl p-5 hover:border-[#ec7fa9] hover:bg-[#ffedfa] transition-all group">
+                  <div className="flex items-start gap-4">
+                    <PiggyBank size={28} className="text-[#ec7fa9] flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                    <div>
+                      <p className="font-bold text-[#1a1a2e] text-base group-hover:text-[#ec7fa9] transition-colors">Bolsitas con propósito</p>
+                      <p className="text-xs text-[#1a1a2e]/60 mt-1 leading-relaxed">Divides tu ahorro en bolsitas según para qué es: emergencias, viaje, ropa, metas... Tú decides cuántas y para qué. Ideal si te gusta tener todo organizado.</p>
+                    </div>
+                  </div>
+                </button>
+
+                <button type="button"
+                  onClick={() => finalSave({ ahorroMonto: selectedAhorro ?? 0, method: debtMethod ?? undefined, cajitas: cajitasOB })}
+                  disabled={saving}
+                  className="w-full text-left border-2 border-[#ffb8e0] rounded-2xl p-5 hover:border-[#ec7fa9] hover:bg-[#ffedfa] transition-all group">
+                  <div className="flex items-start gap-4">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ec7fa9" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+                    <div>
+                      <p className="font-bold text-[#1a1a2e] text-base group-hover:text-[#ec7fa9] transition-colors">Una sola bolsita general</p>
+                      <p className="text-xs text-[#1a1a2e]/60 mt-1 leading-relaxed">Todo tu ahorro en un solo lugar, sin dividirlo. Simple y sin complicarte. Puedes agregar bolsitas más adelante cuando quieras.</p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              <button type="button" onClick={() => setStep("ahorro_puede")}
+                className="w-full text-center text-sm text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-2 transition-colors">
+                ← Atrás
+              </button>
+            </div>
+          )}
+
+          {/* ─── BOLSITAS CREAR ─── */}
+          {step === "bolsitas_crear" && (
+            <div className="p-8">
+              <h2 className="text-xl font-bold text-[#1a1a2e] mb-1 flex items-center gap-2" style={{ fontFamily: "var(--font-playfair)" }}>
+                <PiggyBank size={20} className="text-[#ec7fa9]" />Crea tus bolsitas
+              </h2>
+              <p className="text-sm text-[#1a1a2e]/60 mb-5 leading-relaxed">
+                Ahorro mensual: <strong className="text-[#ec7fa9]">{fmt(selectedAhorro ?? 0)}/mes</strong>. Distribúyelo como quieras.
+              </p>
+
+              {bolsitasOB.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  {bolsitasOB.map((b) => (
+                    <div key={b.id} className="flex items-center justify-between bg-[#ffedfa] rounded-xl px-4 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <span>{b.emoji}</span>
+                        <div>
+                          <p className="text-sm font-medium text-[#1a1a2e]">{b.nombre}</p>
+                          <p className="text-xs text-[#1a1a2e]/40">
+                            {b.tipo === "fondos" ? `${fmt(b.cuota_mensual ?? 0)}/mes` : `Meta ${fmt(b.meta ?? 0)} · ${b.fecha_meta}`}
+                          </p>
+                        </div>
+                      </div>
+                      <button onClick={() => setBolsitasOB(bolsitasOB.filter(x => x.id !== b.id))} className="text-[#1a1a2e]/20 hover:text-red-400 text-xs">✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="bg-[#ffedfa] rounded-2xl p-4 mb-4">
+                <div className="flex gap-2 mb-4">
+                  <button type="button" onClick={() => setBolTipo("fondos")}
+                    className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${bolTipo === "fondos" ? "bg-[#ec7fa9] text-white" : "bg-white border border-[#ffb8e0] text-[#1a1a2e]/60"}`}>
+                    <PiggyBank size={14} />Mis fondos
+                  </button>
+                  <button type="button" onClick={() => setBolTipo("metas")}
+                    className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${bolTipo === "metas" ? "bg-[#ec7fa9] text-white" : "bg-white border border-[#ffb8e0] text-[#1a1a2e]/60"}`}>
+                    <Target size={14} />Mis metas
+                  </button>
+                </div>
+
+                {bolTipo === "fondos" && (
+                  <p className="text-xs text-[#1a1a2e]/50 mb-3">Ahorro sin fecha límite. Defines cuánto apartas cada mes. Ej: fondo de emergencias, ropa, tecnología.</p>
+                )}
+                {bolTipo === "metas" && (
+                  <p className="text-xs text-[#1a1a2e]/50 mb-3">Tienes un monto objetivo y una fecha. Finly calcula cuánto necesitas ahorrar cada mes. Ej: viaje a México en diciembre.</p>
+                )}
+
+                <div className="flex gap-2 mb-2">
+                  <select value={bolEmoji} onChange={e => setBolEmoji(e.target.value)}
+                    className="border border-[#ffb8e0] rounded-xl px-2 py-2.5 text-sm bg-white outline-none w-16">
+                    {EMOJIS_BOLSITA.map(e => <option key={e} value={e}>{e}</option>)}
+                  </select>
+                  <input value={bolNombre} onChange={e => setBolNombre(e.target.value)} placeholder="Nombre de la bolsita"
+                    className={`${inputCls} flex-1`} />
+                </div>
+
+                {bolTipo === "fondos" && (
+                  <input type="number" value={bolCuota} onChange={e => setBolCuota(e.target.value)}
+                    placeholder="¿Cuánto apartas al mes?" className={`${inputCls} mb-2`} />
+                )}
+                {bolTipo === "metas" && (
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <input type="number" value={bolMeta} onChange={e => setBolMeta(e.target.value)} placeholder="Meta total" className={inputCls} />
+                    <input type="date" value={bolFecha} onChange={e => setBolFecha(e.target.value)} className={inputCls} />
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xs text-[#1a1a2e]/50">Importancia:</span>
+                  {[1,2,3,4,5].map(n => (
+                    <button key={n} type="button" onClick={() => setBolImportancia(n)}
+                      className={`transition-all ${n <= bolImportancia ? "text-[#ec7fa9]" : "text-[#ffb8e0]"}`}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill={n <= bolImportancia ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </button>
+                  ))}
+                </div>
+
+                <button type="button" onClick={addBolsitaOB}
+                  disabled={!bolNombre || (bolTipo === "fondos" && !bolCuota) || (bolTipo === "metas" && (!bolMeta || !bolFecha))}
+                  className="w-full border border-[#ec7fa9] text-[#ec7fa9] font-semibold py-2 rounded-xl text-sm hover:bg-white disabled:opacity-40 transition-colors">
+                  + Agregar bolsita
+                </button>
+              </div>
+
+              <button
+                onClick={() => finalSave({ method: debtMethod ?? undefined, cajitas: cajitasOB, bolsillos: bolsitasOB.length > 0 ? bolsitasOB : undefined, ahorroMonto: bolsitasOB.length === 0 ? (selectedAhorro ?? 0) : undefined })}
+                disabled={saving}
+                className={`${btnPink} w-full mb-3`}
+              >
+                {saving ? "Guardando..." : "¡Listo, empecemos! →"}
+              </button>
+              <button type="button" onClick={() => setStep("ahorro_tipo")}
+                className="w-full text-center text-sm text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-2 transition-colors">
+                ← Atrás
+              </button>
+            </div>
+          )}
+
           {/* ─── GUARDANDO ─── */}
           {step === "guardando" && (
             <div className="p-12 text-center">
-              <div className="text-5xl mb-4 animate-bounce">💕</div>
+              <div className="mb-4 animate-bounce flex justify-center"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ec7fa9" opacity="0.8"/></svg></div>
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-2" style={{ fontFamily: "var(--font-playfair)" }}>
                 Aquí es donde todo empieza a tener sentido
               </h2>

@@ -121,7 +121,7 @@ export default function LandingPage() {
             </a>
             <a href="/register"
               className="inline-flex items-center gap-2 bg-[#ec7fa9] hover:bg-[#d96d97] text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-colors shadow-sm">
-              Regístrate gratis ✨
+              Regístrate gratis
             </a>
           </div>
 
@@ -145,7 +145,7 @@ export default function LandingPage() {
               Iniciar sesión
             </a>
             <a href="/register" className="bg-[#ec7fa9] text-white text-sm font-semibold px-5 py-2.5 rounded-full text-center" onClick={() => setMenuOpen(false)}>
-              Regístrate gratis ✨
+              Regístrate gratis
             </a>
           </div>
         )}
@@ -162,7 +162,7 @@ export default function LandingPage() {
             className="inline-flex items-center gap-2 bg-white border border-[#ffb8e0] text-[#ec7fa9] text-sm font-medium px-4 py-1.5 rounded-full mb-8 hover:bg-[#ffedfa] transition-colors cursor-pointer"
           >
             <span className="w-2 h-2 bg-[#ec7fa9] rounded-full inline-block animate-pulse" />
-            🎉 Preventa abierta — plazas limitadas · Ver beneficios →
+            Preventa abierta — plazas limitadas · Ver beneficios →
           </a>
 
           <h1 className="text-5xl md:text-6xl font-bold text-[#1a1a2e] leading-tight mb-5" style={{ fontFamily: "var(--font-playfair)" }}>
@@ -183,7 +183,7 @@ export default function LandingPage() {
               href="/register"
               className="inline-flex items-center justify-center gap-2 bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold text-base px-8 py-4 rounded-full transition-colors shadow-lg"
             >
-              Regístrate gratis 💕
+              Regístrate gratis
             </a>
             <a
               href="/login"
@@ -300,7 +300,7 @@ export default function LandingPage() {
           <div className="bg-[#ec7fa9] rounded-3xl p-6 mb-8 text-white">
             <div className="flex items-center gap-2 mb-3">
               <span className="w-2 h-2 bg-white rounded-full inline-block animate-pulse" />
-              <p className="font-bold text-sm uppercase tracking-widest">🎉 Beneficios de entrar en preventa ahora</p>
+              <p className="font-bold text-sm uppercase tracking-widest">Beneficios de entrar en preventa ahora</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {PRESALE_PERKS.map((perk, i) => (
@@ -333,7 +333,7 @@ export default function LandingPage() {
                 <div className={`text-xs font-semibold mb-2 px-3 py-1 rounded-full inline-block w-fit ${
                   p.highlight ? "bg-white/20 text-white" : "bg-[#ffedfa] text-[#ec7fa9]"
                 }`}>
-                  🎉 {p.presale}
+                  {p.presale}
                 </div>
                 <p className={`font-semibold text-lg mb-1 mt-2 ${p.highlight ? "text-white" : "text-[#1a1a2e]"}`}>
                   {p.name}

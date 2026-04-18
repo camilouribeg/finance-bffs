@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { Lightbulb, BarChart3, Target, ShoppingCart, Inbox, X } from "lucide-react";
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
@@ -16,10 +17,10 @@ const CATEGORIES = ["Vivienda","Comida","Transporte","Salud","Educación","Entre
 const PIE_COLORS = ["#ec7fa9","#ffb8e0","#f472b6","#fb7185","#f9a8d4","#e879f9","#c084fc","#a78bfa","#818cf8","#60a5fa","#34d399","#fbbf24","#f87171"];
 
 const TIPS = [
-  { icon: "💡", title: "La regla del 24 horas", desc: "Antes de una compra no planeada, espera 24 horas. Si al día siguiente sigues queriéndola, evalúa si está en tu presupuesto." },
-  { icon: "📊", title: "Conoce tus patrones", desc: "Ver en qué categoría gastas más te da poder. No para juzgarte, sino para tomar decisiones conscientes." },
-  { icon: "🎯", title: "Gasto vs. valor", desc: "Pregúntate: ¿este gasto me dio el valor que esperaba? Si la respuesta es no frecuentemente en una categoría, ahí está la oportunidad." },
-  { icon: "🛒", title: "Lista antes de comprar", desc: "Ir al mercado con lista reduce el gasto en promedio un 23%. Aplica para cualquier tienda, no solo supermercados." },
+  { icon: <Lightbulb size={16} />, title: "La regla del 24 horas", desc: "Antes de una compra no planeada, espera 24 horas. Si al día siguiente sigues queriéndola, evalúa si está en tu presupuesto." },
+  { icon: <BarChart3 size={16} />, title: "Conoce tus patrones", desc: "Ver en qué categoría gastas más te da poder. No para juzgarte, sino para tomar decisiones conscientes." },
+  { icon: <Target size={16} />, title: "Gasto vs. valor", desc: "Pregúntate: ¿este gasto me dio el valor que esperaba? Si la respuesta es no frecuentemente en una categoría, ahí está la oportunidad." },
+  { icon: <ShoppingCart size={16} />, title: "Lista antes de comprar", desc: "Ir al mercado con lista reduce el gasto en promedio un 23%. Aplica para cualquier tienda, no solo supermercados." },
 ];
 
 type Gasto = { id: string; fecha: string; categoria: string; descripcion: string; valor: number };
@@ -103,7 +104,7 @@ export default function GastosVisualPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
-            Mis gastos 📊
+            Mis gastos
           </h1>
           <p className="text-[#1a1a2e]/50 text-sm mt-1">Conoce en qué se va tu dinero</p>
         </div>
@@ -169,7 +170,7 @@ export default function GastosVisualPage() {
               <h2 className="font-semibold text-[#1a1a2e] mb-5">Por categoría</h2>
               {byCategory.length === 0 ? (
                 <div className="text-center py-10 text-[#1a1a2e]/30">
-                  <p className="text-3xl mb-2">📭</p>
+                  <Inbox size={28} className="mx-auto mb-2 opacity-30" />
                   <p className="text-sm">Sin gastos registrados este mes</p>
                 </div>
               ) : (
@@ -206,7 +207,7 @@ export default function GastosVisualPage() {
               <h2 className="font-semibold text-[#1a1a2e] mb-5">Últimas transacciones</h2>
               {filtered.length === 0 ? (
                 <div className="text-center py-10 text-[#1a1a2e]/30">
-                  <p className="text-3xl mb-2">📭</p>
+                  <Inbox size={28} className="mx-auto mb-2 opacity-30" />
                   <p className="text-sm">Sin gastos este mes</p>
                 </div>
               ) : (
@@ -222,7 +223,7 @@ export default function GastosVisualPage() {
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0 ml-3">
                         <span className="text-sm font-semibold text-[#ec7fa9]">{fmt(g.valor)}</span>
-                        <button onClick={() => removeGasto(g.id)} className="text-[#1a1a2e]/20 hover:text-red-400 text-xs">✕</button>
+                        <button onClick={() => removeGasto(g.id)} className="text-[#1a1a2e]/20 hover:text-red-400 flex items-center"><X size={13} /></button>
                       </div>
                     </div>
                   ))}
@@ -233,8 +234,8 @@ export default function GastosVisualPage() {
 
           {/* Tip */}
           <div className="bg-[#ec7fa9] rounded-2xl p-6 text-white">
-            <p className="text-xs font-bold uppercase tracking-widest mb-3 text-white/70">💡 Tip del mes</p>
-            <h3 className="font-bold text-lg mb-2">{tip.icon} {tip.title}</h3>
+            <p className="text-xs font-bold uppercase tracking-widest mb-3 text-white/70 flex items-center gap-2"><Lightbulb size={12} />Tip del mes</p>
+            <h3 className="font-bold text-lg mb-2 flex items-center gap-2">{tip.icon}{tip.title}</h3>
             <p className="text-white/80 text-sm leading-relaxed">{tip.desc}</p>
           </div>
 

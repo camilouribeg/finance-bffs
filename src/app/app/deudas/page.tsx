@@ -1,23 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { CreditCard, Landmark, Home, Car, Users, FileText, Snowflake, Mountain, Scale, Lightbulb, Target, Ban, Trophy } from "lucide-react";
 
 type Deuda = { id: string; nombre: string; tipo: string; cuota_mensual: number; total_pendiente: number };
 
-const TIPO_EMOJIS: Record<string, string> = {
-  "Tarjeta de crédito": "💳",
-  "Préstamo personal": "🏦",
-  "Crédito hipotecario": "🏠",
-  "Crédito de vehículo": "🚗",
-  "Deuda familiar": "👨‍👩‍👧",
-  "Otro": "📄",
-};
+function TipoIcon({ tipo }: { tipo: string }) {
+  const props = { size: 15, className: "text-[#ec7fa9] flex-shrink-0", strokeWidth: 1.75 };
+  if (tipo === "Tarjeta de crédito") return <CreditCard {...props} />;
+  if (tipo === "Préstamo personal") return <Landmark {...props} />;
+  if (tipo === "Crédito hipotecario") return <Home {...props} />;
+  if (tipo === "Crédito de vehículo") return <Car {...props} />;
+  if (tipo === "Deuda familiar") return <Users {...props} />;
+  return <FileText {...props} />;
+}
 
-const METHOD_LABELS: Record<string, { emoji: string; nombre: string; desc: string }> = {
-  snowball: { emoji: "❄️", nombre: "Bola de nieve", desc: "Paga el mínimo en todas y enfoca el dinero extra en la deuda más pequeña. Al pagarla, ese dinero pasa a la siguiente. Genera momentum y motivación." },
-  avalanche: { emoji: "🏔️", nombre: "Avalancha", desc: "Paga el mínimo en todas y enfoca el dinero extra en la deuda con mayor tasa de interés. Te ahorra más dinero a largo plazo." },
-  balanced: { emoji: "⚖️", nombre: "Equilibrado", desc: "Avanza en varias deudas al mismo tiempo de forma estable. Sin enfocarte en una sola, pero sin descuidar ninguna." },
+const METHOD_LABELS: Record<string, { icon: React.ReactNode; nombre: string; desc: string }> = {
+  snowball: { icon: <Snowflake size={16} />, nombre: "Bola de nieve", desc: "Paga el mínimo en todas y enfoca el dinero extra en la deuda más pequeña. Al pagarla, ese dinero pasa a la siguiente. Genera momentum y motivación." },
+  avalanche: { icon: <Mountain size={16} />, nombre: "Avalancha", desc: "Paga el mínimo en todas y enfoca el dinero extra en la deuda con mayor tasa de interés. Te ahorra más dinero a largo plazo." },
+  balanced: { icon: <Scale size={16} />, nombre: "Equilibrado", desc: "Avanza en varias deudas al mismo tiempo de forma estable. Sin enfocarte en una sola, pero sin descuidar ninguna." },
 };
 
 export default function DeudasVisualPage() {
@@ -60,7 +62,7 @@ export default function DeudasVisualPage() {
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
-          Mis deudas 💳
+          Mis deudas
         </h1>
         <p className="text-[#1a1a2e]/50 text-sm mt-1">Tu camino para quedar libre de deudas</p>
       </div>
@@ -69,7 +71,6 @@ export default function DeudasVisualPage() {
         <div className="text-center py-20 text-[#1a1a2e]/30">Cargando...</div>
       ) : deudas.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-2xl border border-[#ffb8e0]">
-          <p className="text-5xl mb-4">🎉</p>
           <p className="text-xl font-bold text-[#1a1a2e]">¡Sin deudas registradas!</p>
           <p className="text-sm text-[#1a1a2e]/50 mt-2">Agrega tus deudas desde el Dashboard</p>
         </div>
@@ -103,7 +104,7 @@ export default function DeudasVisualPage() {
                   <div key={d.id}>
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span>{TIPO_EMOJIS[d.tipo] || "📄"}</span>
+                        <TipoIcon tipo={d.tipo} />
                         <div>
                           <p className="text-sm font-semibold text-[#1a1a2e]">{d.nombre}</p>
                           <p className="text-xs text-[#1a1a2e]/40">{d.tipo}</p>
@@ -132,7 +133,7 @@ export default function DeudasVisualPage() {
 
           {/* Strategy based on user's debt method */}
           <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
-            <h2 className="font-semibold text-[#1a1a2e] mb-1">{method.emoji} Estrategia: {method.nombre}</h2>
+            <h2 className="font-semibold text-[#1a1a2e] mb-1 flex items-center gap-2">{method.icon} Estrategia: {method.nombre}</h2>
             <p className="text-xs text-[#1a1a2e]/50 mb-5">{method.desc}</p>
             <div className="flex flex-col gap-3">
               {sortedByMethod.filter((d) => d.total_pendiente > 0).map((d, i) => (
@@ -143,8 +144,8 @@ export default function DeudasVisualPage() {
                     {i + 1}
                   </div>
                   <div className="flex-1 flex items-center justify-between bg-[#ffedfa] rounded-xl px-4 py-2.5">
-                    <p className="text-sm font-medium text-[#1a1a2e]">
-                      {TIPO_EMOJIS[d.tipo] || "📄"} {d.nombre}
+                    <p className="text-sm font-medium text-[#1a1a2e] flex items-center gap-2">
+                      <TipoIcon tipo={d.tipo} /> {d.nombre}
                       {i === 0 && debtMethod !== "balanced" && <span className="ml-2 text-xs text-[#ec7fa9] font-semibold">← empieza aquí</span>}
                     </p>
                     <p className="text-sm font-bold text-[#1a1a2e]">{fmt(d.total_pendiente)}</p>
@@ -157,25 +158,25 @@ export default function DeudasVisualPage() {
           {/* Tips */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-[#ec7fa9] rounded-2xl p-5 text-white">
-              <p className="font-bold mb-2">💡 El mínimo no es suficiente</p>
+              <p className="font-bold mb-2 flex items-center gap-2"><Lightbulb size={15} />El mínimo no es suficiente</p>
               <p className="text-sm text-white/80 leading-relaxed">
                 Pagar solo el mínimo de una tarjeta puede hacer que esa deuda dure años más y que pagues el doble en intereses. Si puedes, siempre paga más del mínimo.
               </p>
             </div>
             <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
-              <p className="font-bold text-[#1a1a2e] mb-2">🎯 Una deuda a la vez</p>
+              <p className="font-bold text-[#1a1a2e] mb-2 flex items-center gap-2"><Target size={15} className="text-[#ec7fa9]" />Una deuda a la vez</p>
               <p className="text-sm text-[#1a1a2e]/60 leading-relaxed">
                 Intentar pagar todas a la vez genera sensación de no avanzar. Concentrarte en una sola deuda y celebrar cuando la terminas genera motivación real.
               </p>
             </div>
             <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
-              <p className="font-bold text-[#1a1a2e] mb-2">🚫 No más deuda nueva</p>
+              <p className="font-bold text-[#1a1a2e] mb-2 flex items-center gap-2"><Ban size={15} className="text-[#ec7fa9]" />No más deuda nueva</p>
               <p className="text-sm text-[#1a1a2e]/60 leading-relaxed">
                 Mientras pagas deudas, evita crear deuda nueva. Cada peso nuevo que debes es un paso hacia atrás en tu progreso.
               </p>
             </div>
             <div className="bg-[#ffedfa] rounded-2xl border border-[#ffb8e0] p-5">
-              <p className="font-bold text-[#1a1a2e] mb-2">✨ Celebra cada logro</p>
+              <p className="font-bold text-[#1a1a2e] mb-2 flex items-center gap-2"><Trophy size={15} className="text-[#ec7fa9]" />Celebra cada logro</p>
               <p className="text-sm text-[#1a1a2e]/60 leading-relaxed">
                 Cada deuda que pagas es una victoria enorme. Date el crédito — literalmente estás recuperando tu libertad financiera.
               </p>

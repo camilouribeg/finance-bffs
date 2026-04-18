@@ -28,7 +28,7 @@ export default async function AppLayout({
         {!isActive && (
           <div className="bg-[#ffedfa] border-b border-[#ffb8e0] px-6 py-3 flex items-center justify-between">
             <p className="text-sm text-[#ec7fa9] font-medium">
-              🔒 Activa tu suscripción para acceder a todas las funciones
+              Activa tu suscripción para acceder a todas las funciones
             </p>
             <a
               href="/app/checkout"
