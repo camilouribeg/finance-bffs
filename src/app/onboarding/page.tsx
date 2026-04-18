@@ -26,27 +26,27 @@ const DEUDA_TIPOS = [
 
 const QUIZ = [
   {
-    pregunta: "Cuando piensas en tus deudas, ¿qué prefieres sentir?",
+    pregunta: "¿Qué sientes cuando piensas en pagar tus deudas?",
     opciones: [
-      { id: "A", texto: "Ver cómo una deuda desaparece completamente pronto" },
-      { id: "B", texto: "Saber que estoy pagando lo menos posible en intereses" },
-      { id: "C", texto: "Sentir que avanzo en todas mis deudas al mismo tiempo" },
+      { id: "A", texto: "Quiero ver una deuda desaparecer pronto, aunque sea pequeña" },
+      { id: "B", texto: "Prefiero pagar lo menos posible en intereses, aunque tome más tiempo" },
+      { id: "C", texto: "Me siento mejor si veo que todas avanzan al mismo tiempo" },
     ],
   },
   {
-    pregunta: "¿Qué te motivaría más a continuar?",
+    pregunta: "¿Qué te da más impulso para seguir?",
     opciones: [
-      { id: "A", texto: "Cerrar capítulos: eliminar una deuda y pasar a la siguiente" },
-      { id: "B", texto: "Que mi dinero trabaje de la forma más eficiente posible" },
-      { id: "C", texto: "No sentir que descuido ninguna de mis deudas" },
+      { id: "A", texto: "Tachar una deuda de la lista y concentrarme en la siguiente" },
+      { id: "B", texto: "Saber que estoy tomando la decisión más inteligente con mi dinero" },
+      { id: "C", texto: "Sentir que ninguna deuda se me está yendo de las manos" },
     ],
   },
   {
-    pregunta: "¿Cómo describes tu relación con el dinero?",
+    pregunta: "¿Cómo te describes a la hora de manejar tu dinero?",
     opciones: [
-      { id: "A", texto: "Me va mejor con una meta a la vez, paso a paso" },
-      { id: "B", texto: "Me gusta tomar las decisiones más racionales" },
-      { id: "C", texto: "Prefiero ir tranquila, sin presión ni urgencias" },
+      { id: "A", texto: "Me funciona mejor una cosa a la vez, paso a paso" },
+      { id: "B", texto: "Busco siempre la opción más eficiente y racional" },
+      { id: "C", texto: "Me va mejor cuando todo está equilibrado y sin urgencias" },
     ],
   },
 ];
@@ -848,9 +848,6 @@ export default function OnboardingPage() {
                   style={{ width: `${((quizStep + 1) / QUIZ.length) * 100}%` }} />
               </div>
 
-              <div className="text-sm text-[#1a1a2e]/60 leading-relaxed mb-1">
-                No todas las personas manejan sus deudas igual.
-              </div>
               <h2 className="text-lg font-bold text-[#1a1a2e] mb-6" style={{ fontFamily: "var(--font-playfair)" }}>
                 {QUIZ[quizStep].pregunta}
               </h2>
