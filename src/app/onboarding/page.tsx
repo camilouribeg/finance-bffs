@@ -222,9 +222,13 @@ export default function OnboardingPage() {
     showReinforcement("Lo estás haciendo mejor de lo que crees 💪");
 
     if (finalCapacidad <= 0) {
+      // Sin capacidad → Rompe-deudas intro → quiz
       setStep("no_puede_intro");
+    } else if (finalDeudas.length > 0) {
+      // Tiene deudas pero sí puede ahorrar → quiz directo
+      setStep("deuda_quiz");
     } else {
-      // Check Finly Detective: gastos fijos > 65% of income
+      // Sin deudas → ahorro (con detector de gastos altos)
       const disponiblePostGF = totalIngresos - totalGastos;
       if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
         setStep("finly_detective");
@@ -751,7 +755,7 @@ export default function OnboardingPage() {
                   ← Atrás
                 </button>
                 <button
-                  onClick={() => selectedAhorro !== null && finalSave({ ahorroMonto: selectedAhorro })}
+                  onClick={() => selectedAhorro !== null && finalSave({ ahorroMonto: selectedAhorro, method: debtMethod ?? undefined })}
                   disabled={selectedAhorro === null || saving}
                   className={`${btnPink} flex-[2]`}
                 >
@@ -872,13 +876,31 @@ export default function OnboardingPage() {
                 Vamos a organizar tus deudas con este método, paso a paso. 🌸
               </p>
 
-              <button
-                onClick={() => finalSave({ method: debtMethod })}
-                disabled={saving}
-                className={`${btnPink} w-full`}
-              >
-                {saving ? "Guardando..." : "Empezar con este método →"}
-              </button>
+              {capacidad <= 0 ? (
+                // Sin capacidad de ahorro → guardar directo con el método
+                <button
+                  onClick={() => finalSave({ method: debtMethod })}
+                  disabled={saving}
+                  className={`${btnPink} w-full`}
+                >
+                  {saving ? "Guardando..." : "Empezar con este método →"}
+                </button>
+              ) : (
+                // Con capacidad → continuar al paso de ahorro
+                <button
+                  onClick={() => {
+                    const disponiblePostGF = totalIngresos - totalGastos;
+                    if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
+                      setStep("finly_detective");
+                    } else {
+                      setStep("ahorro_puede");
+                    }
+                  }}
+                  className={`${btnPink} w-full`}
+                >
+                  Ahora veamos cuánto puedes ahorrar →
+                </button>
+              )}
             </div>
           )}
 
