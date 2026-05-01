@@ -365,15 +365,17 @@ export default function OnboardingPage() {
         });
       }
 
-      // Set 40-day trial on first onboarding completion
-      const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 40);
+      const completeRes = await fetch("/api/onboarding/complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ method: opts.method }),
+      });
 
-      await supabase.from("profiles").update({
-        onboarding_completed: true,
-        trial_ends_at: trialEndsAt.toISOString(),
-        ...(opts.method ? { debt_method: opts.method } : {}),
-      }).eq("id", userId);
+      if (!completeRes.ok) {
+        throw new Error("No se pudo completar el onboarding.");
+      }
 
       window.location.href = "/app";
     } catch {

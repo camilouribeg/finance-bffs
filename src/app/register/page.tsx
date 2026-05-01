@@ -2,9 +2,10 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const COUNTRY_CODES = [
   { code: "+57", flag: "🇨🇴", name: "Colombia" },
@@ -22,6 +23,7 @@ const COUNTRY_CODES = [
 ];
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -33,28 +35,53 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(false);
 
+  const checkConfirmedSession = useCallback(async () => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user?.email_confirmed_at) {
+      router.replace("/onboarding");
+      return true;
+    }
+
+    return false;
+  }, [router]);
+
   // When on step 3, poll every 3s for a confirmed session
   useEffect(() => {
     if (step !== 3) return;
-    const interval = setInterval(async () => {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        window.location.href = "/onboarding";
-      }
+    const supabase = createClient();
+    const interval = setInterval(() => {
+      void checkConfirmedSession();
     }, 3000);
-    return () => clearInterval(interval);
-  }, [step]);
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.email_confirmed_at) {
+        router.replace("/onboarding");
+      }
+    });
+
+    void checkConfirmedSession();
+
+    return () => {
+      clearInterval(interval);
+      subscription.unsubscribe();
+    };
+  }, [checkConfirmedSession, step]);
 
   async function handleCheckSession() {
     setCheckingSession(true);
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      window.location.href = "/onboarding";
-    } else {
-      window.location.href = "/login";
+    setError("");
+
+    const isConfirmed = await checkConfirmedSession();
+    if (!isConfirmed) {
+      setError("Aun no vemos la confirmacion del correo. Intenta de nuevo en unos segundos.");
     }
+
     setCheckingSession(false);
   }
 
@@ -92,7 +119,7 @@ export default function RegisterPage() {
       if (data.user) {
         if (data.session) {
           // Email confirmation disabled — session active
-          window.location.href = "/onboarding";
+          router.replace("/onboarding");
         } else {
           // Email confirmation required
           setStep(3);
@@ -158,6 +185,11 @@ export default function RegisterPage() {
                   <span className="w-2 h-2 rounded-full bg-[#ec7fa9] animate-pulse" />
                   <span className="text-xs text-[#1a1a2e]/40">Esperando confirmación...</span>
                 </div>
+                {error && (
+                  <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
+                    {error}
+                  </p>
+                )}
                 <button
                   onClick={handleCheckSession}
                   disabled={checkingSession}

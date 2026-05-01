@@ -87,7 +87,9 @@ export default function CajitasPage() {
     if (!monto) return;
     const nuevoActual = Math.min(cajita.actual + monto, cajita.monto_total);
     const supabase = createClient();
-    await supabase.from("cajitas").update({ actual: nuevoActual }).eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("cajitas").update({ actual: nuevoActual }).eq("id", id).eq("user_id", user.id);
     setCajitas(cajitas.map(c => c.id === id ? { ...c, actual: nuevoActual } : c));
     setAbonarId(null);
     setAbonarMonto("");
@@ -100,13 +102,17 @@ export default function CajitasPage() {
     d.setFullYear(d.getFullYear() + 1);
     const nuevaFecha = d.toISOString().split("T")[0];
     const supabase = createClient();
-    await supabase.from("cajitas").update({ actual: 0, fecha_pago: nuevaFecha }).eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("cajitas").update({ actual: 0, fecha_pago: nuevaFecha }).eq("id", id).eq("user_id", user.id);
     setCajitas(cajitas.map(c => c.id === id ? { ...c, actual: 0, fecha_pago: nuevaFecha } : c));
   }
 
   async function removeCajita(id: string) {
     const supabase = createClient();
-    await supabase.from("cajitas").delete().eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("cajitas").delete().eq("id", id).eq("user_id", user.id);
     setCajitas(cajitas.filter(c => c.id !== id));
   }
 

@@ -216,7 +216,9 @@ export default function DashboardPage() {
     if (!b) return;
     const newActual = Math.min(b.actual + amount, b.meta);
     const supabase = createClient();
-    await supabase.from("bolsillos").update({ actual: newActual }).eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("bolsillos").update({ actual: newActual }).eq("id", id).eq("user_id", user.id);
     setBolsillos(bolsillos.map((x) => x.id === id ? { ...x, actual: newActual } : x));
   }
 

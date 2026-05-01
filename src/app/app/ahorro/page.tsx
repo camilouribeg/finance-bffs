@@ -165,7 +165,9 @@ export default function AhorroPage() {
     if (!monto) return;
     const nuevoActual = b.actual + monto;
     const supabase = createClient();
-    await supabase.from("bolsillos").update({ actual: nuevoActual }).eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("bolsillos").update({ actual: nuevoActual }).eq("id", id).eq("user_id", user.id);
     const updated = bolsillos.map(x => x.id === id ? { ...x, actual: nuevoActual } : x);
     setBolsillos(updated);
     setAbonarId(null); setAbonarMonto("");
@@ -178,7 +180,9 @@ export default function AhorroPage() {
 
   async function marcarCelebrado(id: string) {
     const supabase = createClient();
-    await supabase.from("bolsillos").update({ celebrado: true }).eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("bolsillos").update({ celebrado: true }).eq("id", id).eq("user_id", user.id);
     setBolsillos(bolsillos.map(b => b.id === id ? { ...b, celebrado: true } : b));
     setCelebrando(null);
     setReasignarId(""); setReasignarMonto("");
@@ -190,8 +194,10 @@ export default function AhorroPage() {
     if (!destino) return;
     const monto = parseFloat(reasignarMonto);
     const supabase = createClient();
-    await supabase.from("bolsillos").update({ actual: destino.actual + monto }).eq("id", reasignarId);
-    await supabase.from("bolsillos").update({ celebrado: true }).eq("id", celebrando.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("bolsillos").update({ actual: destino.actual + monto }).eq("id", reasignarId).eq("user_id", user.id);
+    await supabase.from("bolsillos").update({ celebrado: true }).eq("id", celebrando.id).eq("user_id", user.id);
     setBolsillos(bolsillos.map(b => {
       if (b.id === reasignarId) return { ...b, actual: b.actual + monto };
       if (b.id === celebrando.id) return { ...b, celebrado: true };
@@ -202,7 +208,9 @@ export default function AhorroPage() {
 
   async function removeBolsillo(id: string) {
     const supabase = createClient();
-    await supabase.from("bolsillos").delete().eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("bolsillos").delete().eq("id", id).eq("user_id", user.id);
     setBolsillos(bolsillos.filter(b => b.id !== id));
   }
 

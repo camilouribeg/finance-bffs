@@ -6,16 +6,25 @@ import { Suspense } from "react";
 
 function CheckoutContent() {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const searchParams = useSearchParams();
   const expired = searchParams.get("expired") === "true";
 
   async function handleCheckout() {
     setLoading(true);
-    const res = await fetch("/api/stripe/checkout", { method: "POST" });
-    const data = await res.json();
-    if (data.url) {
+    setError("");
+
+    try {
+      const res = await fetch("/api/stripe/checkout", { method: "POST" });
+      const data = await res.json();
+
+      if (!res.ok || !data.url) {
+        throw new Error(data.error ?? "No fue posible iniciar el pago.");
+      }
+
       window.location.href = data.url;
-    } else {
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No fue posible iniciar el pago.");
       setLoading(false);
     }
   }
@@ -72,6 +81,12 @@ function CheckoutContent() {
         >
           {loading ? "Redirigiendo..." : "Activar mi cuenta 💕"}
         </button>
+
+        {error && (
+          <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-3 mt-4">
+            {error}
+          </p>
+        )}
 
         <p className="text-xs text-[#1a1a2e]/40 mt-4">
           Pago seguro con Stripe. Sin sorpresas.
