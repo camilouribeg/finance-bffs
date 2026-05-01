@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
@@ -31,6 +31,32 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(false);
+
+  // When on step 3, poll every 3s for a confirmed session
+  useEffect(() => {
+    if (step !== 3) return;
+    const interval = setInterval(async () => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        window.location.href = "/onboarding";
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [step]);
+
+  async function handleCheckSession() {
+    setCheckingSession(true);
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      window.location.href = "/onboarding";
+    } else {
+      window.location.href = "/login";
+    }
+    setCheckingSession(false);
+  }
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -122,13 +148,22 @@ export default function RegisterPage() {
                   Te enviamos un enlace de confirmación a
                 </p>
                 <p className="font-semibold text-[#ec7fa9] text-sm mb-5">{email}</p>
-                <p className="text-[#1a1a2e]/50 text-xs leading-relaxed mb-6">
-                  Haz clic en el enlace del correo para activar tu cuenta y empezar a usar Finly. Si no lo ves, revisa tu carpeta de spam.
+                <p className="text-[#1a1a2e]/50 text-xs leading-relaxed mb-2">
+                  Haz clic en el enlace del correo para activar tu cuenta. Una vez que lo confirmes, esta página te llevará automáticamente a Finly.
                 </p>
-                <a href="/login"
-                  className="inline-block bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold px-8 py-3 rounded-xl text-sm transition-colors">
-                  Ya confirmé, iniciar sesión →
-                </a>
+                <p className="text-[#1a1a2e]/40 text-xs mb-6">
+                  ¿No lo ves? Revisa tu carpeta de spam.
+                </p>
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <span className="w-2 h-2 rounded-full bg-[#ec7fa9] animate-pulse" />
+                  <span className="text-xs text-[#1a1a2e]/40">Esperando confirmación...</span>
+                </div>
+                <button
+                  onClick={handleCheckSession}
+                  disabled={checkingSession}
+                  className="inline-block bg-[#ec7fa9] hover:bg-[#d96d97] disabled:opacity-60 text-white font-semibold px-8 py-3 rounded-xl text-sm transition-colors">
+                  {checkingSession ? "Verificando..." : "Ya confirmé →"}
+                </button>
               </div>
             )}
 

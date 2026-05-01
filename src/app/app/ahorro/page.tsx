@@ -449,7 +449,8 @@ export default function AhorroPage() {
                           <div className="flex items-center gap-3">
                             <span className="text-2xl">{b.emoji}</span>
                             <div>
-                              <p className="font-semibold text-[#1a1a2e] text-sm">{b.nombre}</p>
+                              <span className="text-[10px] font-semibold text-[#ec7fa9] bg-[#ffedfa] border border-[#ffb8e0] px-2 py-0.5 rounded-full uppercase tracking-wide">Fondo permanente</span>
+                              <p className="font-semibold text-[#1a1a2e] text-sm mt-1">{b.nombre}</p>
                               <Stars value={b.importancia || 3} />
                             </div>
                           </div>
@@ -528,7 +529,8 @@ export default function AhorroPage() {
                           <div className="flex items-center gap-3">
                             <span className="text-2xl">{b.emoji}</span>
                             <div>
-                              <p className="font-semibold text-[#1a1a2e]">{b.nombre}</p>
+                              <span className="text-[10px] font-semibold text-purple-500 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full uppercase tracking-wide">Meta de ahorro</span>
+                              <p className="font-semibold text-[#1a1a2e] mt-1">{b.nombre}</p>
                               <Stars value={b.importancia || 3} />
                             </div>
                           </div>

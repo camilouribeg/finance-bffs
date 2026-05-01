@@ -192,7 +192,9 @@ export default function DashboardPage() {
 
   async function removeDeuda(id: string) {
     const supabase = createClient();
-    await supabase.from("deudas").delete().eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("deudas").delete().eq("id", id).eq("user_id", user.id);
     setDeudas(deudas.filter((d) => d.id !== id));
   }
 
@@ -220,7 +222,9 @@ export default function DashboardPage() {
 
   async function removeBolsillo(id: string) {
     const supabase = createClient();
-    await supabase.from("bolsillos").delete().eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("bolsillos").delete().eq("id", id).eq("user_id", user.id);
     setBolsillos(bolsillos.filter((b) => b.id !== id));
   }
 
@@ -548,12 +552,19 @@ function DeudaRow({ d, onRemove, fmt }: { d: Deuda; onRemove: (id: string) => vo
 function BolsilloRow({ b, onAbonar, onRemove, fmt }: { b: Bolsillo; onAbonar: (id: string, amount: number) => void; onRemove: (id: string) => void; fmt: (n: number) => string }) {
   const [abonoAmt, setAbonoAmt] = useState("");
   const pct = Math.min((b.actual / b.meta) * 100, 100);
+  const isMeta = b.tipo === "metas";
   return (
     <div className="bg-[#ffedfa] rounded-2xl p-4">
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="text-2xl">{b.emoji}</span>
-          <div><p className="font-semibold text-[#1a1a2e] text-sm">{b.nombre}</p><p className="text-xs text-[#1a1a2e]/50">Meta: {fmt(b.meta)}</p></div>
+          <div>
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${isMeta ? "text-purple-500 bg-purple-50 border border-purple-200" : "text-[#ec7fa9] bg-white border border-[#ffb8e0]"}`}>
+              {isMeta ? "Meta de ahorro" : "Fondo permanente"}
+            </span>
+            <p className="font-semibold text-[#1a1a2e] text-sm mt-1">{b.nombre}</p>
+            <p className="text-xs text-[#1a1a2e]/50">Meta: {fmt(b.meta)}</p>
+          </div>
         </div>
         <button onClick={() => onRemove(b.id)} className="text-[#1a1a2e]/20 hover:text-red-400 text-xs">✕</button>
       </div>

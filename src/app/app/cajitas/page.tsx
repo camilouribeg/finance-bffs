@@ -114,7 +114,7 @@ export default function CajitasPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
             Cajitas
@@ -127,6 +127,26 @@ export default function CajitasPage() {
         >
           + Nueva cajita
         </button>
+      </div>
+
+      {/* How cajitas work */}
+      <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl p-5 mb-6">
+        <p className="text-xs font-bold text-[#ec7fa9] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <Lightbulb size={12} /> Cómo funcionan las cajitas
+        </p>
+        <p className="text-sm text-[#1a1a2e]/70 leading-relaxed mb-3">
+          Finly divide el costo total de cada cajita en cuotas mensuales y las descuenta de tu presupuesto disponible — igual que un gasto fijo.
+        </p>
+        <p className="text-sm font-semibold text-[#1a1a2e] mb-1">¿Qué debes hacer en tu banco?</p>
+        <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
+          Cada mes, transfiere el total de cuotas ({fmt(totalMensual)}/mes) a una cuenta separada o a un bolsillo/sobre de tu banco etiquetado como <span className="font-semibold">"Cajitas"</span>. Así el dinero estará apartado cuando llegue ese gasto.
+        </p>
+        {totalMensual > 0 && (
+          <div className="mt-3 flex items-center gap-2 bg-white border border-[#ffb8e0] rounded-xl px-4 py-2.5">
+            <span className="text-xs text-[#1a1a2e]/50">Transferencia mensual recomendada:</span>
+            <span className="text-sm font-bold text-[#ec7fa9]">{fmt(totalMensual)}</span>
+          </div>
+        )}
       </div>
 
       {showForm && (

@@ -30,6 +30,7 @@ export default function GastosVisualPage() {
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState(new Date().getMonth());
   const [year] = useState(new Date().getFullYear());
+  const [presupuestoDisponible, setPresupuestoDisponible] = useState<number | null>(null);
 
   // Form state
   const [categoria, setCategoria] = useState(CATEGORIES[1]);
@@ -43,8 +44,47 @@ export default function GastosVisualPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from("gastos").select("*").eq("user_id", user.id).order("fecha", { ascending: false });
-      if (data) setGastos(data);
+
+      const [{ data: gastosData }, { data: plan }, { data: deudas }, { data: bolsillos }, { data: cajitas }] = await Promise.all([
+        supabase.from("gastos").select("*").eq("user_id", user.id).order("fecha", { ascending: false }),
+        supabase.from("dashboard_mensual").select("ingreso_fijo,ingresos_otros,gastos_fijos_items,gastos_fijos")
+          .eq("user_id", user.id).eq("month", new Date().getMonth() + 1).eq("year", new Date().getFullYear()).single(),
+        supabase.from("deudas").select("cuota_mensual").eq("user_id", user.id),
+        supabase.from("bolsillos").select("cuota_mensual,meta,actual,fecha_meta,tipo").eq("user_id", user.id),
+        supabase.from("cajitas").select("monto_total,actual,fecha_pago").eq("user_id", user.id),
+      ]);
+
+      if (gastosData) setGastos(gastosData);
+
+      if (plan) {
+        const ingresoFijo = plan.ingreso_fijo ?? 0;
+        const ingresosOtros = ((plan.ingresos_otros ?? []) as Array<{ valor: number }>).reduce((s, i) => s + (i.valor || 0), 0);
+        const gastosFijos = plan.gastos_fijos ?? ((plan.gastos_fijos_items ?? []) as Array<{ valor: number }>).reduce((s, i) => s + (i.valor || 0), 0);
+        const totalCuotas = (deudas ?? []).reduce((s, d) => s + (d.cuota_mensual || 0), 0);
+
+        function monthsUntil(fechaStr: string): number {
+          const now = new Date();
+          const fecha = new Date(fechaStr + "T12:00:00");
+          const diff = (fecha.getFullYear() - now.getFullYear()) * 12 + (fecha.getMonth() - now.getMonth());
+          return Math.max(1, diff);
+        }
+
+        const totalBolsitas = (bolsillos ?? []).reduce((s, b) => {
+          if (b.tipo === "metas" && b.fecha_meta && b.meta > 0) {
+            return s + Math.ceil(Math.max(0, b.meta - b.actual) / monthsUntil(b.fecha_meta));
+          }
+          return s + (b.cuota_mensual || 0);
+        }, 0);
+
+        const totalCajitas = (cajitas ?? []).reduce((c, cajita) => {
+          const falta = Math.max(0, cajita.monto_total - cajita.actual);
+          return c + Math.ceil(falta / monthsUntil(cajita.fecha_pago));
+        }, 0);
+
+        const disponible = ingresoFijo + ingresosOtros - gastosFijos - totalCuotas - totalBolsitas - totalCajitas;
+        setPresupuestoDisponible(disponible);
+      }
+
       setLoading(false);
     }
     load();
@@ -113,6 +153,26 @@ export default function GastosVisualPage() {
           {MONTHS.map((m, i) => <option key={i} value={i}>{m} {year}</option>)}
         </select>
       </div>
+
+      {/* Budget banner — only shown for current month since plan is loaded for current month */}
+      {presupuestoDisponible !== null && month === new Date().getMonth() && (
+        <div className={`rounded-2xl border-2 p-5 mb-6 grid grid-cols-3 gap-4 ${presupuestoDisponible - total >= 0 ? "bg-white border-[#ec7fa9]" : "bg-red-50 border-red-200"}`}>
+          <div>
+            <p className="text-xs text-[#1a1a2e]/50 mb-0.5">Para gastar este mes</p>
+            <p className="text-xl font-bold text-[#ec7fa9]">{fmt(presupuestoDisponible)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-[#1a1a2e]/50 mb-0.5">Ya gastado</p>
+            <p className="text-xl font-bold text-red-400">{fmt(total)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-[#1a1a2e]/50 mb-0.5">Restante</p>
+            <p className={`text-xl font-bold ${presupuestoDisponible - total >= 0 ? "text-green-600" : "text-red-500"}`}>
+              {fmt(presupuestoDisponible - total)}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Quick add form */}
       <form onSubmit={addGasto} className="bg-white rounded-2xl border border-[#ffb8e0] p-5 mb-6">
