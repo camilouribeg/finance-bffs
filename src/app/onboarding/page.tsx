@@ -365,8 +365,13 @@ export default function OnboardingPage() {
         });
       }
 
+      // Set 40-day trial on first onboarding completion
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(trialEndsAt.getDate() + 40);
+
       await supabase.from("profiles").update({
         onboarding_completed: true,
+        trial_ends_at: trialEndsAt.toISOString(),
         ...(opts.method ? { debt_method: opts.method } : {}),
       }).eq("id", userId);
 
