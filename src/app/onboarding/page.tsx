@@ -1247,22 +1247,28 @@ export default function OnboardingPage() {
               )}
 
               <div className="bg-[#ffedfa] rounded-2xl p-4 mb-4">
-                <div className="flex gap-2 mb-4">
+                <div className="flex gap-2 mb-3">
                   <button type="button" onClick={() => setBolTipo("fondos")}
                     className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${bolTipo === "fondos" ? "bg-[#ec7fa9] text-white" : "bg-white border border-[#ffb8e0] text-[#1a1a2e]/60"}`}>
-                    <PiggyBank size={14} />Mis fondos
+                    <PiggyBank size={14} />Ahorro continuo
                   </button>
                   <button type="button" onClick={() => setBolTipo("metas")}
                     className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${bolTipo === "metas" ? "bg-[#ec7fa9] text-white" : "bg-white border border-[#ffb8e0] text-[#1a1a2e]/60"}`}>
-                    <Target size={14} />Mis metas
+                    <Target size={14} />Meta con fecha
                   </button>
                 </div>
 
                 {bolTipo === "fondos" && (
-                  <p className="text-xs text-[#1a1a2e]/50 mb-3">Ahorro sin fecha límite. Defines cuánto apartas cada mes. Ej: fondo de emergencias, ropa, tecnología.</p>
+                  <div className="bg-white border border-[#ffb8e0] rounded-xl px-3 py-2.5 mb-3">
+                    <p className="text-xs font-semibold text-[#ec7fa9] mb-0.5">Ahorro continuo — sin fecha límite</p>
+                    <p className="text-xs text-[#1a1a2e]/60 leading-relaxed">Apartas una cantidad fija cada mes, sin un objetivo específico. Ideal para el fondo de emergencias, ropa, tecnología o cualquier cosa que quieras ir acumulando sin prisa.</p>
+                  </div>
                 )}
                 {bolTipo === "metas" && (
-                  <p className="text-xs text-[#1a1a2e]/50 mb-3">Tienes un monto objetivo y una fecha. Amy calcula cuánto necesitas ahorrar cada mes. Ej: viaje a México en diciembre.</p>
+                  <div className="bg-white border border-[#ffb8e0] rounded-xl px-3 py-2.5 mb-3">
+                    <p className="text-xs font-semibold text-[#ec7fa9] mb-0.5">Meta con fecha — Amy hace el cálculo</p>
+                    <p className="text-xs text-[#1a1a2e]/60 leading-relaxed">Tienes un sueño con precio y fecha. Le dices a Amy cuánto necesitas y para cuándo, y ella te dice exactamente cuánto apartar cada mes para llegar a tiempo. Ej: viaje a México en diciembre, computador nuevo en marzo.</p>
+                  </div>
                 )}
 
                 <div className="flex gap-2 mb-2">
