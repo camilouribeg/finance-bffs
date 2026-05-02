@@ -109,7 +109,7 @@ const METHOD_INFO = {
 export default function OnboardingPage() {
   const [step, setStep] = useState<Step>("welcome");
   const [userId, setUserId] = useState<string | null>(null);
-  const [reinforcement, setReinforcement] = useState<{ msg: string; onContinue: () => void } | null>(null);
+  const [reinforcement, setReinforcement] = useState("");
   const reinforcementTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Step 1: Ingresos
@@ -194,8 +194,9 @@ export default function OnboardingPage() {
   }
 
   function showReinforcement(msg: string, onContinue: () => void) {
+    setReinforcement(msg);
     if (reinforcementTimer.current) clearTimeout(reinforcementTimer.current);
-    setReinforcement({ msg, onContinue });
+    reinforcementTimer.current = setTimeout(() => { setReinforcement(""); onContinue(); }, 10000);
   }
 
   // List helpers
@@ -432,24 +433,10 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Reinforcement modal */}
+        {/* Reinforcement toast */}
         {reinforcement && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
-            <div className="bg-white rounded-3xl border border-[#ffb8e0] shadow-2xl p-8 max-w-sm w-full text-center">
-              <div className="text-5xl mb-4">💪</div>
-              <p className="text-xl font-bold text-[#1a1a2e] mb-2" style={{ fontFamily: "var(--font-playfair)" }}>
-                {reinforcement.msg}
-              </p>
-              <p className="text-sm text-[#1a1a2e]/50 mb-6">
-                Cada paso que das te acerca más al control de tu dinero.
-              </p>
-              <button
-                onClick={() => { setReinforcement(null); reinforcement.onContinue(); }}
-                className="w-full bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-3.5 rounded-xl transition-colors"
-              >
-                Continuar →
-              </button>
-            </div>
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white border border-[#ffb8e0] rounded-2xl px-6 py-3 shadow-lg text-sm font-medium text-[#ec7fa9] whitespace-nowrap">
+            {reinforcement}
           </div>
         )}
 
