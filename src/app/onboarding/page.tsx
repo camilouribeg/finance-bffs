@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Pencil, X, Search, Zap, Archive, PiggyBank, Target } from "lucide-react";
 
 type ListItem = { id: string; nombre: string; valor: number };
-type CajitaOB = { id: string; nombre: string; emoji: string; monto_total: number; meses: number; };
+type CajitaOB = { id: string; nombre: string; emoji: string; monto_total: number; meses: number; fecha_pago?: string; };
 type BolsitaOB = { id: string; nombre: string; emoji: string; tipo: "fondos" | "metas"; cuota_mensual?: number; meta?: number; fecha_meta?: string; importancia: number; };
 type DeudaItem = {
   id: string;
@@ -50,12 +50,12 @@ const QUIZ = [
     pregunta: "¿Qué te da más impulso para seguir?",
     opciones: [
       { id: "A", texto: "Tachar una deuda de la lista y concentrarme en la siguiente" },
-      { id: "B", texto: "Saber que estoy tomando la decisión más inteligente con mi dinero" },
+      { id: "B", texto: "Saber que estoy tomando la decisión más inteligente con mi plata" },
       { id: "C", texto: "Sentir que ninguna deuda se me está yendo de las manos" },
     ],
   },
   {
-    pregunta: "¿Cómo te describes a la hora de manejar tu dinero?",
+    pregunta: "¿Cómo te describes a la hora de manejar tu plata?",
     opciones: [
       { id: "A", texto: "Me funciona mejor una cosa a la vez, paso a paso" },
       { id: "B", texto: "Busco siempre la opción más eficiente y racional" },
@@ -91,7 +91,7 @@ const METHOD_INFO = {
   avalanche: {
     emoji: "🏔️",
     nombre: "Avalancha",
-    desc: "Vas a enfocarte primero en la deuda que más te cuesta en intereses. Esto te ayuda a optimizar tu dinero a largo plazo.",
+    desc: "Vas a enfocarte primero en la deuda que más te cuesta en intereses. Esto te ayuda a optimizar tu plata a largo plazo.",
     sort: (a: DeudaItem, b: DeudaItem) => {
       const ta = parseFloat(a.tasa) || 0;
       const tb = parseFloat(b.tasa) || 0;
@@ -145,6 +145,7 @@ export default function OnboardingPage() {
   const [cajEmoji, setCajEmoji] = useState("📦");
   const [cajMonto, setCajMonto] = useState("");
   const [cajMeses, setCajMeses] = useState("2");
+  const [cajFecha, setCajFecha] = useState("");
 
   // Step 4c: Ahorro
   const [selectedAhorro, setSelectedAhorro] = useState<number | null>(null);
@@ -332,8 +333,10 @@ export default function OnboardingPage() {
         const now2 = new Date();
         await supabase.from("cajitas").insert(
           opts.cajitas.map(c => {
-            const fechaPago = new Date(now2.getFullYear(), now2.getMonth() + c.meses, 1);
-            return { user_id: userId, nombre: c.nombre, emoji: c.emoji, monto_total: c.monto_total, actual: 0, fecha_pago: fechaPago.toISOString().split("T")[0] };
+            const fechaPago = c.fecha_pago
+              ? `${c.fecha_pago}-01`
+              : new Date(now2.getFullYear(), now2.getMonth() + c.meses, 1).toISOString().split("T")[0];
+            return { user_id: userId, nombre: c.nombre, emoji: c.emoji, monto_total: c.monto_total, actual: 0, fecha_pago: fechaPago };
           })
         );
       }
@@ -382,7 +385,7 @@ export default function OnboardingPage() {
 
   function addCajitaOB() {
     if (!cajNombre || !cajMonto) return;
-    setCajitasOB([...cajitasOB, { id: Date.now().toString(), nombre: cajNombre, emoji: cajEmoji, monto_total: parseFloat(cajMonto), meses: parseInt(cajMeses) || 12 }]);
+    setCajitasOB([...cajitasOB, { id: Date.now().toString(), nombre: cajNombre, emoji: cajEmoji, monto_total: parseFloat(cajMonto), meses: parseInt(cajMeses) || 12, fecha_pago: cajFecha || undefined }]);
     setCajNombre(""); setCajMonto(""); setCajEmoji("📦"); setCajMeses("2");
   }
 
@@ -415,7 +418,7 @@ export default function OnboardingPage() {
   const btnPink = "bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-3.5 rounded-xl transition-colors disabled:opacity-50";
 
   return (
-    <div className="min-h-screen bg-[#ffedfa] flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[#ffedfa] flex flex-col items-center justify-center px-4 py-4 sm:py-12">
       <div className="absolute top-0 right-0 w-96 h-96 bg-[#ffb8e0] opacity-30 blob pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-72 h-72 bg-[#ffb8e0] opacity-20 blob pointer-events-none" />
 
@@ -478,7 +481,7 @@ export default function OnboardingPage() {
           {step === "ingresos" && (
             <div className="p-8">
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
-                Empecemos por tu dinero
+                Empecemos por tu plata
               </h2>
               <div className="text-sm text-[#1a1a2e]/60 leading-relaxed mb-6 space-y-2">
                 <p>Aquí vas a anotar todos tus ingresos del mes.</p>
@@ -517,17 +520,19 @@ export default function OnboardingPage() {
 
                 <div>
                   <p className="text-xs text-[#1a1a2e]/50 mb-2">¿Tienes otros ingresos? (freelance, arriendos, etc.)</p>
-                  <div className="flex gap-2">
-                    <input type="text" value={nuevoIngNombre} onChange={(e) => setNuevoIngNombre(e.target.value)}
-                      placeholder="¿De dónde?"
-                      onKeyDown={(e) => e.key === "Enter" && addIngreso()}
-                      className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
-                    <input type="number" value={nuevoIngValor} onChange={(e) => setNuevoIngValor(e.target.value)}
-                      placeholder="Valor"
-                      onKeyDown={(e) => e.key === "Enter" && addIngreso()}
-                      className="w-32 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <input type="text" value={nuevoIngNombre} onChange={(e) => setNuevoIngNombre(e.target.value)}
+                        placeholder="¿De dónde?"
+                        onKeyDown={(e) => e.key === "Enter" && addIngreso()}
+                        className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                      <input type="number" value={nuevoIngValor} onChange={(e) => setNuevoIngValor(e.target.value)}
+                        placeholder="Valor"
+                        onKeyDown={(e) => e.key === "Enter" && addIngreso()}
+                        className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                    </div>
                     <button type="button" onClick={addIngreso}
-                      className="bg-[#ec7fa9] text-white font-semibold px-4 rounded-xl hover:bg-[#d96d97] transition-colors text-sm whitespace-nowrap">+ Agregar</button>
+                      className="w-full bg-[#ec7fa9] text-white font-semibold px-4 py-2.5 rounded-xl hover:bg-[#d96d97] transition-colors text-sm">+ Agregar</button>
                   </div>
                   <p className="text-xs text-[#1a1a2e]/40 mt-1.5">Completa los campos y toca <strong>+ Agregar</strong> por cada ingreso extra</p>
                 </div>
@@ -578,17 +583,19 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              <div className="flex gap-2">
-                <input type="text" value={nuevoGastNombre} onChange={(e) => setNuevoGastNombre(e.target.value)}
-                  placeholder="Nombre del gasto"
-                  onKeyDown={(e) => e.key === "Enter" && addGasto()}
-                  className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
-                <input type="number" value={nuevoGastValor} onChange={(e) => setNuevoGastValor(e.target.value)}
-                  placeholder="Valor"
-                  onKeyDown={(e) => e.key === "Enter" && addGasto()}
-                  className="w-32 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <input type="text" value={nuevoGastNombre} onChange={(e) => setNuevoGastNombre(e.target.value)}
+                    placeholder="Nombre del gasto"
+                    onKeyDown={(e) => e.key === "Enter" && addGasto()}
+                    className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                  <input type="number" value={nuevoGastValor} onChange={(e) => setNuevoGastValor(e.target.value)}
+                    placeholder="Valor"
+                    onKeyDown={(e) => e.key === "Enter" && addGasto()}
+                    className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                </div>
                 <button type="button" onClick={addGasto}
-                  className="bg-[#ec7fa9] text-white font-semibold px-4 rounded-xl hover:bg-[#d96d97] transition-colors text-sm whitespace-nowrap">+ Agregar</button>
+                  className="w-full bg-[#ec7fa9] text-white font-semibold px-4 py-2.5 rounded-xl hover:bg-[#d96d97] transition-colors text-sm">+ Agregar</button>
               </div>
               <p className="text-xs text-[#1a1a2e]/40 mt-1.5 mb-4">Completa los campos y toca <strong>+ Agregar</strong> por cada gasto fijo</p>
 
@@ -760,7 +767,7 @@ export default function OnboardingPage() {
                 ) : (
                   <button type="button" onClick={() => setMostrarTasa(true)}
                     className="text-xs text-[#ec7fa9] border border-[#ffb8e0] bg-[#ffedfa] rounded-xl px-4 py-2 hover:bg-[#ffb8e0] transition-colors w-full text-left">
-                    + Agregar tasa de interés <span className="text-[#1a1a2e]/40">(opcional — si no la sabes, no importa)</span>
+                    + Agregar tasa de interés <span className="text-[#1a1a2e]/40">(opcional, si no la sabes no importa)</span>
                   </button>
                 )}
               </div>
@@ -899,7 +906,7 @@ export default function OnboardingPage() {
                 <p>Amy Rompe-deudas te va a mostrar el mejor camino para ti.</p>
               </div>
               <button
-                onClick={() => setStep("deuda_quiz")}
+                onClick={() => setStep(deudas.length > 1 ? "deuda_quiz" : "ahorro_intro")}
                 className={`${btnPink} w-full`}
               >
                 Vamos a encontrar la mejor forma para ti →
@@ -1064,26 +1071,28 @@ export default function OnboardingPage() {
           {/* ─── CAJITAS ONBOARDING ─── */}
           {step === "ahorro_intro" && (
             <div className="p-8 text-center">
-              <div className="text-5xl mb-4">🐷</div>
+              <div className="flex justify-center mb-4">
+                <PiggyBank size={52} className="text-[#ec7fa9]" strokeWidth={1.25} />
+              </div>
               <h2 className="text-2xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
                 Ahora vamos con tus ahorros
               </h2>
               <p className="text-sm text-[#1a1a2e]/60 mb-6 leading-relaxed">
-                En Amy vas a organizar tu dinero en dos tipos de bolsillos. Cada uno tiene un propósito diferente.
+                En Amy vas a organizar tu plata en dos tipos de bolsitas. Cada una tiene un propósito diferente.
               </p>
               <div className="space-y-3 mb-8 text-left">
                 <div className="bg-white border border-[#ffb8e0] rounded-2xl p-4 flex gap-3 items-start">
                   <span className="text-2xl">📦</span>
                   <div>
                     <p className="font-semibold text-[#1a1a2e] text-sm">Cajitas</p>
-                    <p className="text-xs text-[#1a1a2e]/60 mt-0.5 leading-relaxed">Gastos fijos grandes que no pasan todos los meses — como el SOAT, el impuesto predial o la matrícula. Amy los divide en cuotas mensuales y los descuenta de tu presupuesto para que cuando llegue el momento, ya tengas la plata lista.</p>
+                    <p className="text-xs text-[#1a1a2e]/60 mt-0.5 leading-relaxed">Gastos fijos grandes que no pasan todos los meses, como el SOAT, el impuesto predial o la matrícula. Amy los divide en cuotas mensuales y los descuenta de tu presupuesto para que cuando llegue el momento ya tengas la plata lista.</p>
                   </div>
                 </div>
                 <div className="bg-white border border-[#ffb8e0] rounded-2xl p-4 flex gap-3 items-start">
-                  <span className="text-2xl">🐷</span>
+                  <span className="text-2xl">👜</span>
                   <div>
-                    <p className="font-semibold text-[#1a1a2e] text-sm">Bolsillos de ahorro</p>
-                    <p className="text-xs text-[#1a1a2e]/60 mt-0.5 leading-relaxed">Para tus metas y sueños — vacaciones, un fondo de emergencia, o lo que quieras. Amy te muestra exactamente cuánto ahorrar cada mes para llegar a tu meta y te ayuda a crear el hábito de ahorrar sin que se sienta difícil.</p>
+                    <p className="font-semibold text-[#1a1a2e] text-sm">Bolsitas de ahorro</p>
+                    <p className="text-xs text-[#1a1a2e]/60 mt-0.5 leading-relaxed">Para tus metas y sueños: vacaciones, un fondo de emergencia, o lo que quieras. Amy te muestra exactamente cuánto ahorrar cada mes para llegar a tu meta y te ayuda a crear el hábito de ahorrar sin que se sienta difícil.</p>
                   </div>
                 </div>
               </div>
@@ -1100,7 +1109,7 @@ export default function OnboardingPage() {
                 <Archive size={20} className="text-[#ec7fa9]" />¿Tienes gastos grandes que no llegan todos los meses?
               </h2>
               <p className="text-sm text-[#1a1a2e]/60 mb-5 leading-relaxed">
-                Cosas como el SOAT, impuestos, seguros o matrícula. Amy divide el total en cuotas mensuales y las descuenta de tu presupuesto automáticamente — así cuando llegue el gasto ya tienes la plata lista.
+                Cosas como el SOAT, impuestos, seguros o matrícula. Amy divide el total en cuotas mensuales y las descuenta de tu presupuesto automáticamente. Así cuando llegue el gasto ya tienes la plata lista.
               </p>
 
               {cajitasOB.length > 0 && (
@@ -1111,7 +1120,7 @@ export default function OnboardingPage() {
                         <span>{c.emoji}</span>
                         <div>
                           <p className="text-sm font-medium text-[#1a1a2e]">{c.nombre}</p>
-                          <p className="text-xs text-[#1a1a2e]/40">{fmt(c.monto_total)} en {c.meses} meses · {fmt(Math.ceil(c.monto_total / c.meses))}/mes</p>
+                          <p className="text-xs text-[#1a1a2e]/40">{fmt(c.monto_total)} · {fmt(Math.ceil(c.monto_total / c.meses))}/mes{c.fecha_pago ? ` · vence ${new Date(`${c.fecha_pago}-02`).toLocaleDateString("es-CO", { month: "short", year: "numeric" })}` : ""}</p>
                         </div>
                       </div>
                       <button onClick={() => setCajitasOB(cajitasOB.filter(x => x.id !== c.id))} className="text-[#1a1a2e]/20 hover:text-red-400 text-xs">✕</button>
@@ -1148,7 +1157,7 @@ export default function OnboardingPage() {
                 <div className="flex gap-2">
                   <input type="number" value={cajMonto} onChange={e => setCajMonto(e.target.value)} placeholder="Monto total" className={`${inputCls} flex-1`} />
                   <div className="flex flex-col gap-1 w-44">
-                    <label className="text-xs text-[#1a1a2e]/50 font-medium">¿Cada cuántos meses lo pagas?</label>
+                    <label className="text-xs text-[#1a1a2e]/50 font-medium">¿Cada cuánto te llega ese gasto?</label>
                     <input
                       type="number"
                       min="1"
@@ -1161,7 +1170,17 @@ export default function OnboardingPage() {
                     <p className="text-[10px] text-[#1a1a2e]/40 leading-tight">2=bimestral · 3=trimestral · 6=semestral · 12=anual</p>
                   </div>
                 </div>
-                <button type="button" onClick={addCajitaOB} disabled={!cajNombre || !cajMonto}
+                <div>
+                  <label className="text-xs text-[#1a1a2e]/50 font-medium">¿En qué mes te llega ese gasto?</label>
+                  <input
+                    type="month"
+                    value={cajFecha}
+                    onChange={e => setCajFecha(e.target.value)}
+                    className={`${inputCls} mt-1 w-full`}
+                  />
+                  <p className="text-[10px] text-[#1a1a2e]/40 mt-1">Así Amy sabe cuándo tienes que tener la plata lista.</p>
+                </div>
+                <button type="button" onClick={() => { addCajitaOB(); setCajFecha(""); }} disabled={!cajNombre || !cajMonto}
                   className="w-full border border-[#ec7fa9] text-[#ec7fa9] font-semibold py-2 rounded-xl text-sm hover:bg-white disabled:opacity-40 transition-colors">
                   + Agregar cajita
                 </button>
@@ -1265,13 +1284,13 @@ export default function OnboardingPage() {
 
                 {bolTipo === "fondos" && (
                   <div className="bg-white border border-[#ffb8e0] rounded-xl px-3 py-2.5 mb-3">
-                    <p className="text-xs font-semibold text-[#ec7fa9] mb-0.5">Ahorro continuo — sin fecha límite</p>
+                    <p className="text-xs font-semibold text-[#ec7fa9] mb-0.5">Ahorro continuo, sin fecha límite</p>
                     <p className="text-xs text-[#1a1a2e]/60 leading-relaxed">Apartas una cantidad fija cada mes, sin un objetivo específico. Ideal para el fondo de emergencias, ropa, tecnología o cualquier cosa que quieras ir acumulando sin prisa.</p>
                   </div>
                 )}
                 {bolTipo === "metas" && (
                   <div className="bg-white border border-[#ffb8e0] rounded-xl px-3 py-2.5 mb-3">
-                    <p className="text-xs font-semibold text-[#ec7fa9] mb-0.5">Meta con fecha — Amy hace el cálculo</p>
+                    <p className="text-xs font-semibold text-[#ec7fa9] mb-0.5">Meta con fecha, Amy hace el cálculo</p>
                     <p className="text-xs text-[#1a1a2e]/60 leading-relaxed">Tienes un sueño con precio y fecha. Le dices a Amy cuánto necesitas y para cuándo, y ella te dice exactamente cuánto apartar cada mes para llegar a tiempo. Ej: viaje a México en diciembre, computador nuevo en marzo.</p>
                   </div>
                 )}

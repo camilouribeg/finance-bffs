@@ -31,6 +31,7 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(false);
@@ -92,6 +93,12 @@ export default function RegisterPage() {
 
     if (password.length < 8) {
       setError("La contraseña debe tener al menos 8 caracteres.");
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Las contraseñas no coinciden. Verifica e intenta de nuevo.");
       setLoading(false);
       return;
     }
@@ -300,6 +307,29 @@ export default function RegisterPage() {
                           placeholder="Mínimo 8 caracteres"
                           className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
                         />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Confirmar contraseña</label>
+                        <input
+                          type="password"
+                          required
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Repite tu contraseña"
+                          className={`w-full border rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 transition-all bg-[#ffedfa] ${
+                            confirmPassword.length > 0
+                              ? password === confirmPassword
+                                ? "border-green-400 focus:ring-green-300/30 focus:border-green-400"
+                                : "border-red-300 focus:ring-red-200/30 focus:border-red-400"
+                              : "border-[#ffb8e0] focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9]"
+                          }`}
+                        />
+                        {confirmPassword.length > 0 && (
+                          <p className={`text-xs mt-1 ${password === confirmPassword ? "text-green-500" : "text-red-400"}`}>
+                            {password === confirmPassword ? "Las contraseñas coinciden ✓" : "Las contraseñas no coinciden"}
+                          </p>
+                        )}
                       </div>
 
                       {error && (
