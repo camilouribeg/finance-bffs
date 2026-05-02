@@ -49,7 +49,7 @@ const HOW_STEPS = [
 ];
 
 const PRESALE_PERKS = [
-  "Tu tarifa inicial se mantiene para siempre — aunque los precios suban, la tuya no",
+  "Tu precio de hoy se queda así para siempre — aunque mañana suba, tú sigues pagando lo mismo",
   "Acceso prioritario a nuevas funciones antes que cualquier otra persona",
   "Comunidad privada de Finance BFFs 💕",
   "Soporte directo con el equipo",
@@ -74,7 +74,7 @@ const PLANS = [
     features: ["Todo lo incluido en el acceso de 1 mes", "Historial de meses anteriores", "Cancela cuando quieras", "Actualizaciones incluidas"],
     cta: "Elegir mensual",
     highlight: true,
-    presale: "Tu tarifa se mantiene en preventa",
+    presale: "🔒 Tu precio se bloquea para siempre",
   },
   {
     name: "Plan anual",

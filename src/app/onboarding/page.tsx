@@ -527,8 +527,9 @@ export default function OnboardingPage() {
                       onKeyDown={(e) => e.key === "Enter" && addIngreso()}
                       className="w-32 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
                     <button type="button" onClick={addIngreso}
-                      className="bg-[#ffedfa] border border-[#ffb8e0] text-[#ec7fa9] font-bold px-4 rounded-xl hover:bg-[#ffb8e0] transition-colors text-sm">+</button>
+                      className="bg-[#ec7fa9] text-white font-semibold px-4 rounded-xl hover:bg-[#d96d97] transition-colors text-sm whitespace-nowrap">+ Agregar</button>
                   </div>
+                  <p className="text-xs text-[#1a1a2e]/40 mt-1.5">Completa los campos y toca <strong>+ Agregar</strong> por cada ingreso extra</p>
                 </div>
 
                 {totalIngresos > 0 && (
@@ -577,7 +578,7 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-2">
                 <input type="text" value={nuevoGastNombre} onChange={(e) => setNuevoGastNombre(e.target.value)}
                   placeholder="Nombre del gasto"
                   onKeyDown={(e) => e.key === "Enter" && addGasto()}
@@ -587,8 +588,9 @@ export default function OnboardingPage() {
                   onKeyDown={(e) => e.key === "Enter" && addGasto()}
                   className="w-32 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
                 <button type="button" onClick={addGasto}
-                  className="bg-[#ffedfa] border border-[#ffb8e0] text-[#ec7fa9] font-bold px-4 rounded-xl hover:bg-[#ffb8e0] transition-colors text-sm">+</button>
+                  className="bg-[#ec7fa9] text-white font-semibold px-4 rounded-xl hover:bg-[#d96d97] transition-colors text-sm whitespace-nowrap">+ Agregar</button>
               </div>
+              <p className="text-xs text-[#1a1a2e]/40 mt-1.5 mb-4">Completa los campos y toca <strong>+ Agregar</strong> por cada gasto fijo</p>
 
               {totalGastos > 0 && (
                 <div className="bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-xl px-4 py-2.5 text-sm mb-4">
@@ -757,8 +759,8 @@ export default function OnboardingPage() {
                   </div>
                 ) : (
                   <button type="button" onClick={() => setMostrarTasa(true)}
-                    className="text-xs text-[#ec7fa9] hover:underline">
-                    + ¿Sabes tu tasa de interés? (opcional, si no la sabes no importa)
+                    className="text-xs text-[#ec7fa9] border border-[#ffb8e0] bg-[#ffedfa] rounded-xl px-4 py-2 hover:bg-[#ffb8e0] transition-colors w-full text-left">
+                    + Agregar tasa de interés <span className="text-[#1a1a2e]/40">(opcional — si no la sabes, no importa)</span>
                   </button>
                 )}
               </div>
@@ -1122,11 +1124,12 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              <p className="text-xs text-[#1a1a2e]/50 font-semibold mb-2">Sugerencias rápidas</p>
+              <p className="text-xs text-[#1a1a2e]/50 font-semibold mb-1">Sugerencias rápidas</p>
+              <p className="text-xs text-[#1a1a2e]/40 mb-2">Toca una para pre-llenar el formulario y ajusta los valores antes de agregar</p>
               <div className="flex flex-wrap gap-2 mb-4">
                 {CAJITAS_SUGERIDAS.filter(s => !cajitasOB.find(c => c.nombre === s.nombre)).map((s) => (
                   <button key={s.nombre} type="button"
-                    onClick={() => setCajitasOB([...cajitasOB, { id: Date.now().toString(), nombre: s.nombre, emoji: s.emoji, monto_total: s.monto, meses: s.meses }])}
+                    onClick={() => { setCajNombre(s.nombre); setCajEmoji(s.emoji); setCajMonto(String(s.monto)); setCajMeses(String(s.meses)); }}
                     className="flex items-center gap-1.5 bg-white border border-[#ffb8e0] rounded-full px-3 py-1.5 text-xs text-[#1a1a2e]/70 hover:border-[#ec7fa9] hover:text-[#ec7fa9] transition-all">
                     {s.emoji} {s.nombre}
                   </button>
@@ -1144,16 +1147,18 @@ export default function OnboardingPage() {
                 </div>
                 <div className="flex gap-2">
                   <input type="number" value={cajMonto} onChange={e => setCajMonto(e.target.value)} placeholder="Monto total" className={`${inputCls} flex-1`} />
-                  <div className="flex flex-col gap-1 w-40">
-                    <label className="text-xs text-[#1a1a2e]/50 font-medium">¿Cada cuánto lo pagas?</label>
-                    <select value={cajMeses} onChange={e => setCajMeses(e.target.value)}
-                      className="border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-white outline-none w-full">
-                      <option value="2">Bimestral (2 meses)</option>
-                      <option value="3">Trimestral (3 meses)</option>
-                      <option value="4">Cuatrimestral (4 meses)</option>
-                      <option value="6">Semestral (6 meses)</option>
-                      <option value="12">Anual (12 meses)</option>
-                    </select>
+                  <div className="flex flex-col gap-1 w-44">
+                    <label className="text-xs text-[#1a1a2e]/50 font-medium">¿Cada cuántos meses lo pagas?</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="60"
+                      value={cajMeses}
+                      onChange={e => setCajMeses(e.target.value)}
+                      placeholder="Ej: 12"
+                      className={`${inputCls}`}
+                    />
+                    <p className="text-[10px] text-[#1a1a2e]/40 leading-tight">2=bimestral · 3=trimestral · 6=semestral · 12=anual</p>
                   </div>
                 </div>
                 <button type="button" onClick={addCajitaOB} disabled={!cajNombre || !cajMonto}
