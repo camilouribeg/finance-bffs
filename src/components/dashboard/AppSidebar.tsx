@@ -18,7 +18,7 @@ const NAV = [
   { href: "/app", label: "Mis finanzas", icon: LayoutDashboard },
   { href: "/app/gastos", label: "Mis gastos", icon: ShoppingCart },
   { href: "/app/cajitas", label: "Cajitas", icon: Archive },
-  { href: "/app/ahorro", label: "Bolsillos de ahorro", icon: PiggyBank },
+  { href: "/app/ahorro", label: "Bolsitas de ahorro", icon: PiggyBank },
   { href: "/app/deudas", label: "Deudas", icon: CreditCard },
 ];
 
