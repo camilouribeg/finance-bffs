@@ -24,7 +24,6 @@ const CAJITAS_SUGERIDAS = [
   { nombre: "Seguro del carro", emoji: "🛡️", monto: 1200000, meses: 12 },
   { nombre: "Impuesto predial", emoji: "🏠", monto: 800000, meses: 12 },
   { nombre: "Matrícula escolar", emoji: "🎓", monto: 2000000, meses: 12 },
-  { nombre: "Vacaciones", emoji: "✈️", monto: 3000000, meses: 12 },
 ];
 
 const EMOJIS_BOLSITA = ["🐷","✈️","🏠","🎓","💻","👗","💍","🎉","🐾","🌱","🚑","🎸","🏋️","📚","🛍️"];
@@ -75,6 +74,7 @@ type Step =
   | "no_puede_intro"
   | "deuda_quiz"
   | "deuda_resultado"
+  | "ahorro_intro"
   | "cajitas_onboarding"
   | "ahorro_puede"
   | "ahorro_tipo"
@@ -196,7 +196,7 @@ export default function OnboardingPage() {
   function showReinforcement(msg: string) {
     setReinforcement(msg);
     if (reinforcementTimer.current) clearTimeout(reinforcementTimer.current);
-    reinforcementTimer.current = setTimeout(() => setReinforcement(""), 4000);
+    reinforcementTimer.current = setTimeout(() => setReinforcement(""), 8000);
   }
 
   // List helpers
@@ -263,26 +263,26 @@ export default function OnboardingPage() {
       // Más de una deuda → intro + quiz para elegir metodología
       setStep("deuda_intro");
     } else if (finalDeudas.length === 1) {
-      // Una sola deuda → sin quiz, ir a cajitas
+      // Una sola deuda → sin quiz, ir a intro ahorro
       const disponiblePostGF = totalIngresos - totalGastos;
       if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
         setStep("amy_detective");
       } else {
-        setStep("cajitas_onboarding");
+        setStep("ahorro_intro");
       }
     } else {
-      // Sin deudas → ir a cajitas (con detector de gastos altos)
+      // Sin deudas → ir a intro ahorro (con detector de gastos altos)
       const disponiblePostGF = totalIngresos - totalGastos;
       if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
         setStep("amy_detective");
       } else {
-        setStep("cajitas_onboarding");
+        setStep("ahorro_intro");
       }
     }
   }
 
   function goCajitasToAhorro() {
-    setStep("cajitas_onboarding");
+    setStep("ahorro_puede");
   }
 
   function answerQuiz(answer: string) {
@@ -657,7 +657,7 @@ export default function OnboardingPage() {
                   className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
                   ← Revisar gastos
                 </button>
-                <button onClick={() => setStep("cajitas_onboarding")}
+                <button onClick={() => setStep("ahorro_intro")}
                   className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-3.5 rounded-xl text-sm transition-colors">
                   Entendido, continuar →
                 </button>
@@ -938,7 +938,7 @@ export default function OnboardingPage() {
                   if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
                     setStep("amy_detective");
                   } else {
-                    setStep("cajitas_onboarding");
+                    setStep("ahorro_intro");
                   }
                 }}
                 className="w-full text-center text-sm text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-2 transition-colors"
@@ -1048,7 +1048,7 @@ export default function OnboardingPage() {
                     if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
                       setStep("amy_detective");
                     } else {
-                      setStep("cajitas_onboarding");
+                      setStep("ahorro_intro");
                     }
                   }}
                   className={`${btnPink} w-full`}
@@ -1060,13 +1060,44 @@ export default function OnboardingPage() {
           )}
 
           {/* ─── CAJITAS ONBOARDING ─── */}
+          {step === "ahorro_intro" && (
+            <div className="p-8 text-center">
+              <div className="text-5xl mb-4">🐷</div>
+              <h2 className="text-2xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
+                Ahora vamos con tus ahorros
+              </h2>
+              <p className="text-sm text-[#1a1a2e]/60 mb-6 leading-relaxed">
+                En Amy vas a organizar tu dinero en dos tipos de bolsillos. Cada uno tiene un propósito diferente.
+              </p>
+              <div className="space-y-3 mb-8 text-left">
+                <div className="bg-white border border-[#ffb8e0] rounded-2xl p-4 flex gap-3 items-start">
+                  <span className="text-2xl">📦</span>
+                  <div>
+                    <p className="font-semibold text-[#1a1a2e] text-sm">Cajitas</p>
+                    <p className="text-xs text-[#1a1a2e]/60 mt-0.5 leading-relaxed">Para gastos grandes que no llegan todos los meses — como el SOAT, impuesto predial o matrícula. Amy lo divide en cuotas mensuales para que no te pillen por sorpresa.</p>
+                  </div>
+                </div>
+                <div className="bg-white border border-[#ffb8e0] rounded-2xl p-4 flex gap-3 items-start">
+                  <span className="text-2xl">🐷</span>
+                  <div>
+                    <p className="font-semibold text-[#1a1a2e] text-sm">Bolsillos de ahorro</p>
+                    <p className="text-xs text-[#1a1a2e]/60 mt-0.5 leading-relaxed">Para tus metas y sueños — vacaciones, un fondo de emergencia, o lo que quieras. Aquí defines cuánto quieres ahorrar y Amy te muestra cómo llegar.</p>
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => setStep("cajitas_onboarding")} className={`${btnPink} w-full`}>
+                Empecemos con las cajitas →
+              </button>
+            </div>
+          )}
+
           {step === "cajitas_onboarding" && (
             <div className="p-8">
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-1 flex items-center gap-2" style={{ fontFamily: "var(--font-playfair)" }}>
-                <Archive size={20} className="text-[#ec7fa9]" />¿Tienes gastos grandes una vez al año?
+                <Archive size={20} className="text-[#ec7fa9]" />¿Tienes gastos grandes que no llegan todos los meses?
               </h2>
               <p className="text-sm text-[#1a1a2e]/60 mb-5 leading-relaxed">
-                Cosas como el SOAT, impuestos, seguros o vacaciones. Con las cajitas reservas un poquito cada mes para que no te pillen por sorpresa.
+                Cosas como el SOAT, impuestos, seguros o matrícula. Amy divide el total en cuotas mensuales y las descuenta de tu presupuesto automáticamente — así cuando llegue el gasto ya tienes la plata lista.
               </p>
 
               {cajitasOB.length > 0 && (
@@ -1112,12 +1143,18 @@ export default function OnboardingPage() {
                 </div>
                 <div className="flex gap-2">
                   <input type="number" value={cajMonto} onChange={e => setCajMonto(e.target.value)} placeholder="Monto total" className={`${inputCls} flex-1`} />
-                  <select value={cajMeses} onChange={e => setCajMeses(e.target.value)}
-                    className="border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-white outline-none w-36">
-                    <option value="3">3 meses</option>
-                    <option value="6">6 meses</option>
-                    <option value="12">12 meses</option>
-                  </select>
+                  <div className="flex flex-col gap-1 w-40">
+                    <label className="text-xs text-[#1a1a2e]/50 font-medium">¿Cada cuánto lo pagas?</label>
+                    <select value={cajMeses} onChange={e => setCajMeses(e.target.value)}
+                      className="border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-white outline-none w-full">
+                      <option value="1">Mensual (1 mes)</option>
+                      <option value="2">Bimestral (2 meses)</option>
+                      <option value="3">Trimestral (3 meses)</option>
+                      <option value="4">Cuatrimestral (4 meses)</option>
+                      <option value="6">Semestral (6 meses)</option>
+                      <option value="12">Anual (12 meses)</option>
+                    </select>
+                  </div>
                 </div>
                 <button type="button" onClick={addCajitaOB} disabled={!cajNombre || !cajMonto}
                   className="w-full border border-[#ec7fa9] text-[#ec7fa9] font-semibold py-2 rounded-xl text-sm hover:bg-white disabled:opacity-40 transition-colors">
@@ -1126,7 +1163,7 @@ export default function OnboardingPage() {
               </div>
 
               <div className="flex gap-3">
-                <button type="button" onClick={() => setStep("deudas")}
+                <button type="button" onClick={() => setStep("ahorro_intro")}
                   className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
                   ← Atrás
                 </button>
