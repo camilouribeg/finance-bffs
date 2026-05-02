@@ -194,7 +194,7 @@ export default function LandingPage() {
           </div>
 
           <p className="mt-8 text-sm text-[#1a1a2e]/40">
-            Por{" "}
+            by{" "}
             <a href="https://www.instagram.com/financebestfriends" target="_blank" rel="noopener noreferrer" className="text-[#ec7fa9] font-medium hover:underline">
               @financebestfriends
             </a>
