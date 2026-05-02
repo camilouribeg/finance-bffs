@@ -109,7 +109,7 @@ const METHOD_INFO = {
 export default function OnboardingPage() {
   const [step, setStep] = useState<Step>("welcome");
   const [userId, setUserId] = useState<string | null>(null);
-  const [reinforcement, setReinforcement] = useState("");
+  const [reinforcement, setReinforcement] = useState<{ msg: string; onContinue: () => void } | null>(null);
   const reinforcementTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Step 1: Ingresos
@@ -193,10 +193,9 @@ export default function OnboardingPage() {
     return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
   }
 
-  function showReinforcement(msg: string) {
-    setReinforcement(msg);
+  function showReinforcement(msg: string, onContinue: () => void) {
     if (reinforcementTimer.current) clearTimeout(reinforcementTimer.current);
-    reinforcementTimer.current = setTimeout(() => setReinforcement(""), 8000);
+    setReinforcement({ msg, onContinue });
   }
 
   // List helpers
@@ -226,13 +225,11 @@ export default function OnboardingPage() {
 
   // Navigation
   function goToGastos() {
-    showReinforcement("Listo, vamos bien ✨");
-    setStep("gastos");
+    showReinforcement("Listo, vamos bien ✨", () => setStep("gastos"));
   }
 
   function goToDeudas() {
-    showReinforcement("Esto ya te da más claridad 💡");
-    setStep("deudas");
+    showReinforcement("Esto ya te da más claridad 💡", () => setStep("deudas"));
   }
 
   function goToAhorro() {
@@ -254,31 +251,17 @@ export default function OnboardingPage() {
     const finalTotalDeudas = finalDeudas.reduce((s, d) => s + d.cuota_mensual, 0);
     const finalCapacidad = totalIngresos - totalGastos - finalTotalDeudas;
 
-    showReinforcement("Lo estás haciendo mejor de lo que crees 💪");
-
+    let nextStep: Step;
     if (finalCapacidad <= 0) {
-      // Sin capacidad → Rompe-deudas intro → quiz
-      setStep("no_puede_intro");
+      nextStep = "no_puede_intro";
     } else if (finalDeudas.length > 1) {
-      // Más de una deuda → intro + quiz para elegir metodología
-      setStep("deuda_intro");
-    } else if (finalDeudas.length === 1) {
-      // Una sola deuda → sin quiz, ir a intro ahorro
-      const disponiblePostGF = totalIngresos - totalGastos;
-      if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
-        setStep("amy_detective");
-      } else {
-        setStep("ahorro_intro");
-      }
+      nextStep = "deuda_intro";
     } else {
-      // Sin deudas → ir a intro ahorro (con detector de gastos altos)
       const disponiblePostGF = totalIngresos - totalGastos;
-      if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
-        setStep("amy_detective");
-      } else {
-        setStep("ahorro_intro");
-      }
+      nextStep = (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) ? "amy_detective" : "ahorro_intro";
     }
+
+    showReinforcement("Lo estás haciendo mejor de lo que crees 💪", () => setStep(nextStep));
   }
 
   function goCajitasToAhorro() {
@@ -449,10 +432,24 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Reinforcement banner */}
+        {/* Reinforcement modal */}
         {reinforcement && (
-          <div className="mb-4 bg-white border border-[#ffb8e0] rounded-2xl px-5 py-3 text-center text-sm font-semibold text-[#ec7fa9] animate-pulse">
-            {reinforcement}
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6">
+            <div className="bg-white rounded-3xl border border-[#ffb8e0] shadow-2xl p-8 max-w-sm w-full text-center">
+              <div className="text-5xl mb-4">💪</div>
+              <p className="text-xl font-bold text-[#1a1a2e] mb-2" style={{ fontFamily: "var(--font-playfair)" }}>
+                {reinforcement.msg}
+              </p>
+              <p className="text-sm text-[#1a1a2e]/50 mb-6">
+                Cada paso que das te acerca más al control de tu dinero.
+              </p>
+              <button
+                onClick={() => { setReinforcement(null); reinforcement.onContinue(); }}
+                className="w-full bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-3.5 rounded-xl transition-colors"
+              >
+                Continuar →
+              </button>
+            </div>
           </div>
         )}
 
