@@ -652,9 +652,18 @@ export default function OnboardingPage() {
           {/* ─── DEUDAS ─── */}
           {step === "deudas" && (
             <div className="p-8">
-              <h2 className="text-xl font-bold text-[#1a1a2e] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
-                Tus deudas, sin miedo
-              </h2>
+              <div className="flex items-start justify-between mb-1">
+                <h2 className="text-xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
+                  Tus deudas, sin miedo
+                </h2>
+                <button
+                  type="button"
+                  onClick={goToAhorro}
+                  className="text-xs text-[#ec7fa9] border border-[#ffb8e0] rounded-full px-3 py-1.5 hover:bg-[#ffedfa] transition-colors whitespace-nowrap ml-3 font-medium"
+                >
+                  No tengo deudas →
+                </button>
+              </div>
               <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-xs text-[#1a1a2e]/60 mb-5">
                 💡 Aquí van todas tus deudas: tarjetas, créditos, préstamos o lo que le debas a alguien. No te preocupes si no tienes todos los datos exactos, empieza con lo que sabes.
               </div>
@@ -766,9 +775,6 @@ export default function OnboardingPage() {
                   Siguiente →
                 </button>
               </div>
-              <p className="text-sm text-[#ec7fa9] font-medium text-center mt-2 bg-[#ffedfa] rounded-xl px-3 py-2">
-                ¿No tienes deudas? ¡Qué bien! Puedes saltar este paso sin problema →
-              </p>
             </div>
           )}
 
