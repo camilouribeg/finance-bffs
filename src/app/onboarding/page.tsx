@@ -144,7 +144,7 @@ export default function OnboardingPage() {
   const [cajNombre, setCajNombre] = useState("");
   const [cajEmoji, setCajEmoji] = useState("📦");
   const [cajMonto, setCajMonto] = useState("");
-  const [cajMeses, setCajMeses] = useState("12");
+  const [cajMeses, setCajMeses] = useState("2");
 
   // Step 4c: Ahorro
   const [selectedAhorro, setSelectedAhorro] = useState<number | null>(null);
@@ -373,7 +373,7 @@ export default function OnboardingPage() {
   function addCajitaOB() {
     if (!cajNombre || !cajMonto) return;
     setCajitasOB([...cajitasOB, { id: Date.now().toString(), nombre: cajNombre, emoji: cajEmoji, monto_total: parseFloat(cajMonto), meses: parseInt(cajMeses) || 12 }]);
-    setCajNombre(""); setCajMonto(""); setCajEmoji("📦"); setCajMeses("12");
+    setCajNombre(""); setCajMonto(""); setCajEmoji("📦"); setCajMeses("2");
   }
 
   function addBolsitaOB() {
@@ -1083,6 +1083,7 @@ export default function OnboardingPage() {
 
           {step === "cajitas_onboarding" && (
             <div className="p-8">
+              <p className="text-xs font-bold text-[#ec7fa9] uppercase tracking-widest mb-2">Empecemos con las cajitas</p>
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-1 flex items-center gap-2" style={{ fontFamily: "var(--font-playfair)" }}>
                 <Archive size={20} className="text-[#ec7fa9]" />¿Tienes gastos grandes que no llegan todos los meses?
               </h2>
@@ -1137,7 +1138,6 @@ export default function OnboardingPage() {
                     <label className="text-xs text-[#1a1a2e]/50 font-medium">¿Cada cuánto lo pagas?</label>
                     <select value={cajMeses} onChange={e => setCajMeses(e.target.value)}
                       className="border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-white outline-none w-full">
-                      <option value="1">Mensual (1 mes)</option>
                       <option value="2">Bimestral (2 meses)</option>
                       <option value="3">Trimestral (3 meses)</option>
                       <option value="4">Cuatrimestral (4 meses)</option>
