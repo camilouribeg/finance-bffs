@@ -226,10 +226,20 @@ export default function OnboardingPage() {
 
   // Navigation
   function goToGastos() {
+    // Auto-add ingreso if form fields are filled but user forgot to click "+ Agregar"
+    if (nuevoIngNombre && nuevoIngValor) {
+      setIngresosOtros(prev => [...prev, { id: Date.now().toString(), nombre: nuevoIngNombre, valor: parseFloat(nuevoIngValor) }]);
+      setNuevoIngNombre(""); setNuevoIngValor("");
+    }
     showReinforcement("Listo, vamos bien ✨", () => setStep("gastos"));
   }
 
   function goToDeudas() {
+    // Auto-add gasto if form fields are filled but user forgot to click "+ Agregar"
+    if (nuevoGastNombre && nuevoGastValor) {
+      setGastosFijos(prev => [...prev, { id: Date.now().toString(), nombre: nuevoGastNombre, valor: parseFloat(nuevoGastValor) }]);
+      setNuevoGastNombre(""); setNuevoGastValor("");
+    }
     showReinforcement("Esto ya te da más claridad 💡", () => setStep("deudas"));
   }
 
