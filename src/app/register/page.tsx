@@ -145,7 +145,7 @@ export default function RegisterPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
             <span className="text-3xl font-bold text-[#ec7fa9]" style={{ fontFamily: "var(--font-playfair)" }}>
-              Finty
+              Amy
             </span>
             <span className="text-xs text-[#1a1a2e]/40 font-medium ml-2">by Finance BFFs 💕</span>
           </Link>
@@ -176,7 +176,7 @@ export default function RegisterPage() {
                 </p>
                 <p className="font-semibold text-[#ec7fa9] text-sm mb-5">{email}</p>
                 <p className="text-[#1a1a2e]/50 text-xs leading-relaxed mb-2">
-                  Haz clic en el enlace del correo para activar tu cuenta. Una vez que lo confirmes, esta página te llevará automáticamente a Finty.
+                  Haz clic en el enlace del correo para activar tu cuenta. Una vez que lo confirmes, esta página te llevará automáticamente a Amy.
                 </p>
                 <p className="text-[#1a1a2e]/40 text-xs mb-6">
                   ¿No lo ves? Revisa tu carpeta de spam.

@@ -411,7 +411,7 @@ export default function AhorroPage() {
                 </div>
                 {mMeta && mFecha && (
                   <div className="bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-xl px-4 py-2.5 text-sm">
-                    <span className="text-[#1a1a2e]/60">Finty calcula que necesitas apartar </span>
+                    <span className="text-[#1a1a2e]/60">Amy calcula que necesitas apartar </span>
                     <span className="font-bold text-[#ec7fa9]">
                       {fmt(Math.ceil(parseFloat(mMeta) / Math.max(1, monthsUntil(mFecha))))}
                     </span>

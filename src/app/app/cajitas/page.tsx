@@ -141,7 +141,7 @@ export default function CajitasPage() {
           <Lightbulb size={12} /> Cómo funcionan las cajitas
         </p>
         <p className="text-sm text-[#1a1a2e]/70 leading-relaxed mb-3">
-          Finty divide el costo total de cada cajita en cuotas mensuales y las descuenta de tu presupuesto disponible — igual que un gasto fijo.
+          Amy divide el costo total de cada cajita en cuotas mensuales y las descuenta de tu presupuesto disponible — igual que un gasto fijo.
         </p>
         <p className="text-sm font-semibold text-[#1a1a2e] mb-1">¿Qué debes hacer en tu banco?</p>
         <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
@@ -200,7 +200,7 @@ export default function CajitasPage() {
             </div>
             {nombre && montoTotal && fechaPago && (
               <div className="bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-xl px-4 py-2.5 text-sm">
-                <span className="text-[#1a1a2e]/60">Finty reservará </span>
+                <span className="text-[#1a1a2e]/60">Amy reservará </span>
                 <span className="font-bold text-[#ec7fa9]">
                   {fmt(Math.ceil(parseFloat(montoTotal) / Math.max(1, monthsUntil(fechaPago))))}
                 </span>
@@ -238,7 +238,7 @@ export default function CajitasPage() {
           <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5 mb-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-[#1a1a2e]/50">Finty reserva cada mes</p>
+                <p className="text-xs text-[#1a1a2e]/50">Amy reserva cada mes</p>
                 <p className="text-2xl font-bold text-[#ec7fa9]">{fmt(totalMensual)}<span className="text-sm font-normal text-[#1a1a2e]/40">/mes</span></p>
               </div>
               <div className="text-right">
@@ -325,7 +325,7 @@ export default function CajitasPage() {
         <p className="text-sm text-[#1a1a2e]/60 leading-relaxed">
           Hay gastos que no llegan cada mes, pero cuando llegan duelen si no estás preparada.
           Las cajitas reservan una parte de tu dinero cada mes para que no te sorprendan.
-          Finty descuenta la cuota mensual de tu dinero disponible automáticamente.
+          Amy descuenta la cuota mensual de tu dinero disponible automáticamente.
         </p>
       </div>
     </div>

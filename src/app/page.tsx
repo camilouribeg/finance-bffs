@@ -34,17 +34,17 @@ const HOW_STEPS = [
   {
     num: "02",
     title: "Registras tu mes",
-    desc: "Anotas tus ingresos y lo que gastas. Finty hace los cálculos por ti. Además, te muestra cómo ahorrar mejor y, si tienes deudas, cómo empezar a salir de ellas.",
+    desc: "Anotas tus ingresos y lo que gastas. Amy hace los cálculos por ti. Además, te muestra cómo ahorrar mejor y, si tienes deudas, cómo empezar a salir de ellas.",
   },
   {
     num: "03",
     title: "Ves tu dinero claro",
-    desc: "Finty te muestra exactamente a dónde se va tu dinero y qué podrías ajustar.",
+    desc: "Amy te muestra exactamente a dónde se va tu dinero y qué podrías ajustar.",
   },
   {
     num: "04",
     title: "Empiezas el nuevo mes con claridad",
-    desc: "Al inicio de cada mes, Finty te muestra cómo terminó el anterior y te deja todo listo para el siguiente, con saldos actualizados.",
+    desc: "Al inicio de cada mes, Amy te muestra cómo terminó el anterior y te deja todo listo para el siguiente, con saldos actualizados.",
   },
 ];
 
@@ -99,7 +99,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <a href="#" className="flex items-center gap-2">
             <span className="text-2xl font-bold text-[#ec7fa9]" style={{ fontFamily: "var(--font-playfair)" }}>
-              Finty
+              Amy
             </span>
             <span className="text-xs text-[#1a1a2e]/40 font-medium mt-1">by Finance BFFs 💕</span>
           </a>
@@ -206,7 +206,7 @@ export default function LandingPage() {
       <section className="py-16 px-6 bg-white">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a2e] mb-6" style={{ fontFamily: "var(--font-playfair)" }}>
-            ¿Qué es <span className="italic text-[#ec7fa9]">Finty</span>?
+            ¿Qué es <span className="italic text-[#ec7fa9]">Amy</span>?
           </h2>
           <p className="text-lg text-[#1a1a2e]/70 leading-relaxed mb-4">
             Una herramienta mensual donde organizas tu dinero sin enredos.
@@ -220,7 +220,7 @@ export default function LandingPage() {
           <div className="inline-block bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl px-8 py-4">
             <p className="text-[#1a1a2e] font-semibold text-lg">
               Tú solo escribes tus números.<br />
-              <span className="text-[#ec7fa9]">Finty hace el resto.</span>
+              <span className="text-[#ec7fa9]">Amy hace el resto.</span>
             </p>
           </div>
         </div>
@@ -231,7 +231,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
-              Cuando empiezas a usar Finty,<br />
+              Cuando empiezas a usar Amy,<br />
               <span className="italic text-[#ec7fa9]">pasa esto</span>
             </h2>
           </div>
@@ -375,7 +375,7 @@ export default function LandingPage() {
       {/* ───── FOOTER ───── */}
       <footer className="bg-[#1a1a2e] py-12 px-6 text-center">
         <p className="text-2xl font-bold text-[#ec7fa9] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
-          Finty
+          Amy
         </p>
         <p className="text-white/30 text-xs mb-1">by Finance BFFs 💕</p>
         <p className="text-white/40 text-sm mb-4">Tu mejor amiga en las finanzas.</p>

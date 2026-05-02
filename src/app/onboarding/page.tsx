@@ -69,7 +69,7 @@ type Step =
   | "welcome"
   | "ingresos"
   | "gastos"
-  | "finty_detective"
+  | "amy_detective"
   | "deudas"
   | "deuda_intro"
   | "no_puede_intro"
@@ -266,7 +266,7 @@ export default function OnboardingPage() {
       // Una sola deuda → sin quiz, ir a cajitas
       const disponiblePostGF = totalIngresos - totalGastos;
       if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
-        setStep("finty_detective");
+        setStep("amy_detective");
       } else {
         setStep("cajitas_onboarding");
       }
@@ -274,7 +274,7 @@ export default function OnboardingPage() {
       // Sin deudas → ir a cajitas (con detector de gastos altos)
       const disponiblePostGF = totalIngresos - totalGastos;
       if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
-        setStep("finty_detective");
+        setStep("amy_detective");
       } else {
         setStep("cajitas_onboarding");
       }
@@ -409,7 +409,7 @@ export default function OnboardingPage() {
   const stepNum = step === "welcome" ? 0
     : step === "ingresos" ? 1
     : step === "gastos" ? 2
-    : step === "finty_detective" ? 2
+    : step === "amy_detective" ? 2
     : step === "deudas" ? 3
     : step === "deuda_intro" ? 3
     : step === "deuda_quiz" ? 3
@@ -429,7 +429,7 @@ export default function OnboardingPage() {
         {/* Logo */}
         <div className="text-center mb-6">
           <a href="/" className="inline-block">
-            <span className="text-2xl font-bold text-[#ec7fa9]" style={{ fontFamily: "var(--font-playfair)" }}>Finty</span>
+            <span className="text-2xl font-bold text-[#ec7fa9]" style={{ fontFamily: "var(--font-playfair)" }}>Amy</span>
             <span className="text-xs text-[#1a1a2e]/40 font-medium ml-2">by Finance BFFs 💕</span>
           </a>
         </div>
@@ -620,10 +620,10 @@ export default function OnboardingPage() {
           )}
 
           {/* ─── FINLY DETECTIVE ─── */}
-          {step === "finty_detective" && (
+          {step === "amy_detective" && (
             <div className="p-8">
               <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5 mb-4">
-                <span className="text-blue-600 text-sm font-bold flex items-center gap-1.5"><Search size={13} />Finty Detective</span>
+                <span className="text-blue-600 text-sm font-bold flex items-center gap-1.5"><Search size={13} />Amy Detective</span>
               </div>
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
                 Tus gastos fijos están tomando mucho espacio
@@ -631,7 +631,7 @@ export default function OnboardingPage() {
               <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-5 text-sm text-[#1a1a2e]/70 leading-relaxed space-y-2">
                 <p>¡Oops! Con lo que registraste, tus gastos fijos están usando más del 65% de tus ingresos.</p>
                 <p>Eso deja muy poco margen para deudas, ahorro y gastos del día a día.</p>
-                <p className="text-blue-700 font-medium">Pero no te preocupes, para eso existe Finty Detective: vamos a revisar juntas cada gasto y encontrar dónde puede haber un respiro.</p>
+                <p className="text-blue-700 font-medium">Pero no te preocupes, para eso existe Amy Detective: vamos a revisar juntas cada gasto y encontrar dónde puede haber un respiro.</p>
               </div>
               <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm mb-5">
                 <div className="flex justify-between">
@@ -795,7 +795,7 @@ export default function OnboardingPage() {
                 Este es tu punto de partida
               </h2>
               <p className="text-sm text-[#1a1a2e]/60 mb-2 leading-relaxed">
-                Con lo que registraste, Finty analizó tu situación y te propone diferentes formas de ahorrar.
+                Con lo que registraste, Amy analizó tu situación y te propone diferentes formas de ahorrar.
               </p>
               <p className="text-sm text-[#ec7fa9] font-medium mb-6">
                 Puedes elegir la que mejor se adapte a ti.
@@ -884,7 +884,7 @@ export default function OnboardingPage() {
           {step === "no_puede_intro" && (
             <div className="p-8">
               <div className="inline-flex items-center gap-2 bg-red-50 border border-red-200 rounded-full px-4 py-1.5 mb-4">
-                <span className="text-red-600 text-sm font-bold flex items-center gap-1.5"><Zap size={13} />Finty Rompe-deudas</span>
+                <span className="text-red-600 text-sm font-bold flex items-center gap-1.5"><Zap size={13} />Amy Rompe-deudas</span>
               </div>
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-4" style={{ fontFamily: "var(--font-playfair)" }}>
                 Primero, vamos a ordenar esto juntas 🤝
@@ -894,7 +894,7 @@ export default function OnboardingPage() {
                 <p><strong>Y no pasa nada. Esto es más común de lo que crees.</strong></p>
                 <p>En este momento, no tiene sentido presionarte a ahorrar.</p>
                 <p>Lo que sí vamos a hacer es enfocarnos en algo más importante: <strong>salir de tus deudas de forma inteligente.</strong> Eso es libertad.</p>
-                <p>Finty Rompe-deudas te va a mostrar el mejor camino para ti.</p>
+                <p>Amy Rompe-deudas te va a mostrar el mejor camino para ti.</p>
               </div>
               <button
                 onClick={() => setStep("deuda_quiz")}
@@ -909,7 +909,7 @@ export default function OnboardingPage() {
           {step === "deuda_intro" && (
             <div className="p-8">
               <div className="inline-flex items-center gap-2 bg-red-50 border border-red-200 rounded-full px-4 py-1.5 mb-4">
-                <span className="text-red-600 text-sm font-bold flex items-center gap-1.5"><Zap size={13} />Finty Rompe-deudas</span>
+                <span className="text-red-600 text-sm font-bold flex items-center gap-1.5"><Zap size={13} />Amy Rompe-deudas</span>
               </div>
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-4" style={{ fontFamily: "var(--font-playfair)" }}>
                 Tener deudas no es malo
@@ -917,7 +917,7 @@ export default function OnboardingPage() {
               <div className="text-sm text-[#1a1a2e]/70 leading-relaxed space-y-3 mb-6 bg-[#ffedfa] rounded-2xl p-5">
                 <p>Las deudas muchas veces nos ayudan a cumplir metas que de otra forma tomarían años: una casa, un carro, estudios o un proyecto de vida.</p>
                 <p>El problema no es tenerlas. <strong>El problema es no tener un plan para pagarlas.</strong></p>
-                <p className="text-[#ec7fa9] font-medium">Para eso existe Finty Rompe-deudas. Vamos a ayudarte a salir de tus deudas más rápido usando metodologías financieras probadas.</p>
+                <p className="text-[#ec7fa9] font-medium">Para eso existe Amy Rompe-deudas. Vamos a ayudarte a salir de tus deudas más rápido usando metodologías financieras probadas.</p>
                 <p>Pero primero, necesitamos entender cómo eres tú. Porque no todas las personas manejan sus finanzas igual y el mejor método depende de tu personalidad.</p>
               </div>
               <div className="bg-white border border-[#ffb8e0] rounded-2xl px-5 py-4 mb-4 text-center">
@@ -936,7 +936,7 @@ export default function OnboardingPage() {
                 onClick={() => {
                   const disponiblePostGF = totalIngresos - totalGastos;
                   if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
-                    setStep("finty_detective");
+                    setStep("amy_detective");
                   } else {
                     setStep("cajitas_onboarding");
                   }
@@ -1046,7 +1046,7 @@ export default function OnboardingPage() {
                   onClick={() => {
                     const disponiblePostGF = totalIngresos - totalGastos;
                     if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
-                      setStep("finty_detective");
+                      setStep("amy_detective");
                     } else {
                       setStep("cajitas_onboarding");
                     }
@@ -1225,7 +1225,7 @@ export default function OnboardingPage() {
                   <p className="text-xs text-[#1a1a2e]/50 mb-3">Ahorro sin fecha límite. Defines cuánto apartas cada mes. Ej: fondo de emergencias, ropa, tecnología.</p>
                 )}
                 {bolTipo === "metas" && (
-                  <p className="text-xs text-[#1a1a2e]/50 mb-3">Tienes un monto objetivo y una fecha. Finty calcula cuánto necesitas ahorrar cada mes. Ej: viaje a México en diciembre.</p>
+                  <p className="text-xs text-[#1a1a2e]/50 mb-3">Tienes un monto objetivo y una fecha. Amy calcula cuánto necesitas ahorrar cada mes. Ej: viaje a México en diciembre.</p>
                 )}
 
                 <div className="flex gap-2 mb-2">
