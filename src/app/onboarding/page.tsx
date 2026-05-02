@@ -1064,14 +1064,14 @@ export default function OnboardingPage() {
                   <span className="text-2xl">📦</span>
                   <div>
                     <p className="font-semibold text-[#1a1a2e] text-sm">Cajitas</p>
-                    <p className="text-xs text-[#1a1a2e]/60 mt-0.5 leading-relaxed">Para gastos grandes que no llegan todos los meses — como el SOAT, impuesto predial o matrícula. Amy lo divide en cuotas mensuales para que no te pillen por sorpresa.</p>
+                    <p className="text-xs text-[#1a1a2e]/60 mt-0.5 leading-relaxed">Gastos fijos grandes que no pasan todos los meses — como el SOAT, el impuesto predial o la matrícula. Amy los divide en cuotas mensuales y los descuenta de tu presupuesto para que cuando llegue el momento, ya tengas la plata lista.</p>
                   </div>
                 </div>
                 <div className="bg-white border border-[#ffb8e0] rounded-2xl p-4 flex gap-3 items-start">
                   <span className="text-2xl">🐷</span>
                   <div>
                     <p className="font-semibold text-[#1a1a2e] text-sm">Bolsillos de ahorro</p>
-                    <p className="text-xs text-[#1a1a2e]/60 mt-0.5 leading-relaxed">Para tus metas y sueños — vacaciones, un fondo de emergencia, o lo que quieras. Aquí defines cuánto quieres ahorrar y Amy te muestra cómo llegar.</p>
+                    <p className="text-xs text-[#1a1a2e]/60 mt-0.5 leading-relaxed">Para tus metas y sueños — vacaciones, un fondo de emergencia, o lo que quieras. Amy te muestra exactamente cuánto ahorrar cada mes para llegar a tu meta y te ayuda a crear el hábito de ahorrar sin que se sienta difícil.</p>
                   </div>
                 </div>
               </div>
