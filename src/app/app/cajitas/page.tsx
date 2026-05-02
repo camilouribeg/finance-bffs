@@ -27,10 +27,16 @@ const EJEMPLOS = [
   { nombre: "Mantenimiento del hogar", emoji: "🏠" },
 ];
 
+function mesKey() {
+  const now = new Date();
+  return `cajitas_transferido_${now.getFullYear()}_${now.getMonth() + 1}`;
+}
+
 export default function CajitasPage() {
   const [cajitas, setCajitas] = useState<Cajita[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [transferido, setTransferido] = useState(false);
 
   const [nombre, setNombre] = useState("");
   const [montoTotal, setMontoTotal] = useState("");
@@ -40,7 +46,10 @@ export default function CajitasPage() {
   const [abonarId, setAbonarId] = useState<string | null>(null);
   const [abonarMonto, setAbonarMonto] = useState("");
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    setTransferido(localStorage.getItem(mesKey()) === "1");
+  }, []);
 
   async function load() {
     const supabase = createClient();
@@ -116,6 +125,13 @@ export default function CajitasPage() {
     setCajitas(cajitas.filter(c => c.id !== id));
   }
 
+  function toggleTransferido() {
+    const next = !transferido;
+    setTransferido(next);
+    if (next) localStorage.setItem(mesKey(), "1");
+    else localStorage.removeItem(mesKey());
+  }
+
   const totalMensual = cajitas.reduce((s, c) => s + cuotaMensual(c), 0);
 
   return (
@@ -145,13 +161,45 @@ export default function CajitasPage() {
         </p>
         <p className="text-sm font-semibold text-[#1a1a2e] mb-1">¿Qué debes hacer en tu banco?</p>
         <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
-          Cada mes, transfiere el total de cuotas ({fmt(totalMensual)}/mes) a una cuenta separada o a un bolsillo/sobre de tu banco etiquetado como <span className="font-semibold">"Cajitas"</span>. Así el dinero estará apartado cuando llegue ese gasto.
+          Cada mes, crea un bolsillo o sobre en tu banco por cada cajita y etiquétalo{" "}
+          {cajitas.length === 0 ? (
+            <span className="font-semibold">"Cajita de [nombre]"</span>
+          ) : cajitas.length === 1 ? (
+            <span className="font-semibold">"Cajita de {cajitas[0].nombre}"</span>
+          ) : (
+            <>
+              {cajitas.map((c, i) => (
+                <span key={c.id}>
+                  <span className="font-semibold">"Cajita de {c.nombre}"</span>
+                  {i < cajitas.length - 1 ? ", " : ""}
+                </span>
+              ))}
+            </>
+          )}
+          . Así el dinero estará apartado cuando llegue ese gasto.
         </p>
         {totalMensual > 0 && (
-          <div className="mt-3 flex items-center gap-2 bg-white border border-[#ffb8e0] rounded-xl px-4 py-2.5">
-            <span className="text-xs text-[#1a1a2e]/50">Transferencia mensual recomendada:</span>
-            <span className="text-sm font-bold text-[#ec7fa9]">{fmt(totalMensual)}</span>
-          </div>
+          <>
+            <div className="mt-3 flex items-center gap-2 bg-white border border-[#ffb8e0] rounded-xl px-4 py-2.5">
+              <span className="text-xs text-[#1a1a2e]/50">Transferencia mensual recomendada:</span>
+              <span className="text-sm font-bold text-[#ec7fa9]">{fmt(totalMensual)}</span>
+            </div>
+            <button
+              onClick={toggleTransferido}
+              className={`mt-3 w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-colors ${
+                transferido
+                  ? "bg-green-50 border-green-200 text-green-700"
+                  : "bg-white border-[#ffb8e0] text-[#1a1a2e]/60 hover:bg-white/80"
+              }`}
+            >
+              <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                transferido ? "bg-green-500 border-green-500" : "border-[#ffb8e0]"
+              }`}>
+                {transferido && <Check size={12} className="text-white" strokeWidth={3} />}
+              </span>
+              {transferido ? "¡Transferencia de este mes registrada!" : "Marcar transferencia de este mes como hecha"}
+            </button>
+          </>
         )}
       </div>
 
