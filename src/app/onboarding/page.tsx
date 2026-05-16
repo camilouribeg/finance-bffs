@@ -312,7 +312,7 @@ export default function OnboardingPage() {
         ingreso_fijo: parseFloat(ingresoFijo) || 0,
         ingresos_otros: ingresosOtros.map(i => ({ id: i.id, descripcion: i.nombre, valor: i.valor })),
         gastos_fijos: gastosFijos.reduce((s, g) => s + g.valor, 0),
-        gastos_fijos_items: gastosFijos.map(g => ({ id: g.id, descripcion: g.nombre, valor: g.valor })),
+        gastos_fijos_items: gastosFijos.map(g => ({ id: g.id, nombre: g.nombre, valor: g.valor })),
         gastos_variables_items: [],
       }, { onConflict: "user_id,month,year" });
 

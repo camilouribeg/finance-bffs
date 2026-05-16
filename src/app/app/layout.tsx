@@ -14,9 +14,12 @@ export default async function AppLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_status, full_name, trial_ends_at")
+    .select("subscription_status, full_name, trial_ends_at, onboarding_completed")
     .eq("id", user.id)
     .single();
+
+  // No profile yet or onboarding not done → send to onboarding
+  if (!profile || !profile.onboarding_completed) redirect("/onboarding");
 
   const isActive = profile?.subscription_status === "active";
   const trialEndsAt = profile?.trial_ends_at ? new Date(profile.trial_ends_at) : null;

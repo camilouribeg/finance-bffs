@@ -62,8 +62,8 @@ export default function GastosPage() {
 
     if (plan) {
       setDashboardId(plan.id);
-      const items: GastoFijo[] = ((plan.gastos_fijos_items ?? []) as Array<{ nombre: string; valor: number }>).map((i, idx) => ({
-        id: `fijo-${idx}`, nombre: i.nombre, valor: i.valor,
+      const items: GastoFijo[] = ((plan.gastos_fijos_items ?? []) as Array<{ nombre?: string; descripcion?: string; valor: number }>).map((i, idx) => ({
+        id: `fijo-${idx}`, nombre: i.nombre ?? i.descripcion ?? "", valor: i.valor,
       }));
       setGastosFijos(items);
 
