@@ -72,9 +72,11 @@ export default function AhorroPage() {
   const [mMeta, setMMeta] = useState("");
   const [mFecha, setMFecha] = useState("");
 
-  // Abonar
+  // Abonar / Retirar
   const [abonarId, setAbonarId] = useState<string | null>(null);
   const [abonarMonto, setAbonarMonto] = useState("");
+  const [retirarId, setRetirarId] = useState<string | null>(null);
+  const [retirarMonto, setRetirarMonto] = useState("");
 
   // Celebration modal
   const [celebrando, setCelebrando] = useState<Bolsillo | null>(null);
@@ -173,6 +175,20 @@ export default function AhorroPage() {
     if (updatedB && updatedB.tipo === "metas" && updatedB.meta > 0 && nuevoActual >= updatedB.meta && !updatedB.celebrado) {
       setCelebrando(updatedB);
     }
+  }
+
+  async function retirar(id: string) {
+    const b = bolsillos.find(x => x.id === id);
+    if (!b) return;
+    const monto = parseFloat(retirarMonto);
+    if (!monto || monto <= 0) return;
+    const nuevoActual = Math.max(0, b.actual - monto);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("bolsillos").update({ actual: nuevoActual }).eq("id", id).eq("user_id", user.id);
+    setBolsillos(bolsillos.map(x => x.id === id ? { ...x, actual: nuevoActual } : x));
+    setRetirarId(null); setRetirarMonto("");
   }
 
   async function marcarCelebrado(id: string) {
@@ -429,14 +445,28 @@ export default function AhorroPage() {
                       {abonarId === b.id ? (
                         <div className="flex gap-2">
                           <input type="number" value={abonarMonto} onChange={(e) => setAbonarMonto(e.target.value)}
-                            placeholder="Monto" autoFocus
+                            placeholder="Monto a abonar" autoFocus
                             className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
                           <button onClick={() => abonar(b.id)} className="bg-[#ec7fa9] text-white text-sm px-4 py-2 rounded-xl hover:bg-[#d96d97] flex items-center"><Check size={14} /></button>
                           <button onClick={() => { setAbonarId(null); setAbonarMonto(""); }}
                             className="border border-[#ffb8e0] text-[#1a1a2e]/50 text-sm px-3 py-2 rounded-xl flex items-center"><X size={14} /></button>
                         </div>
+                      ) : retirarId === b.id ? (
+                        <div className="flex gap-2">
+                          <input type="number" value={retirarMonto} onChange={(e) => setRetirarMonto(e.target.value)}
+                            placeholder={`Máx. ${fmt(b.actual)}`} autoFocus
+                            className="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm bg-slate-50 outline-none" />
+                          <button onClick={() => retirar(b.id)} className="bg-slate-500 text-white text-sm px-4 py-2 rounded-xl hover:bg-slate-600 flex items-center"><Check size={14} /></button>
+                          <button onClick={() => { setRetirarId(null); setRetirarMonto(""); }}
+                            className="border border-slate-200 text-[#1a1a2e]/50 text-sm px-3 py-2 rounded-xl flex items-center"><X size={14} /></button>
+                        </div>
                       ) : (
-                        <button onClick={() => setAbonarId(b.id)} className="text-xs text-[#ec7fa9] font-medium hover:underline">+ Abonar</button>
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => { setAbonarId(b.id); setRetirarId(null); }} className="text-xs text-[#ec7fa9] font-medium hover:underline">+ Abonar</button>
+                          {b.actual > 0 && (
+                            <button onClick={() => { setRetirarId(b.id); setAbonarId(null); }} className="text-xs text-slate-400 font-medium hover:underline">− Retirar</button>
+                          )}
+                        </div>
                       )}
                     </div>
                   );
@@ -589,19 +619,31 @@ export default function AhorroPage() {
                       )}
                       {done ? (
                         <p className="text-sm font-semibold text-green-600 flex items-center gap-1.5"><PartyPopper size={14} />¡Lo lograste!</p>
+                      ) : abonarId === b.id ? (
+                        <div className="flex gap-2">
+                          <input type="number" value={abonarMonto} onChange={(e) => setAbonarMonto(e.target.value)}
+                            placeholder="Monto a abonar" autoFocus
+                            className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
+                          <button onClick={() => abonar(b.id)} className="bg-[#ec7fa9] text-white text-sm px-4 py-2 rounded-xl hover:bg-[#d96d97] flex items-center"><Check size={14} /></button>
+                          <button onClick={() => { setAbonarId(null); setAbonarMonto(""); }}
+                            className="border border-[#ffb8e0] text-[#1a1a2e]/50 text-sm px-3 py-2 rounded-xl flex items-center"><X size={14} /></button>
+                        </div>
+                      ) : retirarId === b.id ? (
+                        <div className="flex gap-2">
+                          <input type="number" value={retirarMonto} onChange={(e) => setRetirarMonto(e.target.value)}
+                            placeholder={`Máx. ${fmt(b.actual)}`} autoFocus
+                            className="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm bg-slate-50 outline-none" />
+                          <button onClick={() => retirar(b.id)} className="bg-slate-500 text-white text-sm px-4 py-2 rounded-xl hover:bg-slate-600 flex items-center"><Check size={14} /></button>
+                          <button onClick={() => { setRetirarId(null); setRetirarMonto(""); }}
+                            className="border border-slate-200 text-[#1a1a2e]/50 text-sm px-3 py-2 rounded-xl flex items-center"><X size={14} /></button>
+                        </div>
                       ) : (
-                        abonarId === b.id ? (
-                          <div className="flex gap-2">
-                            <input type="number" value={abonarMonto} onChange={(e) => setAbonarMonto(e.target.value)}
-                              placeholder="Monto" autoFocus
-                              className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
-                            <button onClick={() => abonar(b.id)} className="bg-[#ec7fa9] text-white text-sm px-4 py-2 rounded-xl hover:bg-[#d96d97] flex items-center"><Check size={14} /></button>
-                            <button onClick={() => { setAbonarId(null); setAbonarMonto(""); }}
-                              className="border border-[#ffb8e0] text-[#1a1a2e]/50 text-sm px-3 py-2 rounded-xl flex items-center"><X size={14} /></button>
-                          </div>
-                        ) : (
-                          <button onClick={() => setAbonarId(b.id)} className="text-xs text-[#ec7fa9] font-medium hover:underline">+ Abonar</button>
-                        )
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => { setAbonarId(b.id); setRetirarId(null); }} className="text-xs text-[#ec7fa9] font-medium hover:underline">+ Abonar</button>
+                          {b.actual > 0 && (
+                            <button onClick={() => { setRetirarId(b.id); setAbonarId(null); }} className="text-xs text-slate-400 font-medium hover:underline">− Retirar</button>
+                          )}
+                        </div>
                       )}
                     </div>
                   );
