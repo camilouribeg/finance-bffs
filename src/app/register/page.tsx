@@ -137,7 +137,12 @@ export default function RegisterPage() {
         setLoading(false);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error inesperado. Intenta de nuevo.");
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.toLowerCase().includes("load failed") || msg.toLowerCase().includes("network") || msg.toLowerCase().includes("fetch")) {
+        setError("No se pudo conectar al servidor. Verifica tu conexión a internet e intenta de nuevo.");
+      } else {
+        setError(msg || "Error inesperado. Intenta de nuevo.");
+      }
       setLoading(false);
     }
   }

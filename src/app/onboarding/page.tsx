@@ -26,7 +26,7 @@ const CAJITAS_SUGERIDAS = [
   { nombre: "Matrícula escolar", emoji: "🎓", monto: 2000000, meses: 12 },
 ];
 
-const EMOJIS_BOLSITA = ["🐷","✈️","🏠","🎓","💻","👗","💍","🎉","🐾","🌱","🚑","🎸","🏋️","📚","🛍️"];
+const EMOJIS_BOLSITA = ["👜","✈️","🏠","🎓","💻","👗","💍","🎉","🐾","🌱","🚑","🎸","🏋️","📚","🛍️"];
 
 const DEUDA_TIPOS = [
   "Tarjeta de crédito",
@@ -50,12 +50,12 @@ const QUIZ = [
     pregunta: "¿Qué te da más impulso para seguir?",
     opciones: [
       { id: "A", texto: "Tachar una deuda de la lista y concentrarme en la siguiente" },
-      { id: "B", texto: "Saber que estoy tomando la decisión más inteligente con mi plata" },
+      { id: "B", texto: "Saber que estoy tomando la decisión más inteligente con mi dinero" },
       { id: "C", texto: "Sentir que ninguna deuda se me está yendo de las manos" },
     ],
   },
   {
-    pregunta: "¿Cómo te describes a la hora de manejar tu plata?",
+    pregunta: "¿Cómo te describes a la hora de manejar tu dinero?",
     opciones: [
       { id: "A", texto: "Me funciona mejor una cosa a la vez, paso a paso" },
       { id: "B", texto: "Busco siempre la opción más eficiente y racional" },
@@ -85,13 +85,15 @@ const METHOD_INFO = {
   snowball: {
     emoji: "❄️",
     nombre: "Bola de nieve",
-    desc: "Vas a enfocarte primero en la deuda más pequeña. Cuando avances en esta, ese progreso te va a ayudar a seguir con las siguientes.",
+    autor: "Dave Ramsey",
+    desc: "Vas a enfocarte primero en la deuda más pequeña. Cuando la elimines, ese logro te va a dar el impulso para atacar la siguiente. Lo que vamos a hacer es ordenar tus deudas de menor a mayor y ir tachándolas una por una. Más adelante vas a ver esto organizado en tu panel.",
     sort: (a: DeudaItem, b: DeudaItem) => a.total_pendiente - b.total_pendiente,
   },
   avalanche: {
     emoji: "🏔️",
     nombre: "Avalancha",
-    desc: "Vas a enfocarte primero en la deuda que más te cuesta en intereses. Esto te ayuda a optimizar tu plata a largo plazo.",
+    autor: "Suze Orman",
+    desc: "Vas a enfocarte primero en la deuda que más te cuesta en intereses. Esto es lo más inteligente para ahorrar dinero a largo plazo. Lo que vamos a hacer es atacar primero la deuda más cara y bajar los intereses que pagas cada mes. Más adelante vas a ver esto organizado en tu panel.",
     sort: (a: DeudaItem, b: DeudaItem) => {
       const ta = parseFloat(a.tasa) || 0;
       const tb = parseFloat(b.tasa) || 0;
@@ -100,8 +102,9 @@ const METHOD_INFO = {
   },
   balanced: {
     emoji: "⚖️",
-    nombre: "Equilibrado",
-    desc: "Aquí no te enfocas en una sola deuda. La idea es avanzar en varias al mismo tiempo, de forma más estable.",
+    nombre: "Equilibrada",
+    autor: "T. Harv Eker",
+    desc: "Aquí no te enfocas en una sola deuda. Vas a avanzar en varias al mismo tiempo de forma estable, sin sentir que nada se te sale de control. Lo que vamos a hacer es distribuir tus pagos para que todas tus deudas avancen juntas. Más adelante vas a ver esto organizado en tu panel.",
     sort: () => 0,
   },
 };
@@ -154,7 +157,7 @@ export default function OnboardingPage() {
   const [bolsitasOB, setBolsitasOB] = useState<BolsitaOB[]>([]);
   const [bolTipo, setBolTipo] = useState<"fondos" | "metas">("fondos");
   const [bolNombre, setBolNombre] = useState("");
-  const [bolEmoji, setBolEmoji] = useState("🐷");
+  const [bolEmoji, setBolEmoji] = useState("👜");
   const [bolCuota, setBolCuota] = useState("");
   const [bolMeta, setBolMeta] = useState("");
   const [bolFecha, setBolFecha] = useState("");
@@ -194,10 +197,8 @@ export default function OnboardingPage() {
     return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
   }
 
-  function showReinforcement(msg: string, onContinue: () => void) {
-    setReinforcement(msg);
-    if (reinforcementTimer.current) clearTimeout(reinforcementTimer.current);
-    reinforcementTimer.current = setTimeout(() => { setReinforcement(""); onContinue(); }, 10000);
+  function showReinforcement(_msg: string, onContinue: () => void) {
+    onContinue();
   }
 
   // List helpers
@@ -356,7 +357,7 @@ export default function OnboardingPage() {
       } else if (opts.ahorroMonto) {
         // Bolsita general de ahorro
         await supabase.from("bolsillos").insert({
-          user_id: userId, nombre: "Ahorro mensual", emoji: "🐷",
+          user_id: userId, nombre: "Ahorro mensual", emoji: "👜",
           tipo: "fondos", meta: opts.ahorroMonto * 12,
           actual: 0, cuota_mensual: opts.ahorroMonto, importancia: 3, celebrado: false,
         });
@@ -400,7 +401,7 @@ export default function OnboardingPage() {
       fecha_meta: bolTipo === "metas" ? bolFecha : undefined,
       importancia: bolImportancia,
     }]);
-    setBolNombre(""); setBolEmoji("🐷"); setBolCuota(""); setBolMeta(""); setBolFecha(""); setBolImportancia(3);
+    setBolNombre(""); setBolEmoji("👜"); setBolCuota(""); setBolMeta(""); setBolFecha(""); setBolImportancia(3);
   }
 
   const stepNum = step === "welcome" ? 0
@@ -481,7 +482,7 @@ export default function OnboardingPage() {
           {step === "ingresos" && (
             <div className="p-8">
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
-                Empecemos por tu plata
+                Empecemos por tu dinero
               </h2>
               <div className="text-sm text-[#1a1a2e]/60 leading-relaxed mb-6 space-y-2">
                 <p>Aquí vas a anotar todos tus ingresos del mes.</p>
@@ -903,13 +904,14 @@ export default function OnboardingPage() {
                 <p><strong>Y no pasa nada. Esto es más común de lo que crees.</strong></p>
                 <p>En este momento, no tiene sentido presionarte a ahorrar.</p>
                 <p>Lo que sí vamos a hacer es enfocarnos en algo más importante: <strong>salir de tus deudas de forma inteligente.</strong> Eso es libertad.</p>
-                <p>Amy Rompe-deudas te va a mostrar el mejor camino para ti.</p>
+                <p>{deudas.length > 1 ? "Amy Rompe-deudas te va a mostrar el mejor camino para ti." : "Por ahora lo más importante es enfocarte en pagar esa deuda."}</p>
               </div>
               <button
-                onClick={() => setStep(deudas.length > 1 ? "deuda_quiz" : "ahorro_intro")}
+                onClick={() => deudas.length > 1 ? setStep("deuda_quiz") : finalSave({})}
+                disabled={saving}
                 className={`${btnPink} w-full`}
               >
-                Vamos a encontrar la mejor forma para ti →
+                {saving ? "Guardando..." : deudas.length > 1 ? "Vamos a encontrar la mejor forma para ti →" : "Entendido, empecemos →"}
               </button>
             </div>
           )}
@@ -1000,10 +1002,13 @@ export default function OnboardingPage() {
 
               <div className="bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-2xl p-4 mb-5">
                 <p className="text-xs font-semibold text-[#ec7fa9] uppercase tracking-wide mb-1">
-                  Método recomendado para ti
+                  Metodología recomendada para ti
                 </p>
                 <p className="text-base font-bold text-[#1a1a2e]">
-                  {METHOD_INFO[debtMethod].emoji} Método {METHOD_INFO[debtMethod].nombre}
+                  {METHOD_INFO[debtMethod].emoji} Metodología {METHOD_INFO[debtMethod].nombre}
+                </p>
+                <p className="text-xs text-[#1a1a2e]/40 mt-0.5">
+                  por {METHOD_INFO[debtMethod].autor}
                 </p>
                 <p className="text-xs text-[#1a1a2e]/60 mt-2 leading-relaxed">
                   {METHOD_INFO[debtMethod].desc}
@@ -1078,14 +1083,14 @@ export default function OnboardingPage() {
                 Ahora vamos con tus ahorros
               </h2>
               <p className="text-sm text-[#1a1a2e]/60 mb-6 leading-relaxed">
-                En Amy vas a organizar tu plata en dos tipos de bolsitas. Cada una tiene un propósito diferente.
+                En Amy vas a organizar tu dinero en dos tipos de bolsitas. Cada una tiene un propósito diferente.
               </p>
               <div className="space-y-3 mb-8 text-left">
                 <div className="bg-white border border-[#ffb8e0] rounded-2xl p-4 flex gap-3 items-start">
                   <span className="text-2xl">📦</span>
                   <div>
                     <p className="font-semibold text-[#1a1a2e] text-sm">Cajitas</p>
-                    <p className="text-xs text-[#1a1a2e]/60 mt-0.5 leading-relaxed">Gastos fijos grandes que no pasan todos los meses, como el SOAT, el impuesto predial o la matrícula. Amy los divide en cuotas mensuales y los descuenta de tu presupuesto para que cuando llegue el momento ya tengas la plata lista.</p>
+                    <p className="text-xs text-[#1a1a2e]/60 mt-0.5 leading-relaxed">Gastos fijos grandes que no pasan todos los meses, como el SOAT, el impuesto predial o la matrícula. Amy los divide en cuotas mensuales y los descuenta de tu presupuesto para que cuando llegue el momento ya tengas el dinero listo.</p>
                   </div>
                 </div>
                 <div className="bg-white border border-[#ffb8e0] rounded-2xl p-4 flex gap-3 items-start">
@@ -1109,7 +1114,7 @@ export default function OnboardingPage() {
                 <Archive size={20} className="text-[#ec7fa9]" />¿Tienes gastos grandes que no llegan todos los meses?
               </h2>
               <p className="text-sm text-[#1a1a2e]/60 mb-5 leading-relaxed">
-                Cosas como el SOAT, impuestos, seguros o matrícula. Amy divide el total en cuotas mensuales y las descuenta de tu presupuesto automáticamente. Así cuando llegue el gasto ya tienes la plata lista.
+                Cosas como el SOAT, impuestos, seguros o matrícula. Amy divide el total en cuotas mensuales y las descuenta de tu presupuesto automáticamente. Así cuando llegue el gasto ya tienes el dinero listo.
               </p>
 
               {cajitasOB.length > 0 && (
@@ -1178,7 +1183,7 @@ export default function OnboardingPage() {
                     onChange={e => setCajFecha(e.target.value)}
                     className={`${inputCls} mt-1 w-full`}
                   />
-                  <p className="text-[10px] text-[#1a1a2e]/40 mt-1">Así Amy sabe cuándo tienes que tener la plata lista.</p>
+                  <p className="text-[10px] text-[#1a1a2e]/40 mt-1">Así Amy sabe cuándo tienes que tener el dinero listo.</p>
                 </div>
                 <button type="button" onClick={() => { addCajitaOB(); setCajFecha(""); }} disabled={!cajNombre || !cajMonto}
                   className="w-full border border-[#ec7fa9] text-[#ec7fa9] font-semibold py-2 rounded-xl text-sm hover:bg-white disabled:opacity-40 transition-colors">
@@ -1247,9 +1252,26 @@ export default function OnboardingPage() {
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-1 flex items-center gap-2" style={{ fontFamily: "var(--font-playfair)" }}>
                 <PiggyBank size={20} className="text-[#ec7fa9]" />Crea tus bolsitas
               </h2>
-              <p className="text-sm text-[#1a1a2e]/60 mb-5 leading-relaxed">
+              <p className="text-sm text-[#1a1a2e]/60 mb-3 leading-relaxed">
                 Ahorro mensual: <strong className="text-[#ec7fa9]">{fmt(selectedAhorro ?? 0)}/mes</strong>. Distribúyelo como quieras.
               </p>
+              {(() => {
+                const usadoFondos = bolsitasOB.filter(b => b.tipo === "fondos").reduce((s, b) => s + (b.cuota_mensual ?? 0), 0);
+                const usadoMetas = bolsitasOB.filter(b => b.tipo === "metas" && b.meta && b.fecha_meta).reduce((s, b) => {
+                  const [fy, fm] = b.fecha_meta!.split("-").map(Number);
+                  const now2 = new Date();
+                  const meses = Math.max(1, (fy - now2.getFullYear()) * 12 + (fm - 1 - now2.getMonth()));
+                  return s + Math.ceil((b.meta ?? 0) / meses);
+                }, 0);
+                const usado = usadoFondos + usadoMetas;
+                const disponible = (selectedAhorro ?? 0) - usado;
+                return (
+                  <div className={`rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between text-sm ${disponible < 0 ? "bg-red-50 border border-red-200" : "bg-[#ec7fa9]/10 border border-[#ec7fa9]/30"}`}>
+                    <span className={disponible < 0 ? "text-red-500 font-medium" : "text-[#1a1a2e]/60"}>Dinero disponible para repartir</span>
+                    <span className={`font-bold ${disponible < 0 ? "text-red-500" : "text-[#ec7fa9]"}`}>{fmt(disponible)}/mes</span>
+                  </div>
+                );
+              })()}
 
               {bolsitasOB.length > 0 && (
                 <div className="space-y-2 mb-4">

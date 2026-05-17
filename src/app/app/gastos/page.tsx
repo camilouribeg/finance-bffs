@@ -283,7 +283,7 @@ export default function GastosPage() {
 
             <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl px-5 py-3 mb-4">
               <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
-                <span className="font-semibold text-[#ec7fa9]">Lo que gastas en el momento.</span> Restaurantes, compras, Rappi, ropa… Regístralo aquí para saber en qué se va tu plata libre.
+                <span className="font-semibold text-[#ec7fa9]">Lo que gastas en el momento.</span> Restaurantes, compras, Rappi, ropa… Regístralo aquí para saber en qué se va tu dinero libre.
               </p>
             </div>
 
