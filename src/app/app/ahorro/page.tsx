@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
-import { PiggyBank, Target, Check, X, PartyPopper, Star, Plus } from "lucide-react";
+import { PiggyBank, Target, Check, X, PartyPopper, Star, Plus, Pencil } from "lucide-react";
 
 type Bolsillo = {
   id: string;
@@ -60,12 +60,16 @@ export default function AhorroPage() {
   const [loading, setLoading] = useState(true);
   const [formType, setFormType] = useState<"fondos" | "metas" | null>(null);
 
+  // Capacidad de ahorro disponible (ingreso - gastos fijos - cuotas deudas)
+  const [capacidadBase, setCapacidadBase] = useState(0);
+
   // Form fondos
   const [fNombre, setFNombre] = useState("");
   const [fEmoji, setFEmoji] = useState("🐷");
   const [fImportancia, setFImportancia] = useState(3);
   const [fMeta, setFMeta] = useState("");
   const [fCuota, setFCuota] = useState("");
+  const [editingCuota, setEditingCuota] = useState(false);
 
   // Form metas
   const [mNombre, setMNombre] = useState("");
@@ -91,13 +95,25 @@ export default function AhorroPage() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from("bolsillos").select("*").eq("user_id", user.id).order("importancia", { ascending: false });
-    if (data) {
-      setBolsillos(data);
-      const pendingCelebration = data.find(
+    const now = new Date();
+    const [bolRes, dashRes, deudasRes] = await Promise.all([
+      supabase.from("bolsillos").select("*").eq("user_id", user.id).order("importancia", { ascending: false }),
+      supabase.from("dashboard_mensual").select("ingreso_fijo,ingresos_otros,gastos_fijos").eq("user_id", user.id).eq("month", now.getMonth() + 1).eq("year", now.getFullYear()).single(),
+      supabase.from("deudas").select("cuota_mensual").eq("user_id", user.id),
+    ]);
+    if (bolRes.data) {
+      setBolsillos(bolRes.data);
+      const pending = bolRes.data.find(
         (b: Bolsillo) => b.tipo === "metas" && b.meta > 0 && b.actual >= b.meta && !b.celebrado
       );
-      if (pendingCelebration) setCelebrando(pendingCelebration);
+      if (pending) setCelebrando(pending);
+    }
+    if (dashRes.data) {
+      const ingreso = (dashRes.data.ingreso_fijo || 0)
+        + ((dashRes.data.ingresos_otros || []) as { valor: number }[]).reduce((s, i) => s + i.valor, 0);
+      const gastos = dashRes.data.gastos_fijos || 0;
+      const cuotas = (deudasRes.data || []).reduce((s: number, d: { cuota_mensual: number }) => s + d.cuota_mensual, 0);
+      setCapacidadBase(Math.max(0, ingreso - gastos - cuotas));
     }
     setLoading(false);
   }
@@ -130,7 +146,7 @@ export default function AhorroPage() {
       actual: 0, celebrado: false,
     }).select().single();
     if (data) setBolsillos(prev => [...prev, data].sort((a, b) => b.importancia - a.importancia));
-    setFNombre(""); setFEmoji("🐷"); setFImportancia(3); setFMeta(""); setFCuota("");
+    setFNombre(""); setFEmoji("🐷"); setFImportancia(3); setFMeta(""); setFCuota(""); setEditingCuota(false);
     setFormType(null);
   }
 
@@ -230,6 +246,11 @@ export default function AhorroPage() {
   const totalAhorrado = bolsillos.reduce((s, b) => s + b.actual, 0);
   const totalMensual = fondos.reduce((s, b) => s + (b.cuota_mensual || 0), 0)
     + metas.reduce((s, b) => s + cuotaMeta(b), 0);
+
+  const disponibleParaAhorro = Math.max(0, capacidadBase - totalMensual);
+  const recomendacionFCuota = disponibleParaAhorro > 0
+    ? Math.round((fImportancia / 15) * disponibleParaAhorro)
+    : 0;
 
   const inputCls = "w-full border border-[#ffb8e0] rounded-xl px-4 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30";
 
@@ -352,7 +373,7 @@ export default function AhorroPage() {
                     ))}
                   </div>
                 </div>
-                <form onSubmit={addFondo} className="space-y-3">
+                <form onSubmit={addFondo} className="space-y-4">
                   <div className="flex gap-3">
                     <div className="flex-1">
                       <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Nombre</label>
@@ -366,25 +387,69 @@ export default function AhorroPage() {
                       </select>
                     </div>
                   </div>
+
+                  {/* Importancia → recomendación */}
                   <div>
-                    <label className="text-xs text-[#1a1a2e]/50 mb-1.5 block">Importancia</label>
-                    <Stars value={fImportancia} onChange={setFImportancia} />
+                    <label className="text-xs text-[#1a1a2e]/50 mb-1.5 block">¿Qué tan importante es esta bolsita?</label>
+                    <Stars value={fImportancia} onChange={(v) => { setFImportancia(v); setFCuota(""); setEditingCuota(false); }} />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Cuánto apartas por mes?</label>
-                      <input type="number" value={fCuota} onChange={(e) => setFCuota(e.target.value)} placeholder="Ej: 100.000" className={inputCls} />
-                    </div>
-                    <div>
-                      <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Meta total (opcional)</label>
-                      <input type="number" value={fMeta} onChange={(e) => setFMeta(e.target.value)} placeholder="Ej: 2.000.000" className={inputCls} />
-                    </div>
+
+                  {/* Cuota: recomendación o edición manual */}
+                  <div>
+                    <label className="text-xs text-[#1a1a2e]/50 mb-1.5 block">¿Cuánto apartas por mes?</label>
+                    {fCuota && !editingCuota ? (
+                      <div className="flex items-center justify-between bg-[#ec7fa9]/10 border border-[#ec7fa9]/40 rounded-xl px-4 py-3">
+                        <div>
+                          <p className="text-xs text-[#1a1a2e]/50">Apartando</p>
+                          <p className="text-lg font-bold text-[#ec7fa9]">{fmt(parseFloat(fCuota))}/mes</p>
+                        </div>
+                        <button type="button" onClick={() => setEditingCuota(true)}
+                          className="p-2 text-[#1a1a2e]/40 hover:text-[#ec7fa9] transition-colors rounded-lg hover:bg-white">
+                          <Pencil size={15} />
+                        </button>
+                      </div>
+                    ) : editingCuota ? (
+                      <div className="flex gap-2">
+                        <input type="number" value={fCuota} onChange={(e) => setFCuota(e.target.value)}
+                          autoFocus placeholder={recomendacionFCuota > 0 ? String(recomendacionFCuota) : "Ej: 100000"}
+                          className={`${inputCls} flex-1`} />
+                        <button type="button" onClick={() => setEditingCuota(false)} disabled={!fCuota}
+                          className="bg-[#ec7fa9] text-white px-4 py-2.5 rounded-xl hover:bg-[#d96d97] disabled:opacity-40 flex items-center">
+                          <Check size={15} />
+                        </button>
+                      </div>
+                    ) : recomendacionFCuota > 0 ? (
+                      <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3">
+                        <p className="text-xs text-[#1a1a2e]/50 mb-2">Amy recomienda apartar</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xl font-bold text-[#ec7fa9]">{fmt(recomendacionFCuota)}<span className="text-sm font-normal text-[#1a1a2e]/40">/mes</span></p>
+                          <div className="flex gap-2">
+                            <button type="button" onClick={() => { setFCuota(String(recomendacionFCuota)); setEditingCuota(false); }}
+                              className="bg-[#ec7fa9] text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-[#d96d97] flex items-center gap-1.5">
+                              <Check size={14} />Aceptar
+                            </button>
+                            <button type="button" onClick={() => { setFCuota(String(recomendacionFCuota)); setEditingCuota(true); }}
+                              className="border border-[#ffb8e0] bg-white text-[#1a1a2e]/50 text-sm px-3 py-2 rounded-xl hover:text-[#ec7fa9] hover:border-[#ec7fa9] flex items-center">
+                              <Pencil size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <input type="number" value={fCuota} onChange={(e) => setFCuota(e.target.value)}
+                        placeholder="Ej: 100000" className={inputCls} />
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Meta total (opcional)</label>
+                    <input type="number" value={fMeta} onChange={(e) => setFMeta(e.target.value)} placeholder="Ej: 2000000" className={inputCls} />
                   </div>
                   <div className="flex gap-3 pt-1">
-                    <button type="button" onClick={() => setFormType(null)}
+                    <button type="button" onClick={() => { setFormType(null); setFCuota(""); setEditingCuota(false); }}
                       className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-2.5 rounded-xl hover:bg-[#ffedfa] text-sm">Cancelar</button>
-                    <button type="submit"
-                      className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm">Guardar bolsita</button>
+                    <button type="submit" disabled={!fNombre || !fCuota}
+                      className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm disabled:opacity-40">Guardar bolsita</button>
                   </div>
                 </form>
               </div>

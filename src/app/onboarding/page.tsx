@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Pencil, X, Search, Zap, Archive, PiggyBank, Target } from "lucide-react";
+import { Pencil, Check, X, Search, Zap, Archive, PiggyBank, Target } from "lucide-react";
 
 type ListItem = { id: string; nombre: string; valor: number };
 type CajitaOB = { id: string; nombre: string; emoji: string; monto_total: number; meses: number; fecha_pago?: string; };
@@ -178,6 +178,7 @@ export default function OnboardingPage() {
   const [bolMeta, setBolMeta] = useState("");
   const [bolFecha, setBolFecha] = useState("");
   const [bolImportancia, setBolImportancia] = useState(3);
+  const [editingBolCuota, setEditingBolCuota] = useState(false);
 
   const [saving, setSaving] = useState(false);
 
@@ -417,6 +418,9 @@ export default function OnboardingPage() {
     return fondos + metas;
   })();
   const bolsitasDisponible = (selectedAhorro ?? 0) - bolsitasUsadoMensual;
+  const bolCuotaRecomendada = bolsitasDisponible > 0 && bolTipo === "fondos"
+    ? Math.round((bolImportancia / 15) * bolsitasDisponible)
+    : 0;
 
   function addCajitaOB() {
     if (!cajNombre || !cajMonto) return;
@@ -446,7 +450,7 @@ export default function OnboardingPage() {
       fecha_meta: bolTipo === "metas" ? bolFecha : undefined,
       importancia: bolImportancia,
     }]);
-    setBolNombre(""); setBolEmoji("👜"); setBolCuota(""); setBolMeta(""); setBolFecha(""); setBolImportancia(3);
+    setBolNombre(""); setBolEmoji("👜"); setBolCuota(""); setBolMeta(""); setBolFecha(""); setBolImportancia(3); setEditingBolCuota(false);
   }
 
   const stepNum = step === "perfil_inicial" ? 0
@@ -1464,15 +1468,55 @@ export default function OnboardingPage() {
                 </div>
 
                 {bolTipo === "fondos" && (
-                  <>
-                    <input type="number" value={bolCuota} onChange={e => setBolCuota(e.target.value)}
-                      placeholder={`¿Cuánto apartas al mes? (máx ${fmt(bolsitasDisponible)})`}
-                      max={bolsitasDisponible}
-                      className={`${inputCls} mb-1 ${bolCuota && parseFloat(bolCuota) > bolsitasDisponible ? "border-red-400 focus:ring-red-300 focus:border-red-400" : ""}`} />
-                    {bolCuota && parseFloat(bolCuota) > bolsitasDisponible && (
-                      <p className="text-xs text-red-500 mb-2">Excede el dinero disponible. Máximo: {fmt(bolsitasDisponible)}/mes</p>
+                  <div className="mb-2">
+                    {bolCuota && !editingBolCuota ? (
+                      <div className="flex items-center justify-between bg-[#ec7fa9]/10 border border-[#ec7fa9]/40 rounded-xl px-3 py-2.5">
+                        <div>
+                          <p className="text-xs text-[#1a1a2e]/50">Apartando</p>
+                          <p className="text-base font-bold text-[#ec7fa9]">{fmt(parseFloat(bolCuota))}/mes</p>
+                        </div>
+                        <button type="button" onClick={() => setEditingBolCuota(true)}
+                          className="p-1.5 text-[#1a1a2e]/40 hover:text-[#ec7fa9] rounded-lg hover:bg-white transition-colors">
+                          <Pencil size={14} />
+                        </button>
+                      </div>
+                    ) : editingBolCuota ? (
+                      <div className="flex gap-2">
+                        <input type="number" value={bolCuota} onChange={e => setBolCuota(e.target.value)}
+                          autoFocus max={bolsitasDisponible}
+                          placeholder={bolCuotaRecomendada > 0 ? String(bolCuotaRecomendada) : "Monto mensual"}
+                          className={`${inputCls} flex-1 ${bolCuota && parseFloat(bolCuota) > bolsitasDisponible ? "border-red-400" : ""}`} />
+                        <button type="button" onClick={() => setEditingBolCuota(false)} disabled={!bolCuota}
+                          className="bg-[#ec7fa9] text-white px-3 py-2.5 rounded-xl hover:bg-[#d96d97] disabled:opacity-40 flex items-center">
+                          <Check size={14} />
+                        </button>
+                      </div>
+                    ) : bolCuotaRecomendada > 0 ? (
+                      <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-3 py-2.5">
+                        <p className="text-xs text-[#1a1a2e]/50 mb-1.5">Amy recomienda apartar</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-lg font-bold text-[#ec7fa9]">{fmt(bolCuotaRecomendada)}<span className="text-xs font-normal text-[#1a1a2e]/40">/mes</span></p>
+                          <div className="flex gap-1.5">
+                            <button type="button" onClick={() => { setBolCuota(String(bolCuotaRecomendada)); setEditingBolCuota(false); }}
+                              className="bg-[#ec7fa9] text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-[#d96d97] flex items-center gap-1">
+                              <Check size={12} />Aceptar
+                            </button>
+                            <button type="button" onClick={() => { setBolCuota(String(bolCuotaRecomendada)); setEditingBolCuota(true); }}
+                              className="border border-[#ffb8e0] bg-white text-[#1a1a2e]/40 px-2.5 py-1.5 rounded-lg hover:text-[#ec7fa9] flex items-center">
+                              <Pencil size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <input type="number" value={bolCuota} onChange={e => setBolCuota(e.target.value)}
+                        placeholder="¿Cuánto apartas al mes?"
+                        className={inputCls} />
                     )}
-                  </>
+                    {bolCuota && parseFloat(bolCuota) > bolsitasDisponible && (
+                      <p className="text-xs text-red-500 mt-1">Excede el dinero disponible. Máximo: {fmt(bolsitasDisponible)}/mes</p>
+                    )}
+                  </div>
                 )}
                 {bolTipo === "metas" && (
                   <div className="grid grid-cols-2 gap-2 mb-2">
@@ -1481,14 +1525,16 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xs text-[#1a1a2e]/50">Importancia:</span>
-                  {[1,2,3,4,5].map(n => (
-                    <button key={n} type="button" onClick={() => setBolImportancia(n)}
-                      className={`transition-all ${n <= bolImportancia ? "text-[#ec7fa9]" : "text-[#ffb8e0]"}`}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill={n <= bolImportancia ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    </button>
-                  ))}
+                <div className="mb-3">
+                  <p className="text-xs text-[#1a1a2e]/50 mb-1.5">¿Qué tan importante es esta bolsita?</p>
+                  <div className="flex items-center gap-1.5">
+                    {[1,2,3,4,5].map(n => (
+                      <button key={n} type="button" onClick={() => { setBolImportancia(n); if (bolTipo === "fondos") { setBolCuota(""); setEditingBolCuota(false); } }}
+                        className={`transition-all ${n <= bolImportancia ? "text-[#ec7fa9]" : "text-[#ffb8e0]"}`}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill={n <= bolImportancia ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <button type="button" onClick={addBolsitaOB}
