@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useFmt } from "@/lib/useFmt";
 import Link from "next/link";
 import {
   TrendingUp,
@@ -25,6 +26,7 @@ type Deuda = { id: string; nombre: string; tipo: string; cuota_mensual: number; 
 type Cajita = { id: string; nombre: string; monto_total: number; fecha_pago: string; emoji: string; actual: number };
 
 export default function DashboardPage() {
+  const fmt = useFmt();
   const [month, setMonth] = useState(currentMonth);
   const [year] = useState(currentYear);
   const [saving, setSaving] = useState(false);
@@ -129,10 +131,6 @@ export default function DashboardPage() {
     } finally {
       setSaving(false);
     }
-  }
-
-  function fmt(n: number) {
-    return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
   }
 
   function monthsUntilDate(fechaStr: string): number {

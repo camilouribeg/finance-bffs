@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useFmt } from "@/lib/useFmt";
 import { Archive, Lightbulb, Check, X, PartyPopper } from "lucide-react";
 
 type Cajita = {
@@ -33,6 +34,7 @@ function mesKey() {
 }
 
 export default function CajitasPage() {
+  const fmt = useFmt();
   const [cajitas, setCajitas] = useState<Cajita[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -72,9 +74,6 @@ export default function CajitasPage() {
     return Math.ceil(falta / monthsUntil(cajita.fecha_pago));
   }
 
-  function fmt(n: number) {
-    return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
-  }
 
   async function addCajita(e: React.FormEvent) {
     e.preventDefault();

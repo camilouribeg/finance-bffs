@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useFmt } from "@/lib/useFmt";
 import { PiggyBank, Target, Check, X, PartyPopper, Star, Plus } from "lucide-react";
 
 type Bolsillo = {
@@ -54,6 +55,7 @@ function Stars({ value, onChange }: { value: number; onChange?: (v: number) => v
 }
 
 export default function AhorroPage() {
+  const fmt = useFmt();
   const [bolsillos, setBolsillos] = useState<Bolsillo[]>([]);
   const [loading, setLoading] = useState(true);
   const [formType, setFormType] = useState<"fondos" | "metas" | null>(null);
@@ -111,10 +113,6 @@ export default function AhorroPage() {
     if (!b.fecha_meta || b.meta <= 0) return 0;
     const falta = Math.max(0, b.meta - b.actual);
     return Math.ceil(falta / monthsUntil(b.fecha_meta));
-  }
-
-  function fmt(n: number) {
-    return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
   }
 
   async function addFondo(e: React.FormEvent) {

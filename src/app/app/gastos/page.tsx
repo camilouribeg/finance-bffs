@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useFmt } from "@/lib/useFmt";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { Inbox, X, Plus, RefreshCw, ShoppingBag } from "lucide-react";
 
@@ -19,6 +20,7 @@ type GastoFijo = { id: string; nombre: string; valor: number };
 type Gasto = { id: string; fecha: string; categoria: string; descripcion: string; valor: number };
 
 export default function GastosPage() {
+  const fmt = useFmt();
   const [month, setMonth] = useState(new Date().getMonth());
   const [year] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
@@ -151,9 +153,6 @@ export default function GastosPage() {
     setGastos(gastos.filter(g => g.id !== id));
   }
 
-  function fmt(n: number) {
-    return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
-  }
 
   const filtered = gastos.filter(g => {
     const d = new Date(g.fecha + "T00:00:00");

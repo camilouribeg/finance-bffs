@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useFmt } from "@/lib/useFmt";
 import { CreditCard, Landmark, Home, Car, Users, FileText, Check, X, Plus, Lightbulb } from "lucide-react";
 
 type Deuda = { id: string; nombre: string; tipo: string; cuota_mensual: number; total_pendiente: number };
@@ -19,6 +20,7 @@ function TipoIcon({ tipo }: { tipo: string }) {
 }
 
 export default function DeudasPage() {
+  const fmt = useFmt();
   const [deudas, setDeudas] = useState<Deuda[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -45,9 +47,6 @@ export default function DeudasPage() {
     setLoading(false);
   }
 
-  function fmt(n: number) {
-    return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
-  }
 
   async function addDeuda(e: React.FormEvent) {
     e.preventDefault();
