@@ -64,7 +64,23 @@ const QUIZ = [
   },
 ];
 
+const PAISES = [
+  { nombre: "Colombia", emoji: "🇨🇴", divisa: "COP", locale: "es-CO" },
+  { nombre: "México", emoji: "🇲🇽", divisa: "MXN", locale: "es-MX" },
+  { nombre: "Argentina", emoji: "🇦🇷", divisa: "ARS", locale: "es-AR" },
+  { nombre: "Chile", emoji: "🇨🇱", divisa: "CLP", locale: "es-CL" },
+  { nombre: "Perú", emoji: "🇵🇪", divisa: "PEN", locale: "es-PE" },
+  { nombre: "Ecuador", emoji: "🇪🇨", divisa: "USD", locale: "es-EC" },
+  { nombre: "Venezuela", emoji: "🇻🇪", divisa: "USD", locale: "es-VE" },
+  { nombre: "España", emoji: "🇪🇸", divisa: "EUR", locale: "es-ES" },
+  { nombre: "Estados Unidos", emoji: "🇺🇸", divisa: "USD", locale: "en-US" },
+  { nombre: "Otro", emoji: "🌎", divisa: "USD", locale: "en-US" },
+];
+
+const RANGOS_EDAD = ["18-24", "25-34", "35-44", "45-54", "55+"];
+
 type Step =
+  | "perfil_inicial"
   | "welcome"
   | "ingresos"
   | "gastos"
@@ -110,7 +126,7 @@ const METHOD_INFO = {
 };
 
 export default function OnboardingPage() {
-  const [step, setStep] = useState<Step>("welcome");
+  const [step, setStep] = useState<Step>("perfil_inicial");
   const [userId, setUserId] = useState<string | null>(null);
   const [reinforcement, setReinforcement] = useState("");
   const reinforcementTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -165,6 +181,10 @@ export default function OnboardingPage() {
 
   const [saving, setSaving] = useState(false);
 
+  // Pre-onboarding profile
+  const [paisSeleccionado, setPaisSeleccionado] = useState<typeof PAISES[0] | null>(null);
+  const [edadRango, setEdadRango] = useState("");
+
   useEffect(() => {
     async function init() {
       const supabase = createClient();
@@ -194,7 +214,9 @@ export default function OnboardingPage() {
   ];
 
   function fmt(n: number) {
-    return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+    const loc = paisSeleccionado?.locale ?? "es-CO";
+    const cur = paisSeleccionado?.divisa ?? "COP";
+    return new Intl.NumberFormat(loc, { style: "currency", currency: cur, maximumFractionDigits: 0 }).format(n);
   }
 
   function showReinforcement(_msg: string, onContinue: () => void) {
@@ -384,6 +406,18 @@ export default function OnboardingPage() {
   const totalCajitasOBMensual = cajitasOB.reduce((s, c) => s + Math.ceil(c.monto_total / Math.max(1, c.meses)), 0);
   const capacidadNeta = capacidad - totalCajitasOBMensual;
 
+  const bolsitasUsadoMensual = (() => {
+    const fondos = bolsitasOB.filter(b => b.tipo === "fondos").reduce((s, b) => s + (b.cuota_mensual ?? 0), 0);
+    const metas = bolsitasOB.filter(b => b.tipo === "metas" && b.meta && b.fecha_meta).reduce((s, b) => {
+      const [fy, fm] = b.fecha_meta!.split("-").map(Number);
+      const now2 = new Date();
+      const meses = Math.max(1, (fy - now2.getFullYear()) * 12 + (fm - 1 - now2.getMonth()));
+      return s + Math.ceil((b.meta ?? 0) / meses);
+    }, 0);
+    return fondos + metas;
+  })();
+  const bolsitasDisponible = (selectedAhorro ?? 0) - bolsitasUsadoMensual;
+
   function addCajitaOB() {
     if (!cajNombre || !cajMonto) return;
     setCajitasOB([...cajitasOB, { id: Date.now().toString(), nombre: cajNombre, emoji: cajEmoji, monto_total: parseFloat(cajMonto), meses: parseInt(cajMeses) || 12, fecha_pago: cajFecha || undefined }]);
@@ -394,6 +428,17 @@ export default function OnboardingPage() {
     if (!bolNombre) return;
     if (bolTipo === "fondos" && !bolCuota) return;
     if (bolTipo === "metas" && (!bolMeta || !bolFecha)) return;
+    if (bolTipo === "fondos") {
+      const cuota = parseFloat(bolCuota);
+      if (cuota > bolsitasDisponible) return;
+    }
+    if (bolTipo === "metas") {
+      const [fy, fm] = bolFecha.split("-").map(Number);
+      const now2 = new Date();
+      const meses = Math.max(1, (fy - now2.getFullYear()) * 12 + (fm - 1 - now2.getMonth()));
+      const costo = Math.ceil(parseFloat(bolMeta) / meses);
+      if (costo > bolsitasDisponible) return;
+    }
     setBolsitasOB([...bolsitasOB, {
       id: Date.now().toString(), nombre: bolNombre, emoji: bolEmoji, tipo: bolTipo,
       cuota_mensual: bolTipo === "fondos" ? parseFloat(bolCuota) : undefined,
@@ -404,7 +449,8 @@ export default function OnboardingPage() {
     setBolNombre(""); setBolEmoji("👜"); setBolCuota(""); setBolMeta(""); setBolFecha(""); setBolImportancia(3);
   }
 
-  const stepNum = step === "welcome" ? 0
+  const stepNum = step === "perfil_inicial" ? 0
+    : step === "welcome" ? 0
     : step === "ingresos" ? 1
     : step === "gastos" ? 2
     : step === "amy_detective" ? 2
@@ -455,6 +501,80 @@ export default function OnboardingPage() {
         )}
 
         <div className="bg-white rounded-3xl shadow-xl border border-[#ffb8e0] overflow-hidden">
+
+          {/* ─── PERFIL INICIAL ─── */}
+          {step === "perfil_inicial" && (
+            <div className="p-6 sm:p-8">
+              <div className="text-center mb-6">
+                <div className="text-4xl mb-3">🌎</div>
+                <h2 className="text-xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
+                  Antes de empezar
+                </h2>
+                <p className="text-sm text-[#1a1a2e]/60 mt-1 leading-relaxed">
+                  Necesitamos dos datos rápidos para personalizar tu experiencia.
+                </p>
+              </div>
+
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-[#1a1a2e]/70 mb-2">¿De qué país eres?</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PAISES.map((p) => (
+                      <button
+                        key={p.nombre}
+                        type="button"
+                        onClick={() => setPaisSeleccionado(p)}
+                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                          paisSeleccionado?.nombre === p.nombre
+                            ? "bg-[#ec7fa9] text-white border-[#ec7fa9]"
+                            : "bg-white border-[#ffb8e0] text-[#1a1a2e]/70 hover:border-[#ec7fa9] hover:bg-[#ffedfa]"
+                        }`}
+                      >
+                        <span>{p.emoji}</span>
+                        <span className="truncate">{p.nombre}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-[#1a1a2e]/70 mb-2">¿En qué rango de edad estás?</label>
+                  <div className="flex flex-wrap gap-2">
+                    {RANGOS_EDAD.map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setEdadRango(r)}
+                        className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
+                          edadRango === r
+                            ? "bg-[#ec7fa9] text-white border-[#ec7fa9]"
+                            : "bg-white border-[#ffb8e0] text-[#1a1a2e]/70 hover:border-[#ec7fa9] hover:bg-[#ffedfa]"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                disabled={!paisSeleccionado}
+                onClick={() => {
+                  if (paisSeleccionado) localStorage.setItem("amy_pais", JSON.stringify(paisSeleccionado));
+                  if (edadRango) localStorage.setItem("amy_edad", edadRango);
+                  setStep("welcome");
+                }}
+                className="w-full mt-8 bg-[#ec7fa9] hover:bg-[#d96d97] disabled:opacity-40 text-white font-semibold py-3.5 rounded-xl transition-colors"
+              >
+                Continuar →
+              </button>
+              {!paisSeleccionado && (
+                <p className="text-xs text-center text-[#1a1a2e]/40 mt-2">Selecciona tu país para continuar</p>
+              )}
+            </div>
+          )}
 
           {/* ─── WELCOME ─── */}
           {step === "welcome" && (
@@ -1017,27 +1137,48 @@ export default function OnboardingPage() {
 
               {deudas.length > 0 && (
                 <div className="mb-5">
-                  <p className="text-xs font-semibold text-[#1a1a2e]/50 uppercase tracking-wide mb-3">
-                    Orden sugerido
-                  </p>
-                  <div className="space-y-2">
-                    {[...deudas].sort(METHOD_INFO[debtMethod].sort).map((d, i) => (
-                      <div key={d.id} className="flex items-center gap-3">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                          i === 0 ? "bg-[#ec7fa9] text-white" : "bg-[#ffedfa] text-[#ec7fa9]"
-                        }`}>
-                          {i + 1}
-                        </div>
-                        <div className="flex-1 bg-[#ffedfa] rounded-xl px-4 py-2.5 flex items-center justify-between">
-                          <span className="text-sm font-medium text-[#1a1a2e]">
-                            {d.nombre}
-                            {i === 0 && <span className="ml-2 text-xs text-[#ec7fa9]">← empieza aquí</span>}
-                          </span>
-                          <span className="text-sm font-bold text-[#1a1a2e]">{fmt(d.total_pendiente)}</span>
-                        </div>
+                  {debtMethod === "balanced" ? (
+                    <>
+                      <p className="text-xs font-semibold text-[#1a1a2e]/50 uppercase tracking-wide mb-3">
+                        Tus deudas
+                      </p>
+                      <div className="space-y-2 mb-3">
+                        {deudas.map((d) => (
+                          <div key={d.id} className="flex-1 bg-[#ffedfa] rounded-xl px-4 py-2.5 flex items-center justify-between">
+                            <span className="text-sm font-medium text-[#1a1a2e]">{d.nombre}</span>
+                            <span className="text-sm font-bold text-[#1a1a2e]">{fmt(d.total_pendiente)}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                      <p className="text-xs text-[#ec7fa9]/80 bg-[#ffedfa] rounded-xl px-4 py-2.5 text-center">
+                        Con esta metodología todas avanzan al mismo tiempo ✨
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-xs font-semibold text-[#1a1a2e]/50 uppercase tracking-wide mb-3">
+                        Orden sugerido
+                      </p>
+                      <div className="space-y-2">
+                        {[...deudas].sort(METHOD_INFO[debtMethod].sort).map((d, i) => (
+                          <div key={d.id} className="flex items-center gap-3">
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                              i === 0 ? "bg-[#ec7fa9] text-white" : "bg-[#ffedfa] text-[#ec7fa9]"
+                            }`}>
+                              {i + 1}
+                            </div>
+                            <div className="flex-1 bg-[#ffedfa] rounded-xl px-4 py-2.5 flex items-center justify-between">
+                              <span className="text-sm font-medium text-[#1a1a2e]">
+                                {d.nombre}
+                                {i === 0 && <span className="ml-2 text-xs text-[#ec7fa9]">← empieza aquí</span>}
+                              </span>
+                              <span className="text-sm font-bold text-[#1a1a2e]">{fmt(d.total_pendiente)}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -1255,23 +1396,12 @@ export default function OnboardingPage() {
               <p className="text-sm text-[#1a1a2e]/60 mb-3 leading-relaxed">
                 Ahorro mensual: <strong className="text-[#ec7fa9]">{fmt(selectedAhorro ?? 0)}/mes</strong>. Distribúyelo como quieras.
               </p>
-              {(() => {
-                const usadoFondos = bolsitasOB.filter(b => b.tipo === "fondos").reduce((s, b) => s + (b.cuota_mensual ?? 0), 0);
-                const usadoMetas = bolsitasOB.filter(b => b.tipo === "metas" && b.meta && b.fecha_meta).reduce((s, b) => {
-                  const [fy, fm] = b.fecha_meta!.split("-").map(Number);
-                  const now2 = new Date();
-                  const meses = Math.max(1, (fy - now2.getFullYear()) * 12 + (fm - 1 - now2.getMonth()));
-                  return s + Math.ceil((b.meta ?? 0) / meses);
-                }, 0);
-                const usado = usadoFondos + usadoMetas;
-                const disponible = (selectedAhorro ?? 0) - usado;
-                return (
-                  <div className={`rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between text-sm ${disponible < 0 ? "bg-red-50 border border-red-200" : "bg-[#ec7fa9]/10 border border-[#ec7fa9]/30"}`}>
-                    <span className={disponible < 0 ? "text-red-500 font-medium" : "text-[#1a1a2e]/60"}>Dinero disponible para repartir</span>
-                    <span className={`font-bold ${disponible < 0 ? "text-red-500" : "text-[#ec7fa9]"}`}>{fmt(disponible)}/mes</span>
-                  </div>
-                );
-              })()}
+              <div className={`rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between text-sm ${bolsitasDisponible < 0 ? "bg-red-50 border border-red-200" : bolsitasDisponible === 0 ? "bg-orange-50 border border-orange-200" : "bg-[#ec7fa9]/10 border border-[#ec7fa9]/30"}`}>
+                <span className={bolsitasDisponible < 0 ? "text-red-500 font-medium" : bolsitasDisponible === 0 ? "text-orange-500 font-medium" : "text-[#1a1a2e]/60"}>
+                  {bolsitasDisponible <= 0 ? "¡Dinero completamente repartido!" : "Dinero disponible para repartir"}
+                </span>
+                <span className={`font-bold ${bolsitasDisponible < 0 ? "text-red-500" : bolsitasDisponible === 0 ? "text-orange-500" : "text-[#ec7fa9]"}`}>{fmt(bolsitasDisponible)}/mes</span>
+              </div>
 
               {bolsitasOB.length > 0 && (
                 <div className="space-y-2 mb-4">
@@ -1292,7 +1422,14 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              <div className="bg-[#ffedfa] rounded-2xl p-4 mb-4">
+              {bolsitasDisponible <= 0 && (
+                <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 mb-4 text-center">
+                  <p className="text-sm text-orange-600 font-medium">Ya repartiste todo tu dinero de ahorro</p>
+                  <p className="text-xs text-orange-500 mt-0.5">Elimina una bolsita para agregar otra, o continúa así.</p>
+                </div>
+              )}
+
+              <div className={`bg-[#ffedfa] rounded-2xl p-4 mb-4 ${bolsitasDisponible <= 0 ? "opacity-50 pointer-events-none" : ""}`}>
                 <div className="flex gap-2 mb-3">
                   <button type="button" onClick={() => setBolTipo("fondos")}
                     className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${bolTipo === "fondos" ? "bg-[#ec7fa9] text-white" : "bg-white border border-[#ffb8e0] text-[#1a1a2e]/60"}`}>
@@ -1327,8 +1464,15 @@ export default function OnboardingPage() {
                 </div>
 
                 {bolTipo === "fondos" && (
-                  <input type="number" value={bolCuota} onChange={e => setBolCuota(e.target.value)}
-                    placeholder="¿Cuánto apartas al mes?" className={`${inputCls} mb-2`} />
+                  <>
+                    <input type="number" value={bolCuota} onChange={e => setBolCuota(e.target.value)}
+                      placeholder={`¿Cuánto apartas al mes? (máx ${fmt(bolsitasDisponible)})`}
+                      max={bolsitasDisponible}
+                      className={`${inputCls} mb-1 ${bolCuota && parseFloat(bolCuota) > bolsitasDisponible ? "border-red-400 focus:ring-red-300 focus:border-red-400" : ""}`} />
+                    {bolCuota && parseFloat(bolCuota) > bolsitasDisponible && (
+                      <p className="text-xs text-red-500 mb-2">Excede el dinero disponible. Máximo: {fmt(bolsitasDisponible)}/mes</p>
+                    )}
+                  </>
                 )}
                 {bolTipo === "metas" && (
                   <div className="grid grid-cols-2 gap-2 mb-2">
@@ -1348,7 +1492,11 @@ export default function OnboardingPage() {
                 </div>
 
                 <button type="button" onClick={addBolsitaOB}
-                  disabled={!bolNombre || (bolTipo === "fondos" && !bolCuota) || (bolTipo === "metas" && (!bolMeta || !bolFecha))}
+                  disabled={
+                    !bolNombre ||
+                    (bolTipo === "fondos" && (!bolCuota || parseFloat(bolCuota) > bolsitasDisponible)) ||
+                    (bolTipo === "metas" && (!bolMeta || !bolFecha))
+                  }
                   className="w-full border border-[#ec7fa9] text-[#ec7fa9] font-semibold py-2 rounded-xl text-sm hover:bg-white disabled:opacity-40 transition-colors">
                   + Agregar bolsita
                 </button>

@@ -142,8 +142,6 @@ export default function AppSidebar({
         </div>
       )}
 
-      {/* Mobile top padding */}
-      <div className="md:hidden h-14 w-full" />
     </>
   );
 }

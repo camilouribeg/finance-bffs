@@ -39,7 +39,7 @@ export default async function AppLayout({
   return (
     <div className="flex min-h-screen bg-[#ffedfa]">
       <AppSidebar userName={profile?.full_name ?? user.email ?? ""} isActive={isActive} />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto pt-14 md:pt-0">
         {banner && (
           <div className={`px-6 py-3 flex items-center justify-between border-b ${
             banner.type === "trial-ending"
