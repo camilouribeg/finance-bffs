@@ -14,6 +14,7 @@ import {
   Pencil,
   X,
   Info,
+  Box,
 } from "lucide-react";
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -187,13 +188,17 @@ export default function DashboardPage() {
 
       {/* Hero metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className={`rounded-2xl p-6 border-2 ${disponible >= 0 ? "bg-white border-[#ec7fa9]" : "bg-red-50 border-red-200"}`}>
+        <div className={`rounded-2xl p-6 border-2 ${loading ? "bg-white border-[#ffb8e0]" : disponible >= 0 ? "bg-white border-[#ec7fa9]" : "bg-red-50 border-red-200"}`}>
           <p className="text-xs font-semibold uppercase tracking-widest mb-1">
-            <span className={disponible >= 0 ? "text-[#ec7fa9]" : "text-red-400"}>Dinero disponible</span>
+            <span className={loading ? "text-[#1a1a2e]/30" : disponible >= 0 ? "text-[#ec7fa9]" : "text-red-400"}>Dinero disponible</span>
           </p>
-          <p className={`text-3xl font-bold mt-1 ${disponible >= 0 ? "text-[#1a1a2e]" : "text-red-500"}`}>{fmt(disponible)}</p>
+          {loading ? (
+            <div className="h-9 w-36 bg-[#ffb8e0] rounded-xl animate-pulse mt-1" />
+          ) : (
+            <p className={`text-3xl font-bold mt-1 ${disponible >= 0 ? "text-[#1a1a2e]" : "text-red-500"}`}>{fmt(disponible)}</p>
+          )}
           <p className="text-xs text-[#1a1a2e]/40 mt-2">Ingresos − GF − Cajitas − Bolsitas − Deudas</p>
-          {totalIngresos > 0 && (
+          {!loading && totalIngresos > 0 && (
             <div className="mt-3 h-1.5 bg-[#ffb8e0] rounded-full overflow-hidden">
               <div className={`h-full rounded-full transition-all ${disponible >= 0 ? "bg-[#ec7fa9]" : "bg-red-400"}`}
                 style={{ width: `${Math.min(Math.max(pctDisponible, 0), 100)}%` }} />
@@ -203,23 +208,33 @@ export default function DashboardPage() {
 
         <div className="bg-white rounded-2xl border-2 border-[#ffb8e0] p-6">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#ec7fa9] mb-1 flex items-center gap-1.5"><PiggyBank size={13} />Total ahorro</p>
-          <p className="text-3xl font-bold text-[#1a1a2e] mt-1">{fmt(totalAhorro)}</p>
-          {totalMetaAhorro > 0 ? (
+          {loading ? (
+            <div className="h-9 w-28 bg-[#ffb8e0] rounded-xl animate-pulse mt-1" />
+          ) : (
+            <p className="text-3xl font-bold text-[#1a1a2e] mt-1">{fmt(totalAhorro)}</p>
+          )}
+          {!loading && (totalMetaAhorro > 0 ? (
             <>
               <p className="text-xs text-[#1a1a2e]/40 mt-2">Meta total: {fmt(totalMetaAhorro)}</p>
               <div className="mt-3 h-1.5 bg-[#ffb8e0] rounded-full overflow-hidden">
                 <div className="h-full bg-[#ec7fa9] rounded-full transition-all" style={{ width: `${Math.min((totalAhorro / totalMetaAhorro) * 100, 100)}%` }} />
               </div>
             </>
-          ) : <p className="text-xs text-[#1a1a2e]/40 mt-2">Sin bolsillos de ahorro aún</p>}
+          ) : <p className="text-xs text-[#1a1a2e]/40 mt-2">Sin bolsillos de ahorro aún</p>)}
         </div>
 
         <div className="bg-white rounded-2xl border-2 border-[#ffb8e0] p-6">
           <p className="text-xs font-semibold uppercase tracking-widest text-[#ec7fa9] mb-1 flex items-center gap-1.5"><CreditCard size={13} />Deudas pendientes</p>
-          <p className="text-3xl font-bold text-[#1a1a2e] mt-1">{fmt(totalDeudaPendiente)}</p>
-          <p className="text-xs text-[#1a1a2e]/40 mt-2">
-            {deudas.length > 0 ? `${deudas.length} deuda${deudas.length !== 1 ? "s" : ""} · ${fmt(totalCuotas)}/mes` : "Sin deudas registradas"}
-          </p>
+          {loading ? (
+            <div className="h-9 w-32 bg-[#ffb8e0] rounded-xl animate-pulse mt-1" />
+          ) : (
+            <p className="text-3xl font-bold text-[#1a1a2e] mt-1">{fmt(totalDeudaPendiente)}</p>
+          )}
+          {!loading && (
+            <p className="text-xs text-[#1a1a2e]/40 mt-2">
+              {deudas.length > 0 ? `${deudas.length} deuda${deudas.length !== 1 ? "s" : ""} · ${fmt(totalCuotas)}/mes` : "Sin deudas registradas"}
+            </p>
+          )}
         </div>
       </div>
 
@@ -359,6 +374,54 @@ export default function DashboardPage() {
               <div className="flex justify-between items-center bg-[#ffedfa] rounded-xl px-5 py-4">
                 <span className="text-sm text-[#1a1a2e]/60">Total registrado</span>
                 <span className="text-2xl font-bold text-red-400">{fmt(totalGastosReales)}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Cajitas — read-only, link to section */}
+          <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="font-semibold text-[#1a1a2e] text-lg flex items-center gap-2"><Box size={18} className="text-[#ec7fa9]" />Cajitas</h2>
+                <p className="text-xs text-[#1a1a2e]/40 mt-0.5">Reserva mensual: <span className="font-semibold text-[#ec7fa9]">{fmt(totalCajitasMensual)}/mes</span></p>
+              </div>
+              <Link href="/app/cajitas" className="text-xs text-[#ec7fa9] border border-[#ffb8e0] rounded-full px-3 py-1.5 hover:bg-[#ffedfa] transition-colors font-medium">
+                Gestionar →
+              </Link>
+            </div>
+            {cajitas.length === 0 ? (
+              <div className="text-center py-6 bg-[#ffedfa] rounded-xl">
+                <p className="text-sm text-[#1a1a2e]/40">Sin cajitas creadas</p>
+                <Link href="/app/cajitas" className="text-xs text-[#ec7fa9] font-medium mt-1 inline-block hover:underline">Crear cajita →</Link>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {cajitas.map((c) => {
+                  const falta = Math.max(0, c.monto_total - c.actual);
+                  const pct = c.monto_total > 0 ? Math.min((c.actual / c.monto_total) * 100, 100) : 0;
+                  const cuotaMes = Math.ceil(falta / monthsUntilDate(c.fecha_pago));
+                  return (
+                    <div key={c.id} className="bg-[#ffedfa] rounded-2xl px-4 py-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{c.emoji}</span>
+                          <p className="text-sm font-semibold text-[#1a1a2e]">{c.nombre}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-[#1a1a2e]/40">reserva/mes</p>
+                          <p className="text-sm font-bold text-[#ec7fa9]">{fmt(cuotaMes)}</p>
+                        </div>
+                      </div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-[#1a1a2e]/60">{fmt(c.actual)} ahorrado</span>
+                        <span className="font-semibold text-[#1a1a2e]">{pct.toFixed(0)}% · meta {fmt(c.monto_total)}</span>
+                      </div>
+                      <div className="h-1.5 bg-[#ffb8e0] rounded-full overflow-hidden">
+                        <div className="h-full bg-[#ec7fa9] rounded-full transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
