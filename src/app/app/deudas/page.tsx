@@ -151,7 +151,13 @@ export default function DeudasPage() {
       )}
 
       {loading ? (
-        <div className="text-center py-20 text-[#1a1a2e]/30">Cargando...</div>
+        <div className="flex flex-col gap-4 animate-pulse">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="h-24 bg-white rounded-2xl border border-[#ffb8e0]" />
+            <div className="h-24 bg-white rounded-2xl border border-[#ffb8e0]" />
+          </div>
+          {[1,2,3].map(i => <div key={i} className="h-28 bg-white rounded-2xl border border-[#ffb8e0]" />)}
+        </div>
       ) : deudas.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-2xl border border-[#ffb8e0]">
           <CreditCard size={36} className="mx-auto mb-3 text-[#ec7fa9] opacity-40" />

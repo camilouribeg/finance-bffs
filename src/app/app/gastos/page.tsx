@@ -228,6 +228,19 @@ export default function GastosPage() {
 
   const inputCls = "border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30";
 
+  function fmtFecha(iso: string): string {
+    const today = new Date();
+    const d = new Date(iso + "T00:00:00");
+    const todayStr = today.toISOString().split("T")[0];
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split("T")[0];
+    if (iso === todayStr) return "hoy";
+    if (iso === yesterdayStr) return "ayer";
+    const sameYear = d.getFullYear() === today.getFullYear();
+    return d.toLocaleDateString("es-CO", { day: "numeric", month: "short", ...(sameYear ? {} : { year: "numeric" }) });
+  }
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -264,7 +277,19 @@ export default function GastosPage() {
       )}
 
       {loading ? (
-        <div className="text-center py-20 text-[#1a1a2e]/30">Cargando...</div>
+        <div className="flex flex-col gap-6 animate-pulse">
+          <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
+            <div className="h-4 w-32 bg-[#ffb8e0] rounded mb-3" />
+            {[1,2,3].map(i => <div key={i} className="h-10 bg-[#ffedfa] rounded-xl mb-2" />)}
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            {[1,2,3].map(i => <div key={i} className="h-20 bg-white rounded-2xl border border-[#ffb8e0]" />)}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="h-64 bg-white rounded-2xl border border-[#ffb8e0]" />
+            <div className="h-64 bg-white rounded-2xl border border-[#ffb8e0]" />
+          </div>
+        </div>
       ) : (
         <div className="flex flex-col gap-10">
 
@@ -464,7 +489,7 @@ export default function GastosPage() {
                           <span className="text-base flex-shrink-0">{CATEGORY_EMOJIS[g.categoria] || "📦"}</span>
                           <div className="min-w-0">
                             <p className="text-sm text-[#1a1a2e] truncate">{g.descripcion}</p>
-                            <p className="text-xs text-[#1a1a2e]/40">{g.fecha}</p>
+                            <p className="text-xs text-[#1a1a2e]/40">{fmtFecha(g.fecha)}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0 ml-3">

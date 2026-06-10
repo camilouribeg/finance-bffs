@@ -246,7 +246,11 @@ export default function DashboardPage() {
         <SummaryCard label="% disponible" value={`${Math.max(pctDisponible, 0).toFixed(0)}%`} color={disponible >= 0 ? "blue" : "red"} icon={<BarChart3 size={16} />} />
       </div>
 
-      {loading ? <div className="text-center py-20 text-[#1a1a2e]/30">Cargando...</div> : (
+      {loading ? (
+        <div className="flex flex-col gap-6 animate-pulse">
+          {[1,2,3,4,5].map(i => <div key={i} className="h-32 bg-white rounded-2xl border border-[#ffb8e0]" />)}
+        </div>
+      ) : (
         <div className="flex flex-col gap-6">
 
           {/* Ingresos — read-only with inline edit */}

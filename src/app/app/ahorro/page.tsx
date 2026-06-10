@@ -330,7 +330,11 @@ export default function AhorroPage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-20 text-[#1a1a2e]/30">Cargando...</div>
+        <div className="flex flex-col gap-6 animate-pulse">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1,2,3,4].map(i => <div key={i} className="h-44 bg-white rounded-2xl border border-[#ffb8e0]" />)}
+          </div>
+        </div>
       ) : (
         <>
           {/* ── AHORRO CONTINUO ── */}

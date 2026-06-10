@@ -269,7 +269,9 @@ export default function CajitasPage() {
       )}
 
       {loading ? (
-        <div className="text-center py-20 text-[#1a1a2e]/30">Cargando...</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-pulse">
+          {[1,2,3,4].map(i => <div key={i} className="h-48 bg-white rounded-2xl border border-[#ffb8e0]" />)}
+        </div>
       ) : cajitas.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-2xl border border-[#ffb8e0]">
           <Archive size={36} className="mx-auto mb-3 text-[#ec7fa9] opacity-40" />
