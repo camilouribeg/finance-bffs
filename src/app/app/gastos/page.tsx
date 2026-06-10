@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { Inbox, X, Plus, RefreshCw, ShoppingBag } from "lucide-react";
+import { Inbox, X, Plus, RefreshCw, ShoppingBag, Mic, Square } from "lucide-react";
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
@@ -39,11 +39,72 @@ export default function GastosPage() {
   const [fecha, setFecha] = useState("");
   const [adding, setAdding] = useState(false);
 
+  // Voice
+  const [recording, setRecording] = useState(false);
+  const [parsing, setParsing] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [hasVoiceSupport, setHasVoiceSupport] = useState(false);
+  const recognitionRef = useRef<{ stop: () => void } | null>(null);
+
   // Budget
   const [presupuestoDisponible, setPresupuestoDisponible] = useState<number | null>(null);
   const [dashboardId, setDashboardId] = useState<string | null>(null);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const win = window as any;
+    setHasVoiceSupport(!!(win.SpeechRecognition || win.webkitSpeechRecognition));
+  }, []);
+
+  function startVoice() {
+    setVoiceError(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const win = window as any;
+    const SpeechRecAPI = win.SpeechRecognition || win.webkitSpeechRecognition;
+    if (!SpeechRecAPI) return;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rec = new SpeechRecAPI() as any;
+    rec.lang = "es-CO";
+    rec.continuous = false;
+    rec.interimResults = false;
+    recognitionRef.current = rec as { stop: () => void };
+
+    rec.onstart = () => setRecording(true);
+    rec.onend = () => setRecording(false);
+    rec.onerror = () => {
+      setRecording(false);
+      setVoiceError("No pude escucharte, intenta de nuevo");
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rec.onresult = async (event: any) => {
+      const transcript = event.results[0][0].transcript as string;
+      setRecording(false);
+      setParsing(true);
+      setVoiceError(null);
+      try {
+        const res = await fetch("/api/gastos/parse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ transcription: transcript }),
+        });
+        const data = await res.json() as { categoria?: string; descripcion?: string; valor?: number };
+        if (data.categoria) setCategoria(data.categoria);
+        if (data.descripcion) setDescripcion(data.descripcion);
+        if (data.valor) setValor(String(data.valor));
+      } catch {
+        setVoiceError("No pude entender el gasto, escríbelo manualmente");
+      } finally {
+        setParsing(false);
+      }
+    };
+    rec.start();
+  }
+
+  function stopVoice() {
+    recognitionRef.current?.stop();
+  }
 
   async function load() {
     const supabase = createClient();
@@ -289,6 +350,31 @@ export default function GastosPage() {
             {/* Quick add */}
             <form onSubmit={addGasto} className="bg-white rounded-2xl border border-[#ffb8e0] p-5 mb-5">
               <p className="text-xs font-semibold text-[#1a1a2e]/50 uppercase tracking-wide mb-3">Registrar gasto</p>
+
+              {/* Voice button */}
+              {hasVoiceSupport && (
+                <div className="mb-3">
+                  {!recording && !parsing && (
+                    <button type="button" onClick={startVoice}
+                      className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-[#ffb8e0] hover:border-[#ec7fa9] bg-[#ffedfa] hover:bg-white rounded-xl py-3 text-sm text-[#ec7fa9] font-medium transition-all">
+                      <Mic size={15} /> Hablarle a Amy
+                    </button>
+                  )}
+                  {recording && (
+                    <button type="button" onClick={stopVoice}
+                      className="w-full flex items-center justify-center gap-2 bg-red-50 border-2 border-red-300 rounded-xl py-3 text-sm text-red-500 font-semibold animate-pulse">
+                      <Square size={13} fill="currentColor" /> Escuchando... toca para detener
+                    </button>
+                  )}
+                  {parsing && (
+                    <div className="w-full flex items-center justify-center gap-2 bg-[#ffedfa] border border-[#ffb8e0] rounded-xl py-3 text-sm text-[#ec7fa9]">
+                      ✨ Amy está analizando...
+                    </div>
+                  )}
+                  {voiceError && <p className="text-xs text-red-400 mt-1.5 text-center">{voiceError}</p>}
+                </div>
+              )}
+
               <div className="flex flex-col sm:flex-row gap-2">
                 <select value={categoria} onChange={e => setCategoria(e.target.value)}
                   className={`${inputCls} sm:w-44`}>
