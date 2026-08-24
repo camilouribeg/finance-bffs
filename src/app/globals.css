@@ -38,3 +38,25 @@ body {
 .blob {
   border-radius: 60% 40% 70% 30% / 50% 60% 40% 70%;
 }
+
+/* Navegación suave entre secciones de la landing */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Las animaciones nunca deben estorbar: si la usuaria pidió menos
+   movimiento en su sistema, todo queda estático y visible. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-float,
+  .animate-fade-in-up,
+  .animate-pulse {
+    animation: none !important;
+  }
+  .animate-fade-in-up {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

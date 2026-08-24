@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import AmyMockup from "@/components/landing/AmyMockup";
 
 const NAV_LINKS = [
   { label: "¿Para quién?", href: "#para-quien" },
@@ -121,7 +122,7 @@ export default function LandingPage() {
             </a>
             <a href="/register"
               className="inline-flex items-center gap-2 bg-[#ec7fa9] hover:bg-[#d96d97] text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-colors shadow-sm">
-              Regístrate gratis
+              Empezar gratis
             </a>
           </div>
 
@@ -145,60 +146,81 @@ export default function LandingPage() {
               Iniciar sesión
             </a>
             <a href="/register" className="bg-[#ec7fa9] text-white text-sm font-semibold px-5 py-2.5 rounded-full text-center" onClick={() => setMenuOpen(false)}>
-              Regístrate gratis
+              Empezar gratis
             </a>
           </div>
         )}
       </nav>
 
       {/* ───── HERO ───── */}
-      <section className="relative overflow-hidden pt-20 pb-24 px-6">
+      <section className="relative overflow-hidden pt-16 pb-28 lg:pt-20 lg:pb-32 px-6">
         <div className="absolute -top-20 -right-20 w-80 h-80 bg-[#ffb8e0] opacity-50 blob" aria-hidden="true" />
         <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-[#ffb8e0] opacity-30 blob" aria-hidden="true" />
 
-        <div className="relative max-w-3xl mx-auto text-center">
-          <a
-            href="#precios"
-            className="inline-flex items-center gap-2 bg-white border border-[#ffb8e0] text-[#ec7fa9] text-sm font-medium px-4 py-1.5 rounded-full mb-8 hover:bg-[#ffedfa] transition-colors cursor-pointer"
-          >
-            <span className="w-2 h-2 bg-[#ec7fa9] rounded-full inline-block animate-pulse" />
-            Preventa abierta — plazas limitadas · Ver beneficios →
-          </a>
+        <div className="relative max-w-6xl mx-auto grid lg:grid-cols-2 gap-14 lg:gap-12 items-center">
 
-          <h1 className="text-5xl md:text-6xl font-bold text-[#1a1a2e] leading-tight mb-5" style={{ fontFamily: "var(--font-playfair)" }}>
-            Entender tu dinero no tiene que ser{" "}
-            <span className="italic text-[#ec7fa9]">complicado.</span>
-          </h1>
-
-          <p className="text-lg text-[#1a1a2e]/60 max-w-xl mx-auto mb-3 leading-relaxed">
-            Te entra dinero… pero no sabes en qué se va. Y eso cansa.
-          </p>
-          <p className="text-base text-[#1a1a2e]/80 max-w-xl mx-auto mb-10 font-medium">
-            No necesitas hacerlo perfecto ni sola.<br />
-            Solo necesitas empezar.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {/* ── Columna de mensaje ── */}
+          <div className="text-center lg:text-left">
             <a
-              href="/register"
-              className="inline-flex items-center justify-center gap-2 bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold text-base px-8 py-4 rounded-full transition-colors shadow-lg"
+              href="#precios"
+              className="inline-flex items-center gap-2 bg-white border border-[#ffb8e0] text-[#ec7fa9] text-sm font-medium px-4 py-1.5 rounded-full mb-7 hover:bg-[#ffedfa] transition-colors cursor-pointer animate-fade-in-up opacity-0 [animation-delay:60ms]"
             >
-              Regístrate gratis
+              <span className="w-2 h-2 bg-[#ec7fa9] rounded-full inline-block animate-pulse" />
+              Preventa abierta — plazas limitadas →
             </a>
-            <a
-              href="/login"
-              className="inline-flex items-center justify-center gap-2 bg-white hover:bg-[#ffedfa] text-[#ec7fa9] font-semibold text-base px-8 py-4 rounded-full border border-[#ffb8e0] transition-colors"
+
+            <h1
+              className="text-5xl md:text-6xl font-bold text-[#1a1a2e] leading-tight mb-5 animate-fade-in-up opacity-0 [animation-delay:140ms]"
+              style={{ fontFamily: "var(--font-playfair)" }}
             >
-              Ya tengo cuenta
-            </a>
+              Entender tu dinero no tiene que ser{" "}
+              <span className="italic text-[#ec7fa9]">complicado.</span>
+            </h1>
+
+            {/* La emoción va antes que la explicación funcional */}
+            <p className="text-lg text-[#1a1a2e]/60 mb-3 leading-relaxed lg:max-w-lg animate-fade-in-up opacity-0 [animation-delay:220ms]">
+              Te entra dinero… pero no sabes en qué se va. Y eso cansa.
+            </p>
+            <p className="text-base text-[#1a1a2e]/80 mb-3 font-medium lg:max-w-lg animate-fade-in-up opacity-0 [animation-delay:280ms]">
+              No necesitas hacerlo perfecto ni sola.<br />
+              Solo necesitas empezar.
+            </p>
+            <p className="text-base text-[#1a1a2e]/60 mb-9 lg:max-w-lg leading-relaxed animate-fade-in-up opacity-0 [animation-delay:340ms]">
+              Amy te guía paso a paso, mes a mes, hasta que ver tus números deje de darte susto.
+            </p>
+
+            {/* CTA principal dominante · secundario deliberadamente discreto */}
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-center lg:justify-start animate-fade-in-up opacity-0 [animation-delay:420ms]">
+              <a
+                href="/register"
+                className="inline-flex items-center justify-center gap-2 bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold text-lg px-9 py-4.5 rounded-full transition-all shadow-lg shadow-[#ec7fa9]/30 hover:shadow-xl hover:shadow-[#ec7fa9]/40 hover:-translate-y-0.5"
+              >
+                Empezar gratis
+              </a>
+              <a
+                href="/login"
+                className="inline-flex items-center justify-center text-[#1a1a2e]/50 hover:text-[#ec7fa9] font-medium text-sm px-4 py-3 transition-colors"
+              >
+                Ya tengo cuenta
+              </a>
+            </div>
+
+            <p className="mt-4 text-sm text-[#1a1a2e]/45 animate-fade-in-up opacity-0 [animation-delay:480ms]">
+              40 días gratis · Sin tarjeta para empezar
+            </p>
+
+            <p className="mt-7 text-sm text-[#1a1a2e]/40 animate-fade-in-up opacity-0 [animation-delay:540ms]">
+              by{" "}
+              <a href="https://www.instagram.com/financebestfriends" target="_blank" rel="noopener noreferrer" className="text-[#ec7fa9] font-medium hover:underline">
+                @financebestfriends
+              </a>
+            </p>
           </div>
 
-          <p className="mt-8 text-sm text-[#1a1a2e]/40">
-            by{" "}
-            <a href="https://www.instagram.com/financebestfriends" target="_blank" rel="noopener noreferrer" className="text-[#ec7fa9] font-medium hover:underline">
-              @financebestfriends
-            </a>
-          </p>
+          {/* ── Columna de producto ── */}
+          <div className="animate-fade-in-up opacity-0 [animation-delay:300ms]">
+            <AmyMockup />
+          </div>
         </div>
       </section>
 
