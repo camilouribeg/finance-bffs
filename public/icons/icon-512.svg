@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background fills edge-to-edge for maskable (Android adaptive icons) -->
+  <rect width="512" height="512" fill="#ec7fa9"/>
+  <!-- Soft inner glow -->
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="#e8729e"/>
+  <!-- Letter A in white serif -->
+  <text
+    x="256"
+    y="348"
+    text-anchor="middle"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="310"
+    font-weight="700"
+    fill="white"
+    opacity="0.97"
+  >A</text>
+  <!-- Tiny heart below the A -->
+  <text
+    x="256"
+    y="436"
+    text-anchor="middle"
+    font-size="72"
+    fill="white"
+    opacity="0.70"
+  >♥</text>
+</svg>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import AmyMockup from "@/components/landing/AmyMockup";
 
 const NAV_LINKS = [
   { label: "¿Para quién?", href: "#para-quien" },
@@ -34,22 +35,22 @@ const HOW_STEPS = [
   {
     num: "02",
     title: "Registras tu mes",
-    desc: "Anotas tus ingresos y lo que gastas. Finly hace los cálculos por ti. Además, te muestra cómo ahorrar mejor y, si tienes deudas, cómo empezar a salir de ellas.",
+    desc: "Anotas tus ingresos y lo que gastas. Amy hace los cálculos por ti. Además, te muestra cómo ahorrar mejor y, si tienes deudas, cómo empezar a salir de ellas.",
   },
   {
     num: "03",
     title: "Ves tu dinero claro",
-    desc: "Finly te muestra exactamente a dónde se va tu dinero y qué podrías ajustar.",
+    desc: "Amy te muestra exactamente a dónde se va tu dinero y qué podrías ajustar.",
   },
   {
     num: "04",
     title: "Empiezas el nuevo mes con claridad",
-    desc: "Al inicio de cada mes, Finly te muestra cómo terminó el anterior y te deja todo listo para el siguiente, con saldos actualizados.",
+    desc: "Al inicio de cada mes, Amy te muestra cómo terminó el anterior y te deja todo listo para el siguiente, con saldos actualizados.",
   },
 ];
 
 const PRESALE_PERKS = [
-  "Tu tarifa inicial se mantiene para siempre — aunque los precios suban, la tuya no",
+  "Tu precio de hoy se queda así para siempre — aunque mañana suba, tú sigues pagando lo mismo",
   "Acceso prioritario a nuevas funciones antes que cualquier otra persona",
   "Comunidad privada de Finance BFFs 💕",
   "Soporte directo con el equipo",
@@ -74,7 +75,7 @@ const PLANS = [
     features: ["Todo lo incluido en el acceso de 1 mes", "Historial de meses anteriores", "Cancela cuando quieras", "Actualizaciones incluidas"],
     cta: "Elegir mensual",
     highlight: true,
-    presale: "Tu tarifa se mantiene en preventa",
+    presale: "🔒 Tu precio se bloquea para siempre",
   },
   {
     name: "Plan anual",
@@ -99,7 +100,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <a href="#" className="flex items-center gap-2">
             <span className="text-2xl font-bold text-[#ec7fa9]" style={{ fontFamily: "var(--font-playfair)" }}>
-              Finly
+              Amy
             </span>
             <span className="text-xs text-[#1a1a2e]/40 font-medium mt-1">by Finance BFFs 💕</span>
           </a>
@@ -121,7 +122,7 @@ export default function LandingPage() {
             </a>
             <a href="/register"
               className="inline-flex items-center gap-2 bg-[#ec7fa9] hover:bg-[#d96d97] text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-colors shadow-sm">
-              Regístrate gratis
+              Empezar gratis
             </a>
           </div>
 
@@ -145,60 +146,81 @@ export default function LandingPage() {
               Iniciar sesión
             </a>
             <a href="/register" className="bg-[#ec7fa9] text-white text-sm font-semibold px-5 py-2.5 rounded-full text-center" onClick={() => setMenuOpen(false)}>
-              Regístrate gratis
+              Empezar gratis
             </a>
           </div>
         )}
       </nav>
 
       {/* ───── HERO ───── */}
-      <section className="relative overflow-hidden pt-20 pb-24 px-6">
+      <section className="relative overflow-hidden pt-16 pb-28 lg:pt-20 lg:pb-32 px-6">
         <div className="absolute -top-20 -right-20 w-80 h-80 bg-[#ffb8e0] opacity-50 blob" aria-hidden="true" />
         <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-[#ffb8e0] opacity-30 blob" aria-hidden="true" />
 
-        <div className="relative max-w-3xl mx-auto text-center">
-          <a
-            href="#precios"
-            className="inline-flex items-center gap-2 bg-white border border-[#ffb8e0] text-[#ec7fa9] text-sm font-medium px-4 py-1.5 rounded-full mb-8 hover:bg-[#ffedfa] transition-colors cursor-pointer"
-          >
-            <span className="w-2 h-2 bg-[#ec7fa9] rounded-full inline-block animate-pulse" />
-            Preventa abierta — plazas limitadas · Ver beneficios →
-          </a>
+        <div className="relative max-w-6xl mx-auto grid lg:grid-cols-2 gap-14 lg:gap-12 items-center">
 
-          <h1 className="text-5xl md:text-6xl font-bold text-[#1a1a2e] leading-tight mb-5" style={{ fontFamily: "var(--font-playfair)" }}>
-            Entender tu dinero no tiene que ser{" "}
-            <span className="italic text-[#ec7fa9]">complicado.</span>
-          </h1>
-
-          <p className="text-lg text-[#1a1a2e]/60 max-w-xl mx-auto mb-3 leading-relaxed">
-            Te entra dinero… pero no sabes en qué se va. Y eso cansa.
-          </p>
-          <p className="text-base text-[#1a1a2e]/80 max-w-xl mx-auto mb-10 font-medium">
-            No necesitas hacerlo perfecto ni sola.<br />
-            Solo necesitas empezar.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {/* ── Columna de mensaje ── */}
+          <div className="text-center lg:text-left">
             <a
-              href="/register"
-              className="inline-flex items-center justify-center gap-2 bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold text-base px-8 py-4 rounded-full transition-colors shadow-lg"
+              href="#precios"
+              className="inline-flex items-center gap-2 bg-white border border-[#ffb8e0] text-[#ec7fa9] text-sm font-medium px-4 py-1.5 rounded-full mb-7 hover:bg-[#ffedfa] transition-colors cursor-pointer animate-fade-in-up opacity-0 [animation-delay:60ms]"
             >
-              Regístrate gratis
+              <span className="w-2 h-2 bg-[#ec7fa9] rounded-full inline-block animate-pulse" />
+              Preventa abierta — plazas limitadas →
             </a>
-            <a
-              href="/login"
-              className="inline-flex items-center justify-center gap-2 bg-white hover:bg-[#ffedfa] text-[#ec7fa9] font-semibold text-base px-8 py-4 rounded-full border border-[#ffb8e0] transition-colors"
+
+            <h1
+              className="text-5xl md:text-6xl font-bold text-[#1a1a2e] leading-tight mb-5 animate-fade-in-up opacity-0 [animation-delay:140ms]"
+              style={{ fontFamily: "var(--font-playfair)" }}
             >
-              Ya tengo cuenta
-            </a>
+              Entender tu dinero no tiene que ser{" "}
+              <span className="italic text-[#ec7fa9]">complicado.</span>
+            </h1>
+
+            {/* La emoción va antes que la explicación funcional */}
+            <p className="text-lg text-[#1a1a2e]/60 mb-3 leading-relaxed lg:max-w-lg animate-fade-in-up opacity-0 [animation-delay:220ms]">
+              Te entra dinero… pero no sabes en qué se va. Y eso cansa.
+            </p>
+            <p className="text-base text-[#1a1a2e]/80 mb-3 font-medium lg:max-w-lg animate-fade-in-up opacity-0 [animation-delay:280ms]">
+              No necesitas hacerlo perfecto ni sola.<br />
+              Solo necesitas empezar.
+            </p>
+            <p className="text-base text-[#1a1a2e]/60 mb-9 lg:max-w-lg leading-relaxed animate-fade-in-up opacity-0 [animation-delay:340ms]">
+              Amy te guía paso a paso, mes a mes, hasta que ver tus números deje de darte susto.
+            </p>
+
+            {/* CTA principal dominante · secundario deliberadamente discreto */}
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-center lg:justify-start animate-fade-in-up opacity-0 [animation-delay:420ms]">
+              <a
+                href="/register"
+                className="inline-flex items-center justify-center gap-2 bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold text-lg px-9 py-4.5 rounded-full transition-all shadow-lg shadow-[#ec7fa9]/30 hover:shadow-xl hover:shadow-[#ec7fa9]/40 hover:-translate-y-0.5"
+              >
+                Empezar gratis
+              </a>
+              <a
+                href="/login"
+                className="inline-flex items-center justify-center text-[#1a1a2e]/50 hover:text-[#ec7fa9] font-medium text-sm px-4 py-3 transition-colors"
+              >
+                Ya tengo cuenta
+              </a>
+            </div>
+
+            <p className="mt-4 text-sm text-[#1a1a2e]/45 animate-fade-in-up opacity-0 [animation-delay:480ms]">
+              40 días gratis · Sin tarjeta para empezar
+            </p>
+
+            <p className="mt-7 text-sm text-[#1a1a2e]/40 animate-fade-in-up opacity-0 [animation-delay:540ms]">
+              by{" "}
+              <a href="https://www.instagram.com/financebestfriends" target="_blank" rel="noopener noreferrer" className="text-[#ec7fa9] font-medium hover:underline">
+                @financebestfriends
+              </a>
+            </p>
           </div>
 
-          <p className="mt-8 text-sm text-[#1a1a2e]/40">
-            Por{" "}
-            <a href="https://www.instagram.com/financebestfriends" target="_blank" rel="noopener noreferrer" className="text-[#ec7fa9] font-medium hover:underline">
-              @financebestfriends
-            </a>
-          </p>
+          {/* ── Columna de producto ── */}
+          <div className="animate-fade-in-up opacity-0 [animation-delay:300ms]">
+            <AmyMockup />
+          </div>
         </div>
       </section>
 
@@ -206,7 +228,7 @@ export default function LandingPage() {
       <section className="py-16 px-6 bg-white">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a2e] mb-6" style={{ fontFamily: "var(--font-playfair)" }}>
-            ¿Qué es <span className="italic text-[#ec7fa9]">Finly</span>?
+            ¿Qué es <span className="italic text-[#ec7fa9]">Amy</span>?
           </h2>
           <p className="text-lg text-[#1a1a2e]/70 leading-relaxed mb-4">
             Una herramienta mensual donde organizas tu dinero sin enredos.
@@ -220,7 +242,7 @@ export default function LandingPage() {
           <div className="inline-block bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl px-8 py-4">
             <p className="text-[#1a1a2e] font-semibold text-lg">
               Tú solo escribes tus números.<br />
-              <span className="text-[#ec7fa9]">Finly hace el resto.</span>
+              <span className="text-[#ec7fa9]">Amy hace el resto.</span>
             </p>
           </div>
         </div>
@@ -231,7 +253,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
-              Cuando empiezas a usar Finly,<br />
+              Cuando empiezas a usar Amy,<br />
               <span className="italic text-[#ec7fa9]">pasa esto</span>
             </h2>
           </div>
@@ -375,7 +397,7 @@ export default function LandingPage() {
       {/* ───── FOOTER ───── */}
       <footer className="bg-[#1a1a2e] py-12 px-6 text-center">
         <p className="text-2xl font-bold text-[#ec7fa9] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
-          Finly
+          Amy
         </p>
         <p className="text-white/30 text-xs mb-1">by Finance BFFs 💕</p>
         <p className="text-white/40 text-sm mb-4">Tu mejor amiga en las finanzas.</p>

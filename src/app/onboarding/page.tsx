@@ -4,10 +4,10 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Pencil, X, Search, Zap, Archive, PiggyBank, Target } from "lucide-react";
+import { Pencil, Check, X, Search, Zap, Archive, PiggyBank, Target } from "lucide-react";
 
 type ListItem = { id: string; nombre: string; valor: number };
-type CajitaOB = { id: string; nombre: string; emoji: string; monto_total: number; meses: number; };
+type CajitaOB = { id: string; nombre: string; emoji: string; monto_total: number; meses: number; fecha_pago?: string; };
 type BolsitaOB = { id: string; nombre: string; emoji: string; tipo: "fondos" | "metas"; cuota_mensual?: number; meta?: number; fecha_meta?: string; importancia: number; };
 type DeudaItem = {
   id: string;
@@ -24,10 +24,9 @@ const CAJITAS_SUGERIDAS = [
   { nombre: "Seguro del carro", emoji: "🛡️", monto: 1200000, meses: 12 },
   { nombre: "Impuesto predial", emoji: "🏠", monto: 800000, meses: 12 },
   { nombre: "Matrícula escolar", emoji: "🎓", monto: 2000000, meses: 12 },
-  { nombre: "Vacaciones", emoji: "✈️", monto: 3000000, meses: 12 },
 ];
 
-const EMOJIS_BOLSITA = ["🐷","✈️","🏠","🎓","💻","👗","💍","🎉","🐾","🌱","🚑","🎸","🏋️","📚","🛍️"];
+const EMOJIS_BOLSITA = ["👜","✈️","🏠","🎓","💻","👗","💍","🎉","🐾","🌱","🚑","🎸","🏋️","📚","🛍️"];
 
 const DEUDA_TIPOS = [
   "Tarjeta de crédito",
@@ -65,16 +64,33 @@ const QUIZ = [
   },
 ];
 
+const PAISES = [
+  { nombre: "Colombia", emoji: "🇨🇴", divisa: "COP", locale: "es-CO" },
+  { nombre: "México", emoji: "🇲🇽", divisa: "MXN", locale: "es-MX" },
+  { nombre: "Argentina", emoji: "🇦🇷", divisa: "ARS", locale: "es-AR" },
+  { nombre: "Chile", emoji: "🇨🇱", divisa: "CLP", locale: "es-CL" },
+  { nombre: "Perú", emoji: "🇵🇪", divisa: "PEN", locale: "es-PE" },
+  { nombre: "Ecuador", emoji: "🇪🇨", divisa: "USD", locale: "es-EC" },
+  { nombre: "Venezuela", emoji: "🇻🇪", divisa: "USD", locale: "es-VE" },
+  { nombre: "España", emoji: "🇪🇸", divisa: "EUR", locale: "es-ES" },
+  { nombre: "Estados Unidos", emoji: "🇺🇸", divisa: "USD", locale: "en-US" },
+  { nombre: "Otro", emoji: "🌎", divisa: "USD", locale: "en-US" },
+];
+
+const RANGOS_EDAD = ["18-24", "25-34", "35-44", "45-54", "55+"];
+
 type Step =
+  | "perfil_inicial"
   | "welcome"
   | "ingresos"
   | "gastos"
-  | "finly_detective"
+  | "amy_detective"
   | "deudas"
   | "deuda_intro"
   | "no_puede_intro"
   | "deuda_quiz"
   | "deuda_resultado"
+  | "ahorro_intro"
   | "cajitas_onboarding"
   | "ahorro_puede"
   | "ahorro_tipo"
@@ -85,13 +101,15 @@ const METHOD_INFO = {
   snowball: {
     emoji: "❄️",
     nombre: "Bola de nieve",
-    desc: "Vas a enfocarte primero en la deuda más pequeña. Cuando avances en esta, ese progreso te va a ayudar a seguir con las siguientes.",
+    autor: "Dave Ramsey",
+    desc: "Vas a enfocarte primero en la deuda más pequeña. Cuando la elimines, ese logro te va a dar el impulso para atacar la siguiente. Lo que vamos a hacer es ordenar tus deudas de menor a mayor y ir tachándolas una por una. Más adelante vas a ver esto organizado en tu panel.",
     sort: (a: DeudaItem, b: DeudaItem) => a.total_pendiente - b.total_pendiente,
   },
   avalanche: {
     emoji: "🏔️",
     nombre: "Avalancha",
-    desc: "Vas a enfocarte primero en la deuda que más te cuesta en intereses. Esto te ayuda a optimizar tu dinero a largo plazo.",
+    autor: "Suze Orman",
+    desc: "Vas a enfocarte primero en la deuda que más te cuesta en intereses. Esto es lo más inteligente para ahorrar dinero a largo plazo. Lo que vamos a hacer es atacar primero la deuda más cara y bajar los intereses que pagas cada mes. Más adelante vas a ver esto organizado en tu panel.",
     sort: (a: DeudaItem, b: DeudaItem) => {
       const ta = parseFloat(a.tasa) || 0;
       const tb = parseFloat(b.tasa) || 0;
@@ -100,14 +118,15 @@ const METHOD_INFO = {
   },
   balanced: {
     emoji: "⚖️",
-    nombre: "Equilibrado",
-    desc: "Aquí no te enfocas en una sola deuda. La idea es avanzar en varias al mismo tiempo, de forma más estable.",
+    nombre: "Equilibrada",
+    autor: "T. Harv Eker",
+    desc: "Aquí no te enfocas en una sola deuda. Vas a avanzar en varias al mismo tiempo de forma estable, sin sentir que nada se te sale de control. Lo que vamos a hacer es distribuir tus pagos para que todas tus deudas avancen juntas. Más adelante vas a ver esto organizado en tu panel.",
     sort: () => 0,
   },
 };
 
 export default function OnboardingPage() {
-  const [step, setStep] = useState<Step>("welcome");
+  const [step, setStep] = useState<Step>("perfil_inicial");
   const [userId, setUserId] = useState<string | null>(null);
   const [reinforcement, setReinforcement] = useState("");
   const reinforcementTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -144,7 +163,8 @@ export default function OnboardingPage() {
   const [cajNombre, setCajNombre] = useState("");
   const [cajEmoji, setCajEmoji] = useState("📦");
   const [cajMonto, setCajMonto] = useState("");
-  const [cajMeses, setCajMeses] = useState("12");
+  const [cajMeses, setCajMeses] = useState("2");
+  const [cajFecha, setCajFecha] = useState("");
 
   // Step 4c: Ahorro
   const [selectedAhorro, setSelectedAhorro] = useState<number | null>(null);
@@ -153,13 +173,18 @@ export default function OnboardingPage() {
   const [bolsitasOB, setBolsitasOB] = useState<BolsitaOB[]>([]);
   const [bolTipo, setBolTipo] = useState<"fondos" | "metas">("fondos");
   const [bolNombre, setBolNombre] = useState("");
-  const [bolEmoji, setBolEmoji] = useState("🐷");
+  const [bolEmoji, setBolEmoji] = useState("👜");
   const [bolCuota, setBolCuota] = useState("");
   const [bolMeta, setBolMeta] = useState("");
   const [bolFecha, setBolFecha] = useState("");
   const [bolImportancia, setBolImportancia] = useState(3);
+  const [editingBolCuota, setEditingBolCuota] = useState(false);
 
   const [saving, setSaving] = useState(false);
+
+  // Pre-onboarding profile
+  const [paisSeleccionado, setPaisSeleccionado] = useState<typeof PAISES[0] | null>(null);
+  const [edadRango, setEdadRango] = useState("");
 
   useEffect(() => {
     async function init() {
@@ -190,13 +215,13 @@ export default function OnboardingPage() {
   ];
 
   function fmt(n: number) {
-    return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+    const loc = paisSeleccionado?.locale ?? "es-CO";
+    const cur = paisSeleccionado?.divisa ?? "COP";
+    return new Intl.NumberFormat(loc, { style: "currency", currency: cur, maximumFractionDigits: 0 }).format(n);
   }
 
-  function showReinforcement(msg: string) {
-    setReinforcement(msg);
-    if (reinforcementTimer.current) clearTimeout(reinforcementTimer.current);
-    reinforcementTimer.current = setTimeout(() => setReinforcement(""), 4000);
+  function showReinforcement(_msg: string, onContinue: () => void) {
+    onContinue();
   }
 
   // List helpers
@@ -226,13 +251,21 @@ export default function OnboardingPage() {
 
   // Navigation
   function goToGastos() {
-    showReinforcement("Listo, vamos bien ✨");
-    setStep("gastos");
+    // Auto-add ingreso if form fields are filled but user forgot to click "+ Agregar"
+    if (nuevoIngNombre && nuevoIngValor) {
+      setIngresosOtros(prev => [...prev, { id: Date.now().toString(), nombre: nuevoIngNombre, valor: parseFloat(nuevoIngValor) }]);
+      setNuevoIngNombre(""); setNuevoIngValor("");
+    }
+    showReinforcement("Listo, vamos bien ✨", () => setStep("gastos"));
   }
 
   function goToDeudas() {
-    showReinforcement("Esto ya te da más claridad 💡");
-    setStep("deudas");
+    // Auto-add gasto if form fields are filled but user forgot to click "+ Agregar"
+    if (nuevoGastNombre && nuevoGastValor) {
+      setGastosFijos(prev => [...prev, { id: Date.now().toString(), nombre: nuevoGastNombre, valor: parseFloat(nuevoGastValor) }]);
+      setNuevoGastNombre(""); setNuevoGastValor("");
+    }
+    showReinforcement("Esto ya te da más claridad 💡", () => setStep("deudas"));
   }
 
   function goToAhorro() {
@@ -254,35 +287,21 @@ export default function OnboardingPage() {
     const finalTotalDeudas = finalDeudas.reduce((s, d) => s + d.cuota_mensual, 0);
     const finalCapacidad = totalIngresos - totalGastos - finalTotalDeudas;
 
-    showReinforcement("Lo estás haciendo mejor de lo que crees 💪");
-
+    let nextStep: Step;
     if (finalCapacidad <= 0) {
-      // Sin capacidad → Rompe-deudas intro → quiz
-      setStep("no_puede_intro");
+      nextStep = "no_puede_intro";
     } else if (finalDeudas.length > 1) {
-      // Más de una deuda → intro + quiz para elegir metodología
-      setStep("deuda_intro");
-    } else if (finalDeudas.length === 1) {
-      // Una sola deuda → sin quiz, ir a cajitas
-      const disponiblePostGF = totalIngresos - totalGastos;
-      if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
-        setStep("finly_detective");
-      } else {
-        setStep("cajitas_onboarding");
-      }
+      nextStep = "deuda_intro";
     } else {
-      // Sin deudas → ir a cajitas (con detector de gastos altos)
       const disponiblePostGF = totalIngresos - totalGastos;
-      if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
-        setStep("finly_detective");
-      } else {
-        setStep("cajitas_onboarding");
-      }
+      nextStep = (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) ? "amy_detective" : "ahorro_intro";
     }
+
+    showReinforcement("Lo estás haciendo mejor de lo que crees 💪", () => setStep(nextStep));
   }
 
   function goCajitasToAhorro() {
-    setStep("cajitas_onboarding");
+    setStep("ahorro_puede");
   }
 
   function answerQuiz(answer: string) {
@@ -317,7 +336,7 @@ export default function OnboardingPage() {
         ingreso_fijo: parseFloat(ingresoFijo) || 0,
         ingresos_otros: ingresosOtros.map(i => ({ id: i.id, descripcion: i.nombre, valor: i.valor })),
         gastos_fijos: gastosFijos.reduce((s, g) => s + g.valor, 0),
-        gastos_fijos_items: gastosFijos.map(g => ({ id: g.id, descripcion: g.nombre, valor: g.valor })),
+        gastos_fijos_items: gastosFijos.map(g => ({ id: g.id, nombre: g.nombre, valor: g.valor })),
         gastos_variables_items: [],
       }, { onConflict: "user_id,month,year" });
 
@@ -338,8 +357,10 @@ export default function OnboardingPage() {
         const now2 = new Date();
         await supabase.from("cajitas").insert(
           opts.cajitas.map(c => {
-            const fechaPago = new Date(now2.getFullYear(), now2.getMonth() + c.meses, 1);
-            return { user_id: userId, nombre: c.nombre, emoji: c.emoji, monto_total: c.monto_total, actual: 0, fecha_pago: fechaPago.toISOString().split("T")[0] };
+            const fechaPago = c.fecha_pago
+              ? `${c.fecha_pago}-01`
+              : new Date(now2.getFullYear(), now2.getMonth() + c.meses, 1).toISOString().split("T")[0];
+            return { user_id: userId, nombre: c.nombre, emoji: c.emoji, monto_total: c.monto_total, actual: 0, fecha_pago: fechaPago };
           })
         );
       }
@@ -359,16 +380,23 @@ export default function OnboardingPage() {
       } else if (opts.ahorroMonto) {
         // Bolsita general de ahorro
         await supabase.from("bolsillos").insert({
-          user_id: userId, nombre: "Ahorro mensual", emoji: "🐷",
+          user_id: userId, nombre: "Ahorro mensual", emoji: "👜",
           tipo: "fondos", meta: opts.ahorroMonto * 12,
           actual: 0, cuota_mensual: opts.ahorroMonto, importancia: 3, celebrado: false,
         });
       }
 
-      await supabase.from("profiles").update({
-        onboarding_completed: true,
-        ...(opts.method ? { debt_method: opts.method } : {}),
-      }).eq("id", userId);
+      const completeRes = await fetch("/api/onboarding/complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ method: opts.method }),
+      });
+
+      if (!completeRes.ok) {
+        throw new Error("No se pudo completar el onboarding.");
+      }
 
       window.location.href = "/app";
     } catch {
@@ -379,16 +407,42 @@ export default function OnboardingPage() {
   const totalCajitasOBMensual = cajitasOB.reduce((s, c) => s + Math.ceil(c.monto_total / Math.max(1, c.meses)), 0);
   const capacidadNeta = capacidad - totalCajitasOBMensual;
 
+  const bolsitasUsadoMensual = (() => {
+    const fondos = bolsitasOB.filter(b => b.tipo === "fondos").reduce((s, b) => s + (b.cuota_mensual ?? 0), 0);
+    const metas = bolsitasOB.filter(b => b.tipo === "metas" && b.meta && b.fecha_meta).reduce((s, b) => {
+      const [fy, fm] = b.fecha_meta!.split("-").map(Number);
+      const now2 = new Date();
+      const meses = Math.max(1, (fy - now2.getFullYear()) * 12 + (fm - 1 - now2.getMonth()));
+      return s + Math.ceil((b.meta ?? 0) / meses);
+    }, 0);
+    return fondos + metas;
+  })();
+  const bolsitasDisponible = (selectedAhorro ?? 0) - bolsitasUsadoMensual;
+  const bolCuotaRecomendada = bolsitasDisponible > 0 && bolTipo === "fondos"
+    ? Math.round((bolImportancia / 15) * bolsitasDisponible)
+    : 0;
+
   function addCajitaOB() {
     if (!cajNombre || !cajMonto) return;
-    setCajitasOB([...cajitasOB, { id: Date.now().toString(), nombre: cajNombre, emoji: cajEmoji, monto_total: parseFloat(cajMonto), meses: parseInt(cajMeses) || 12 }]);
-    setCajNombre(""); setCajMonto(""); setCajEmoji("📦"); setCajMeses("12");
+    setCajitasOB([...cajitasOB, { id: Date.now().toString(), nombre: cajNombre, emoji: cajEmoji, monto_total: parseFloat(cajMonto), meses: parseInt(cajMeses) || 12, fecha_pago: cajFecha || undefined }]);
+    setCajNombre(""); setCajMonto(""); setCajEmoji("📦"); setCajMeses("2");
   }
 
   function addBolsitaOB() {
     if (!bolNombre) return;
     if (bolTipo === "fondos" && !bolCuota) return;
     if (bolTipo === "metas" && (!bolMeta || !bolFecha)) return;
+    if (bolTipo === "fondos") {
+      const cuota = parseFloat(bolCuota);
+      if (cuota > bolsitasDisponible) return;
+    }
+    if (bolTipo === "metas") {
+      const [fy, fm] = bolFecha.split("-").map(Number);
+      const now2 = new Date();
+      const meses = Math.max(1, (fy - now2.getFullYear()) * 12 + (fm - 1 - now2.getMonth()));
+      const costo = Math.ceil(parseFloat(bolMeta) / meses);
+      if (costo > bolsitasDisponible) return;
+    }
     setBolsitasOB([...bolsitasOB, {
       id: Date.now().toString(), nombre: bolNombre, emoji: bolEmoji, tipo: bolTipo,
       cuota_mensual: bolTipo === "fondos" ? parseFloat(bolCuota) : undefined,
@@ -396,13 +450,14 @@ export default function OnboardingPage() {
       fecha_meta: bolTipo === "metas" ? bolFecha : undefined,
       importancia: bolImportancia,
     }]);
-    setBolNombre(""); setBolEmoji("🐷"); setBolCuota(""); setBolMeta(""); setBolFecha(""); setBolImportancia(3);
+    setBolNombre(""); setBolEmoji("👜"); setBolCuota(""); setBolMeta(""); setBolFecha(""); setBolImportancia(3); setEditingBolCuota(false);
   }
 
-  const stepNum = step === "welcome" ? 0
+  const stepNum = step === "perfil_inicial" ? 0
+    : step === "welcome" ? 0
     : step === "ingresos" ? 1
     : step === "gastos" ? 2
-    : step === "finly_detective" ? 2
+    : step === "amy_detective" ? 2
     : step === "deudas" ? 3
     : step === "deuda_intro" ? 3
     : step === "deuda_quiz" ? 3
@@ -414,7 +469,7 @@ export default function OnboardingPage() {
   const btnPink = "bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-3.5 rounded-xl transition-colors disabled:opacity-50";
 
   return (
-    <div className="min-h-screen bg-[#ffedfa] flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[#ffedfa] flex flex-col items-center justify-center px-4 py-4 sm:py-12">
       <div className="absolute top-0 right-0 w-96 h-96 bg-[#ffb8e0] opacity-30 blob pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-72 h-72 bg-[#ffb8e0] opacity-20 blob pointer-events-none" />
 
@@ -422,7 +477,7 @@ export default function OnboardingPage() {
         {/* Logo */}
         <div className="text-center mb-6">
           <a href="/" className="inline-block">
-            <span className="text-2xl font-bold text-[#ec7fa9]" style={{ fontFamily: "var(--font-playfair)" }}>Finly</span>
+            <span className="text-2xl font-bold text-[#ec7fa9]" style={{ fontFamily: "var(--font-playfair)" }}>Amy</span>
             <span className="text-xs text-[#1a1a2e]/40 font-medium ml-2">by Finance BFFs 💕</span>
           </a>
         </div>
@@ -442,14 +497,88 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Reinforcement banner */}
+        {/* Reinforcement toast */}
         {reinforcement && (
-          <div className="mb-4 bg-white border border-[#ffb8e0] rounded-2xl px-5 py-3 text-center text-sm font-semibold text-[#ec7fa9] animate-pulse">
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white border border-[#ffb8e0] rounded-2xl px-6 py-3 shadow-lg text-sm font-medium text-[#ec7fa9] whitespace-nowrap">
             {reinforcement}
           </div>
         )}
 
         <div className="bg-white rounded-3xl shadow-xl border border-[#ffb8e0] overflow-hidden">
+
+          {/* ─── PERFIL INICIAL ─── */}
+          {step === "perfil_inicial" && (
+            <div className="p-6 sm:p-8">
+              <div className="text-center mb-6">
+                <div className="text-4xl mb-3">🌎</div>
+                <h2 className="text-xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
+                  Antes de empezar
+                </h2>
+                <p className="text-sm text-[#1a1a2e]/60 mt-1 leading-relaxed">
+                  Necesitamos dos datos rápidos para personalizar tu experiencia.
+                </p>
+              </div>
+
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-[#1a1a2e]/70 mb-2">¿De qué país eres?</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PAISES.map((p) => (
+                      <button
+                        key={p.nombre}
+                        type="button"
+                        onClick={() => setPaisSeleccionado(p)}
+                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                          paisSeleccionado?.nombre === p.nombre
+                            ? "bg-[#ec7fa9] text-white border-[#ec7fa9]"
+                            : "bg-white border-[#ffb8e0] text-[#1a1a2e]/70 hover:border-[#ec7fa9] hover:bg-[#ffedfa]"
+                        }`}
+                      >
+                        <span>{p.emoji}</span>
+                        <span className="truncate">{p.nombre}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-[#1a1a2e]/70 mb-2">¿En qué rango de edad estás?</label>
+                  <div className="flex flex-wrap gap-2">
+                    {RANGOS_EDAD.map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setEdadRango(r)}
+                        className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
+                          edadRango === r
+                            ? "bg-[#ec7fa9] text-white border-[#ec7fa9]"
+                            : "bg-white border-[#ffb8e0] text-[#1a1a2e]/70 hover:border-[#ec7fa9] hover:bg-[#ffedfa]"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                disabled={!paisSeleccionado}
+                onClick={() => {
+                  if (paisSeleccionado) localStorage.setItem("amy_pais", JSON.stringify(paisSeleccionado));
+                  if (edadRango) localStorage.setItem("amy_edad", edadRango);
+                  setStep("welcome");
+                }}
+                className="w-full mt-8 bg-[#ec7fa9] hover:bg-[#d96d97] disabled:opacity-40 text-white font-semibold py-3.5 rounded-xl transition-colors"
+              >
+                Continuar →
+              </button>
+              {!paisSeleccionado && (
+                <p className="text-xs text-center text-[#1a1a2e]/40 mt-2">Selecciona tu país para continuar</p>
+              )}
+            </div>
+          )}
 
           {/* ─── WELCOME ─── */}
           {step === "welcome" && (
@@ -516,18 +645,21 @@ export default function OnboardingPage() {
 
                 <div>
                   <p className="text-xs text-[#1a1a2e]/50 mb-2">¿Tienes otros ingresos? (freelance, arriendos, etc.)</p>
-                  <div className="flex gap-2">
-                    <input type="text" value={nuevoIngNombre} onChange={(e) => setNuevoIngNombre(e.target.value)}
-                      placeholder="¿De dónde?"
-                      onKeyDown={(e) => e.key === "Enter" && addIngreso()}
-                      className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
-                    <input type="number" value={nuevoIngValor} onChange={(e) => setNuevoIngValor(e.target.value)}
-                      placeholder="Valor"
-                      onKeyDown={(e) => e.key === "Enter" && addIngreso()}
-                      className="w-32 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <input type="text" value={nuevoIngNombre} onChange={(e) => setNuevoIngNombre(e.target.value)}
+                        placeholder="¿De dónde?"
+                        onKeyDown={(e) => e.key === "Enter" && addIngreso()}
+                        className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                      <input type="number" value={nuevoIngValor} onChange={(e) => setNuevoIngValor(e.target.value)}
+                        placeholder="Valor"
+                        onKeyDown={(e) => e.key === "Enter" && addIngreso()}
+                        className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                    </div>
                     <button type="button" onClick={addIngreso}
-                      className="bg-[#ffedfa] border border-[#ffb8e0] text-[#ec7fa9] font-bold px-4 rounded-xl hover:bg-[#ffb8e0] transition-colors text-sm">+</button>
+                      className="w-full bg-[#ec7fa9] text-white font-semibold px-4 py-2.5 rounded-xl hover:bg-[#d96d97] transition-colors text-sm">+ Agregar</button>
                   </div>
+                  <p className="text-xs text-[#1a1a2e]/40 mt-1.5">Completa los campos y toca <strong>+ Agregar</strong> por cada ingreso extra</p>
                 </div>
 
                 {totalIngresos > 0 && (
@@ -576,18 +708,21 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              <div className="flex gap-2 mb-4">
-                <input type="text" value={nuevoGastNombre} onChange={(e) => setNuevoGastNombre(e.target.value)}
-                  placeholder="Nombre del gasto"
-                  onKeyDown={(e) => e.key === "Enter" && addGasto()}
-                  className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
-                <input type="number" value={nuevoGastValor} onChange={(e) => setNuevoGastValor(e.target.value)}
-                  placeholder="Valor"
-                  onKeyDown={(e) => e.key === "Enter" && addGasto()}
-                  className="w-32 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <input type="text" value={nuevoGastNombre} onChange={(e) => setNuevoGastNombre(e.target.value)}
+                    placeholder="Nombre del gasto"
+                    onKeyDown={(e) => e.key === "Enter" && addGasto()}
+                    className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                  <input type="number" value={nuevoGastValor} onChange={(e) => setNuevoGastValor(e.target.value)}
+                    placeholder="Valor"
+                    onKeyDown={(e) => e.key === "Enter" && addGasto()}
+                    className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                </div>
                 <button type="button" onClick={addGasto}
-                  className="bg-[#ffedfa] border border-[#ffb8e0] text-[#ec7fa9] font-bold px-4 rounded-xl hover:bg-[#ffb8e0] transition-colors text-sm">+</button>
+                  className="w-full bg-[#ec7fa9] text-white font-semibold px-4 py-2.5 rounded-xl hover:bg-[#d96d97] transition-colors text-sm">+ Agregar</button>
               </div>
+              <p className="text-xs text-[#1a1a2e]/40 mt-1.5 mb-4">Completa los campos y toca <strong>+ Agregar</strong> por cada gasto fijo</p>
 
               {totalGastos > 0 && (
                 <div className="bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-xl px-4 py-2.5 text-sm mb-4">
@@ -613,10 +748,10 @@ export default function OnboardingPage() {
           )}
 
           {/* ─── FINLY DETECTIVE ─── */}
-          {step === "finly_detective" && (
+          {step === "amy_detective" && (
             <div className="p-8">
               <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5 mb-4">
-                <span className="text-blue-600 text-sm font-bold flex items-center gap-1.5"><Search size={13} />Finly Detective</span>
+                <span className="text-blue-600 text-sm font-bold flex items-center gap-1.5"><Search size={13} />Amy Detective</span>
               </div>
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
                 Tus gastos fijos están tomando mucho espacio
@@ -624,7 +759,7 @@ export default function OnboardingPage() {
               <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-5 text-sm text-[#1a1a2e]/70 leading-relaxed space-y-2">
                 <p>¡Oops! Con lo que registraste, tus gastos fijos están usando más del 65% de tus ingresos.</p>
                 <p>Eso deja muy poco margen para deudas, ahorro y gastos del día a día.</p>
-                <p className="text-blue-700 font-medium">Pero no te preocupes, para eso existe Finly Detective: vamos a revisar juntas cada gasto y encontrar dónde puede haber un respiro.</p>
+                <p className="text-blue-700 font-medium">Pero no te preocupes, para eso existe Amy Detective: vamos a revisar juntas cada gasto y encontrar dónde puede haber un respiro.</p>
               </div>
               <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm mb-5">
                 <div className="flex justify-between">
@@ -650,7 +785,7 @@ export default function OnboardingPage() {
                   className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
                   ← Revisar gastos
                 </button>
-                <button onClick={() => setStep("cajitas_onboarding")}
+                <button onClick={() => setStep("ahorro_intro")}
                   className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-3.5 rounded-xl text-sm transition-colors">
                   Entendido, continuar →
                 </button>
@@ -661,9 +796,18 @@ export default function OnboardingPage() {
           {/* ─── DEUDAS ─── */}
           {step === "deudas" && (
             <div className="p-8">
-              <h2 className="text-xl font-bold text-[#1a1a2e] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
-                Tus deudas, sin miedo
-              </h2>
+              <div className="flex items-start justify-between mb-1">
+                <h2 className="text-xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
+                  Tus deudas, sin miedo
+                </h2>
+                <button
+                  type="button"
+                  onClick={goToAhorro}
+                  className="text-xs text-[#ec7fa9] border border-[#ffb8e0] rounded-full px-3 py-1.5 hover:bg-[#ffedfa] transition-colors whitespace-nowrap ml-3 font-medium"
+                >
+                  No tengo deudas →
+                </button>
+              </div>
               <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-xs text-[#1a1a2e]/60 mb-5">
                 💡 Aquí van todas tus deudas: tarjetas, créditos, préstamos o lo que le debas a alguien. No te preocupes si no tienes todos los datos exactos, empieza con lo que sabes.
               </div>
@@ -747,8 +891,8 @@ export default function OnboardingPage() {
                   </div>
                 ) : (
                   <button type="button" onClick={() => setMostrarTasa(true)}
-                    className="text-xs text-[#ec7fa9] hover:underline">
-                    + ¿Sabes tu tasa de interés? (opcional, si no la sabes no importa)
+                    className="text-xs text-[#ec7fa9] border border-[#ffb8e0] bg-[#ffedfa] rounded-xl px-4 py-2 hover:bg-[#ffb8e0] transition-colors w-full text-left">
+                    + Agregar tasa de interés <span className="text-[#1a1a2e]/40">(opcional, si no la sabes no importa)</span>
                   </button>
                 )}
               </div>
@@ -775,9 +919,6 @@ export default function OnboardingPage() {
                   Siguiente →
                 </button>
               </div>
-              <p className="text-sm text-[#ec7fa9] font-medium text-center mt-2 bg-[#ffedfa] rounded-xl px-3 py-2">
-                ¿No tienes deudas? ¡Qué bien! Puedes saltar este paso sin problema →
-              </p>
             </div>
           )}
 
@@ -788,7 +929,7 @@ export default function OnboardingPage() {
                 Este es tu punto de partida
               </h2>
               <p className="text-sm text-[#1a1a2e]/60 mb-2 leading-relaxed">
-                Con lo que registraste, Finly analizó tu situación y te propone diferentes formas de ahorrar.
+                Con lo que registraste, Amy analizó tu situación y te propone diferentes formas de ahorrar.
               </p>
               <p className="text-sm text-[#ec7fa9] font-medium mb-6">
                 Puedes elegir la que mejor se adapte a ti.
@@ -877,7 +1018,7 @@ export default function OnboardingPage() {
           {step === "no_puede_intro" && (
             <div className="p-8">
               <div className="inline-flex items-center gap-2 bg-red-50 border border-red-200 rounded-full px-4 py-1.5 mb-4">
-                <span className="text-red-600 text-sm font-bold flex items-center gap-1.5"><Zap size={13} />Finly Rompe-deudas</span>
+                <span className="text-red-600 text-sm font-bold flex items-center gap-1.5"><Zap size={13} />Amy Rompe-deudas</span>
               </div>
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-4" style={{ fontFamily: "var(--font-playfair)" }}>
                 Primero, vamos a ordenar esto juntas 🤝
@@ -887,13 +1028,14 @@ export default function OnboardingPage() {
                 <p><strong>Y no pasa nada. Esto es más común de lo que crees.</strong></p>
                 <p>En este momento, no tiene sentido presionarte a ahorrar.</p>
                 <p>Lo que sí vamos a hacer es enfocarnos en algo más importante: <strong>salir de tus deudas de forma inteligente.</strong> Eso es libertad.</p>
-                <p>Finly Rompe-deudas te va a mostrar el mejor camino para ti.</p>
+                <p>{deudas.length > 1 ? "Amy Rompe-deudas te va a mostrar el mejor camino para ti." : "Por ahora lo más importante es enfocarte en pagar esa deuda."}</p>
               </div>
               <button
-                onClick={() => setStep("deuda_quiz")}
+                onClick={() => deudas.length > 1 ? setStep("deuda_quiz") : finalSave({})}
+                disabled={saving}
                 className={`${btnPink} w-full`}
               >
-                Vamos a encontrar la mejor forma para ti →
+                {saving ? "Guardando..." : deudas.length > 1 ? "Vamos a encontrar la mejor forma para ti →" : "Entendido, empecemos →"}
               </button>
             </div>
           )}
@@ -902,7 +1044,7 @@ export default function OnboardingPage() {
           {step === "deuda_intro" && (
             <div className="p-8">
               <div className="inline-flex items-center gap-2 bg-red-50 border border-red-200 rounded-full px-4 py-1.5 mb-4">
-                <span className="text-red-600 text-sm font-bold flex items-center gap-1.5"><Zap size={13} />Finly Rompe-deudas</span>
+                <span className="text-red-600 text-sm font-bold flex items-center gap-1.5"><Zap size={13} />Amy Rompe-deudas</span>
               </div>
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-4" style={{ fontFamily: "var(--font-playfair)" }}>
                 Tener deudas no es malo
@@ -910,7 +1052,7 @@ export default function OnboardingPage() {
               <div className="text-sm text-[#1a1a2e]/70 leading-relaxed space-y-3 mb-6 bg-[#ffedfa] rounded-2xl p-5">
                 <p>Las deudas muchas veces nos ayudan a cumplir metas que de otra forma tomarían años: una casa, un carro, estudios o un proyecto de vida.</p>
                 <p>El problema no es tenerlas. <strong>El problema es no tener un plan para pagarlas.</strong></p>
-                <p className="text-[#ec7fa9] font-medium">Para eso existe Finly Rompe-deudas. Vamos a ayudarte a salir de tus deudas más rápido usando metodologías financieras probadas.</p>
+                <p className="text-[#ec7fa9] font-medium">Para eso existe Amy Rompe-deudas. Vamos a ayudarte a salir de tus deudas más rápido usando metodologías financieras probadas.</p>
                 <p>Pero primero, necesitamos entender cómo eres tú. Porque no todas las personas manejan sus finanzas igual y el mejor método depende de tu personalidad.</p>
               </div>
               <div className="bg-white border border-[#ffb8e0] rounded-2xl px-5 py-4 mb-4 text-center">
@@ -929,9 +1071,9 @@ export default function OnboardingPage() {
                 onClick={() => {
                   const disponiblePostGF = totalIngresos - totalGastos;
                   if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
-                    setStep("finly_detective");
+                    setStep("amy_detective");
                   } else {
-                    setStep("cajitas_onboarding");
+                    setStep("ahorro_intro");
                   }
                 }}
                 className="w-full text-center text-sm text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-2 transition-colors"
@@ -984,10 +1126,13 @@ export default function OnboardingPage() {
 
               <div className="bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-2xl p-4 mb-5">
                 <p className="text-xs font-semibold text-[#ec7fa9] uppercase tracking-wide mb-1">
-                  Método recomendado para ti
+                  Metodología recomendada para ti
                 </p>
                 <p className="text-base font-bold text-[#1a1a2e]">
-                  {METHOD_INFO[debtMethod].emoji} Método {METHOD_INFO[debtMethod].nombre}
+                  {METHOD_INFO[debtMethod].emoji} Metodología {METHOD_INFO[debtMethod].nombre}
+                </p>
+                <p className="text-xs text-[#1a1a2e]/40 mt-0.5">
+                  por {METHOD_INFO[debtMethod].autor}
                 </p>
                 <p className="text-xs text-[#1a1a2e]/60 mt-2 leading-relaxed">
                   {METHOD_INFO[debtMethod].desc}
@@ -996,27 +1141,48 @@ export default function OnboardingPage() {
 
               {deudas.length > 0 && (
                 <div className="mb-5">
-                  <p className="text-xs font-semibold text-[#1a1a2e]/50 uppercase tracking-wide mb-3">
-                    Orden sugerido
-                  </p>
-                  <div className="space-y-2">
-                    {[...deudas].sort(METHOD_INFO[debtMethod].sort).map((d, i) => (
-                      <div key={d.id} className="flex items-center gap-3">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                          i === 0 ? "bg-[#ec7fa9] text-white" : "bg-[#ffedfa] text-[#ec7fa9]"
-                        }`}>
-                          {i + 1}
-                        </div>
-                        <div className="flex-1 bg-[#ffedfa] rounded-xl px-4 py-2.5 flex items-center justify-between">
-                          <span className="text-sm font-medium text-[#1a1a2e]">
-                            {d.nombre}
-                            {i === 0 && <span className="ml-2 text-xs text-[#ec7fa9]">← empieza aquí</span>}
-                          </span>
-                          <span className="text-sm font-bold text-[#1a1a2e]">{fmt(d.total_pendiente)}</span>
-                        </div>
+                  {debtMethod === "balanced" ? (
+                    <>
+                      <p className="text-xs font-semibold text-[#1a1a2e]/50 uppercase tracking-wide mb-3">
+                        Tus deudas
+                      </p>
+                      <div className="space-y-2 mb-3">
+                        {deudas.map((d) => (
+                          <div key={d.id} className="flex-1 bg-[#ffedfa] rounded-xl px-4 py-2.5 flex items-center justify-between">
+                            <span className="text-sm font-medium text-[#1a1a2e]">{d.nombre}</span>
+                            <span className="text-sm font-bold text-[#1a1a2e]">{fmt(d.total_pendiente)}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                      <p className="text-xs text-[#ec7fa9]/80 bg-[#ffedfa] rounded-xl px-4 py-2.5 text-center">
+                        Con esta metodología todas avanzan al mismo tiempo ✨
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-xs font-semibold text-[#1a1a2e]/50 uppercase tracking-wide mb-3">
+                        Orden sugerido
+                      </p>
+                      <div className="space-y-2">
+                        {[...deudas].sort(METHOD_INFO[debtMethod].sort).map((d, i) => (
+                          <div key={d.id} className="flex items-center gap-3">
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                              i === 0 ? "bg-[#ec7fa9] text-white" : "bg-[#ffedfa] text-[#ec7fa9]"
+                            }`}>
+                              {i + 1}
+                            </div>
+                            <div className="flex-1 bg-[#ffedfa] rounded-xl px-4 py-2.5 flex items-center justify-between">
+                              <span className="text-sm font-medium text-[#1a1a2e]">
+                                {d.nombre}
+                                {i === 0 && <span className="ml-2 text-xs text-[#ec7fa9]">← empieza aquí</span>}
+                              </span>
+                              <span className="text-sm font-bold text-[#1a1a2e]">{fmt(d.total_pendiente)}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -1039,9 +1205,9 @@ export default function OnboardingPage() {
                   onClick={() => {
                     const disponiblePostGF = totalIngresos - totalGastos;
                     if (totalIngresos > 0 && disponiblePostGF < 0.35 * totalIngresos) {
-                      setStep("finly_detective");
+                      setStep("amy_detective");
                     } else {
-                      setStep("cajitas_onboarding");
+                      setStep("ahorro_intro");
                     }
                   }}
                   className={`${btnPink} w-full`}
@@ -1053,13 +1219,47 @@ export default function OnboardingPage() {
           )}
 
           {/* ─── CAJITAS ONBOARDING ─── */}
+          {step === "ahorro_intro" && (
+            <div className="p-8 text-center">
+              <div className="flex justify-center mb-4">
+                <PiggyBank size={52} className="text-[#ec7fa9]" strokeWidth={1.25} />
+              </div>
+              <h2 className="text-2xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
+                Ahora vamos con tus ahorros
+              </h2>
+              <p className="text-sm text-[#1a1a2e]/60 mb-6 leading-relaxed">
+                En Amy vas a organizar tu dinero en dos tipos de bolsitas. Cada una tiene un propósito diferente.
+              </p>
+              <div className="space-y-3 mb-8 text-left">
+                <div className="bg-white border border-[#ffb8e0] rounded-2xl p-4 flex gap-3 items-start">
+                  <span className="text-2xl">📦</span>
+                  <div>
+                    <p className="font-semibold text-[#1a1a2e] text-sm">Cajitas</p>
+                    <p className="text-xs text-[#1a1a2e]/60 mt-0.5 leading-relaxed">Gastos fijos grandes que no pasan todos los meses, como el SOAT, el impuesto predial o la matrícula. Amy los divide en cuotas mensuales y los descuenta de tu presupuesto para que cuando llegue el momento ya tengas el dinero listo.</p>
+                  </div>
+                </div>
+                <div className="bg-white border border-[#ffb8e0] rounded-2xl p-4 flex gap-3 items-start">
+                  <span className="text-2xl">👜</span>
+                  <div>
+                    <p className="font-semibold text-[#1a1a2e] text-sm">Bolsitas de ahorro</p>
+                    <p className="text-xs text-[#1a1a2e]/60 mt-0.5 leading-relaxed">Para tus metas y sueños: vacaciones, un fondo de emergencia, o lo que quieras. Amy te muestra exactamente cuánto ahorrar cada mes para llegar a tu meta y te ayuda a crear el hábito de ahorrar sin que se sienta difícil.</p>
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => setStep("cajitas_onboarding")} className={`${btnPink} w-full`}>
+                Empecemos con las cajitas →
+              </button>
+            </div>
+          )}
+
           {step === "cajitas_onboarding" && (
             <div className="p-8">
+              <p className="text-xs font-bold text-[#ec7fa9] uppercase tracking-widest mb-2">Empecemos con las cajitas</p>
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-1 flex items-center gap-2" style={{ fontFamily: "var(--font-playfair)" }}>
-                <Archive size={20} className="text-[#ec7fa9]" />¿Tienes gastos grandes una vez al año?
+                <Archive size={20} className="text-[#ec7fa9]" />¿Tienes gastos grandes que no llegan todos los meses?
               </h2>
               <p className="text-sm text-[#1a1a2e]/60 mb-5 leading-relaxed">
-                Cosas como el SOAT, impuestos, seguros o vacaciones. Con las cajitas reservas un poquito cada mes para que no te pillen por sorpresa.
+                Cosas como el SOAT, impuestos, seguros o matrícula. Amy divide el total en cuotas mensuales y las descuenta de tu presupuesto automáticamente. Así cuando llegue el gasto ya tienes el dinero listo.
               </p>
 
               {cajitasOB.length > 0 && (
@@ -1070,7 +1270,7 @@ export default function OnboardingPage() {
                         <span>{c.emoji}</span>
                         <div>
                           <p className="text-sm font-medium text-[#1a1a2e]">{c.nombre}</p>
-                          <p className="text-xs text-[#1a1a2e]/40">{fmt(c.monto_total)} en {c.meses} meses · {fmt(Math.ceil(c.monto_total / c.meses))}/mes</p>
+                          <p className="text-xs text-[#1a1a2e]/40">{fmt(c.monto_total)} · {fmt(Math.ceil(c.monto_total / c.meses))}/mes{c.fecha_pago ? ` · vence ${new Date(`${c.fecha_pago}-02`).toLocaleDateString("es-CO", { month: "short", year: "numeric" })}` : ""}</p>
                         </div>
                       </div>
                       <button onClick={() => setCajitasOB(cajitasOB.filter(x => x.id !== c.id))} className="text-[#1a1a2e]/20 hover:text-red-400 text-xs">✕</button>
@@ -1083,11 +1283,12 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              <p className="text-xs text-[#1a1a2e]/50 font-semibold mb-2">Sugerencias rápidas</p>
+              <p className="text-xs text-[#1a1a2e]/50 font-semibold mb-1">Sugerencias rápidas</p>
+              <p className="text-xs text-[#1a1a2e]/40 mb-2">Toca una para pre-llenar el formulario y ajusta los valores antes de agregar</p>
               <div className="flex flex-wrap gap-2 mb-4">
                 {CAJITAS_SUGERIDAS.filter(s => !cajitasOB.find(c => c.nombre === s.nombre)).map((s) => (
                   <button key={s.nombre} type="button"
-                    onClick={() => setCajitasOB([...cajitasOB, { id: Date.now().toString(), nombre: s.nombre, emoji: s.emoji, monto_total: s.monto, meses: s.meses }])}
+                    onClick={() => { setCajNombre(s.nombre); setCajEmoji(s.emoji); setCajMonto(String(s.monto)); setCajMeses(String(s.meses)); }}
                     className="flex items-center gap-1.5 bg-white border border-[#ffb8e0] rounded-full px-3 py-1.5 text-xs text-[#1a1a2e]/70 hover:border-[#ec7fa9] hover:text-[#ec7fa9] transition-all">
                     {s.emoji} {s.nombre}
                   </button>
@@ -1105,21 +1306,38 @@ export default function OnboardingPage() {
                 </div>
                 <div className="flex gap-2">
                   <input type="number" value={cajMonto} onChange={e => setCajMonto(e.target.value)} placeholder="Monto total" className={`${inputCls} flex-1`} />
-                  <select value={cajMeses} onChange={e => setCajMeses(e.target.value)}
-                    className="border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-white outline-none w-36">
-                    <option value="3">3 meses</option>
-                    <option value="6">6 meses</option>
-                    <option value="12">12 meses</option>
-                  </select>
+                  <div className="flex flex-col gap-1 w-44">
+                    <label className="text-xs text-[#1a1a2e]/50 font-medium">¿Cada cuánto te llega ese gasto?</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="60"
+                      value={cajMeses}
+                      onChange={e => setCajMeses(e.target.value)}
+                      placeholder="Ej: 12"
+                      className={`${inputCls}`}
+                    />
+                    <p className="text-[10px] text-[#1a1a2e]/40 leading-tight">2=bimestral · 3=trimestral · 6=semestral · 12=anual</p>
+                  </div>
                 </div>
-                <button type="button" onClick={addCajitaOB} disabled={!cajNombre || !cajMonto}
+                <div>
+                  <label className="text-xs text-[#1a1a2e]/50 font-medium">¿En qué mes te llega ese gasto?</label>
+                  <input
+                    type="month"
+                    value={cajFecha}
+                    onChange={e => setCajFecha(e.target.value)}
+                    className={`${inputCls} mt-1 w-full`}
+                  />
+                  <p className="text-[10px] text-[#1a1a2e]/40 mt-1">Así Amy sabe cuándo tienes que tener el dinero listo.</p>
+                </div>
+                <button type="button" onClick={() => { addCajitaOB(); setCajFecha(""); }} disabled={!cajNombre || !cajMonto}
                   className="w-full border border-[#ec7fa9] text-[#ec7fa9] font-semibold py-2 rounded-xl text-sm hover:bg-white disabled:opacity-40 transition-colors">
                   + Agregar cajita
                 </button>
               </div>
 
               <div className="flex gap-3">
-                <button type="button" onClick={() => setStep("deudas")}
+                <button type="button" onClick={() => setStep("ahorro_intro")}
                   className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
                   ← Atrás
                 </button>
@@ -1179,9 +1397,15 @@ export default function OnboardingPage() {
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-1 flex items-center gap-2" style={{ fontFamily: "var(--font-playfair)" }}>
                 <PiggyBank size={20} className="text-[#ec7fa9]" />Crea tus bolsitas
               </h2>
-              <p className="text-sm text-[#1a1a2e]/60 mb-5 leading-relaxed">
+              <p className="text-sm text-[#1a1a2e]/60 mb-3 leading-relaxed">
                 Ahorro mensual: <strong className="text-[#ec7fa9]">{fmt(selectedAhorro ?? 0)}/mes</strong>. Distribúyelo como quieras.
               </p>
+              <div className={`rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between text-sm ${bolsitasDisponible < 0 ? "bg-red-50 border border-red-200" : bolsitasDisponible === 0 ? "bg-orange-50 border border-orange-200" : "bg-[#ec7fa9]/10 border border-[#ec7fa9]/30"}`}>
+                <span className={bolsitasDisponible < 0 ? "text-red-500 font-medium" : bolsitasDisponible === 0 ? "text-orange-500 font-medium" : "text-[#1a1a2e]/60"}>
+                  {bolsitasDisponible <= 0 ? "¡Dinero completamente repartido!" : "Dinero disponible para repartir"}
+                </span>
+                <span className={`font-bold ${bolsitasDisponible < 0 ? "text-red-500" : bolsitasDisponible === 0 ? "text-orange-500" : "text-[#ec7fa9]"}`}>{fmt(bolsitasDisponible)}/mes</span>
+              </div>
 
               {bolsitasOB.length > 0 && (
                 <div className="space-y-2 mb-4">
@@ -1202,23 +1426,36 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              <div className="bg-[#ffedfa] rounded-2xl p-4 mb-4">
-                <div className="flex gap-2 mb-4">
+              {bolsitasDisponible <= 0 && (
+                <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 mb-4 text-center">
+                  <p className="text-sm text-orange-600 font-medium">Ya repartiste todo tu dinero de ahorro</p>
+                  <p className="text-xs text-orange-500 mt-0.5">Elimina una bolsita para agregar otra, o continúa así.</p>
+                </div>
+              )}
+
+              <div className={`bg-[#ffedfa] rounded-2xl p-4 mb-4 ${bolsitasDisponible <= 0 ? "opacity-50 pointer-events-none" : ""}`}>
+                <div className="flex gap-2 mb-3">
                   <button type="button" onClick={() => setBolTipo("fondos")}
                     className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${bolTipo === "fondos" ? "bg-[#ec7fa9] text-white" : "bg-white border border-[#ffb8e0] text-[#1a1a2e]/60"}`}>
-                    <PiggyBank size={14} />Mis fondos
+                    <PiggyBank size={14} />Ahorro continuo
                   </button>
                   <button type="button" onClick={() => setBolTipo("metas")}
                     className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5 ${bolTipo === "metas" ? "bg-[#ec7fa9] text-white" : "bg-white border border-[#ffb8e0] text-[#1a1a2e]/60"}`}>
-                    <Target size={14} />Mis metas
+                    <Target size={14} />Meta con fecha
                   </button>
                 </div>
 
                 {bolTipo === "fondos" && (
-                  <p className="text-xs text-[#1a1a2e]/50 mb-3">Ahorro sin fecha límite. Defines cuánto apartas cada mes. Ej: fondo de emergencias, ropa, tecnología.</p>
+                  <div className="bg-white border border-[#ffb8e0] rounded-xl px-3 py-2.5 mb-3">
+                    <p className="text-xs font-semibold text-[#ec7fa9] mb-0.5">Ahorro continuo, sin fecha límite</p>
+                    <p className="text-xs text-[#1a1a2e]/60 leading-relaxed">Apartas una cantidad fija cada mes, sin un objetivo específico. Ideal para el fondo de emergencias, ropa, tecnología o cualquier cosa que quieras ir acumulando sin prisa.</p>
+                  </div>
                 )}
                 {bolTipo === "metas" && (
-                  <p className="text-xs text-[#1a1a2e]/50 mb-3">Tienes un monto objetivo y una fecha. Finly calcula cuánto necesitas ahorrar cada mes. Ej: viaje a México en diciembre.</p>
+                  <div className="bg-white border border-[#ffb8e0] rounded-xl px-3 py-2.5 mb-3">
+                    <p className="text-xs font-semibold text-[#ec7fa9] mb-0.5">Meta con fecha, Amy hace el cálculo</p>
+                    <p className="text-xs text-[#1a1a2e]/60 leading-relaxed">Tienes un sueño con precio y fecha. Le dices a Amy cuánto necesitas y para cuándo, y ella te dice exactamente cuánto apartar cada mes para llegar a tiempo. Ej: viaje a México en diciembre, computador nuevo en marzo.</p>
+                  </div>
                 )}
 
                 <div className="flex gap-2 mb-2">
@@ -1231,8 +1468,55 @@ export default function OnboardingPage() {
                 </div>
 
                 {bolTipo === "fondos" && (
-                  <input type="number" value={bolCuota} onChange={e => setBolCuota(e.target.value)}
-                    placeholder="¿Cuánto apartas al mes?" className={`${inputCls} mb-2`} />
+                  <div className="mb-2">
+                    {bolCuota && !editingBolCuota ? (
+                      <div className="flex items-center justify-between bg-[#ec7fa9]/10 border border-[#ec7fa9]/40 rounded-xl px-3 py-2.5">
+                        <div>
+                          <p className="text-xs text-[#1a1a2e]/50">Apartando</p>
+                          <p className="text-base font-bold text-[#ec7fa9]">{fmt(parseFloat(bolCuota))}/mes</p>
+                        </div>
+                        <button type="button" onClick={() => setEditingBolCuota(true)}
+                          className="p-1.5 text-[#1a1a2e]/40 hover:text-[#ec7fa9] rounded-lg hover:bg-white transition-colors">
+                          <Pencil size={14} />
+                        </button>
+                      </div>
+                    ) : editingBolCuota ? (
+                      <div className="flex gap-2">
+                        <input type="number" value={bolCuota} onChange={e => setBolCuota(e.target.value)}
+                          autoFocus max={bolsitasDisponible}
+                          placeholder={bolCuotaRecomendada > 0 ? String(bolCuotaRecomendada) : "Monto mensual"}
+                          className={`${inputCls} flex-1 ${bolCuota && parseFloat(bolCuota) > bolsitasDisponible ? "border-red-400" : ""}`} />
+                        <button type="button" onClick={() => setEditingBolCuota(false)} disabled={!bolCuota}
+                          className="bg-[#ec7fa9] text-white px-3 py-2.5 rounded-xl hover:bg-[#d96d97] disabled:opacity-40 flex items-center">
+                          <Check size={14} />
+                        </button>
+                      </div>
+                    ) : bolCuotaRecomendada > 0 ? (
+                      <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-3 py-2.5">
+                        <p className="text-xs text-[#1a1a2e]/50 mb-1.5">Amy recomienda apartar</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-lg font-bold text-[#ec7fa9]">{fmt(bolCuotaRecomendada)}<span className="text-xs font-normal text-[#1a1a2e]/40">/mes</span></p>
+                          <div className="flex gap-1.5">
+                            <button type="button" onClick={() => { setBolCuota(String(bolCuotaRecomendada)); setEditingBolCuota(false); }}
+                              className="bg-[#ec7fa9] text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-[#d96d97] flex items-center gap-1">
+                              <Check size={12} />Aceptar
+                            </button>
+                            <button type="button" onClick={() => { setBolCuota(String(bolCuotaRecomendada)); setEditingBolCuota(true); }}
+                              className="border border-[#ffb8e0] bg-white text-[#1a1a2e]/40 px-2.5 py-1.5 rounded-lg hover:text-[#ec7fa9] flex items-center">
+                              <Pencil size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <input type="number" value={bolCuota} onChange={e => setBolCuota(e.target.value)}
+                        placeholder="¿Cuánto apartas al mes?"
+                        className={inputCls} />
+                    )}
+                    {bolCuota && parseFloat(bolCuota) > bolsitasDisponible && (
+                      <p className="text-xs text-red-500 mt-1">Excede el dinero disponible. Máximo: {fmt(bolsitasDisponible)}/mes</p>
+                    )}
+                  </div>
                 )}
                 {bolTipo === "metas" && (
                   <div className="grid grid-cols-2 gap-2 mb-2">
@@ -1241,18 +1525,24 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xs text-[#1a1a2e]/50">Importancia:</span>
-                  {[1,2,3,4,5].map(n => (
-                    <button key={n} type="button" onClick={() => setBolImportancia(n)}
-                      className={`transition-all ${n <= bolImportancia ? "text-[#ec7fa9]" : "text-[#ffb8e0]"}`}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill={n <= bolImportancia ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    </button>
-                  ))}
+                <div className="mb-3">
+                  <p className="text-xs text-[#1a1a2e]/50 mb-1.5">¿Qué tan importante es esta bolsita?</p>
+                  <div className="flex items-center gap-1.5">
+                    {[1,2,3,4,5].map(n => (
+                      <button key={n} type="button" onClick={() => { setBolImportancia(n); if (bolTipo === "fondos") { setBolCuota(""); setEditingBolCuota(false); } }}
+                        className={`transition-all ${n <= bolImportancia ? "text-[#ec7fa9]" : "text-[#ffb8e0]"}`}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill={n <= bolImportancia ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <button type="button" onClick={addBolsitaOB}
-                  disabled={!bolNombre || (bolTipo === "fondos" && !bolCuota) || (bolTipo === "metas" && (!bolMeta || !bolFecha))}
+                  disabled={
+                    !bolNombre ||
+                    (bolTipo === "fondos" && (!bolCuota || parseFloat(bolCuota) > bolsitasDisponible)) ||
+                    (bolTipo === "metas" && (!bolMeta || !bolFecha))
+                  }
                   className="w-full border border-[#ec7fa9] text-[#ec7fa9] font-semibold py-2 rounded-xl text-sm hover:bg-white disabled:opacity-40 transition-colors">
                   + Agregar bolsita
                 </button>

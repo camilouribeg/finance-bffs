@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
@@ -15,10 +15,26 @@ const playfair = Playfair_Display({
   style: ["normal", "italic"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#ec7fa9",
+};
+
 export const metadata: Metadata = {
   title: "Finance BFFs — Tu mejor amiga en las finanzas",
   description:
     "La plataforma de finanzas personales diseñada para mujeres que quieren tomar el control de su dinero, sin estrés y sin juicio.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "Amy",
+    statusBarStyle: "default",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.svg",
+  },
   openGraph: {
     title: "Finance BFFs",
     description: "Organiza tu dinero, construye tu vida.",

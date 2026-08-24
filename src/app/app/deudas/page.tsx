@@ -2,12 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { CreditCard, Landmark, Home, Car, Users, FileText, Snowflake, Mountain, Scale, Lightbulb, Target, Ban, Trophy } from "lucide-react";
+import { useFmt } from "@/lib/useFmt";
+import { CreditCard, Landmark, Home, Car, Users, FileText, Check, X, Plus, Lightbulb } from "lucide-react";
 
 type Deuda = { id: string; nombre: string; tipo: string; cuota_mensual: number; total_pendiente: number };
 
+const TIPOS = ["Tarjeta de crédito", "Préstamo personal", "Crédito hipotecario", "Crédito de vehículo", "Deuda familiar", "Otro"];
+
 function TipoIcon({ tipo }: { tipo: string }) {
-  const props = { size: 15, className: "text-[#ec7fa9] flex-shrink-0", strokeWidth: 1.75 };
+  const props = { size: 16, className: "text-[#ec7fa9] flex-shrink-0", strokeWidth: 1.75 };
   if (tipo === "Tarjeta de crédito") return <CreditCard {...props} />;
   if (tipo === "Préstamo personal") return <Landmark {...props} />;
   if (tipo === "Crédito hipotecario") return <Home {...props} />;
@@ -16,169 +19,302 @@ function TipoIcon({ tipo }: { tipo: string }) {
   return <FileText {...props} />;
 }
 
-const METHOD_LABELS: Record<string, { icon: React.ReactNode; nombre: string; desc: string }> = {
-  snowball: { icon: <Snowflake size={16} />, nombre: "Bola de nieve", desc: "Paga el mínimo en todas y enfoca el dinero extra en la deuda más pequeña. Al pagarla, ese dinero pasa a la siguiente. Genera momentum y motivación." },
-  avalanche: { icon: <Mountain size={16} />, nombre: "Avalancha", desc: "Paga el mínimo en todas y enfoca el dinero extra en la deuda con mayor tasa de interés. Te ahorra más dinero a largo plazo." },
-  balanced: { icon: <Scale size={16} />, nombre: "Equilibrado", desc: "Avanza en varias deudas al mismo tiempo de forma estable. Sin enfocarte en una sola, pero sin descuidar ninguna." },
-};
-
-export default function DeudasVisualPage() {
+export default function DeudasPage() {
+  const fmt = useFmt();
   const [deudas, setDeudas] = useState<Deuda[]>([]);
   const [loading, setLoading] = useState(true);
-  const [debtMethod, setDebtMethod] = useState<string>("snowball");
+  const [showForm, setShowForm] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const [{ data }, { data: profile }] = await Promise.all([
-        supabase.from("deudas").select("*").eq("user_id", user.id).order("total_pendiente", { ascending: false }),
-        supabase.from("profiles").select("debt_method").eq("id", user.id).single(),
-      ]);
-      if (data) setDeudas(data);
-      if (profile?.debt_method) setDebtMethod(profile.debt_method);
-      setLoading(false);
-    }
-    load();
-  }, []);
+  // Form state
+  const [nombre, setNombre] = useState("");
+  const [tipo, setTipo] = useState("Tarjeta de crédito");
+  const [totalPendiente, setTotalPendiente] = useState("");
+  const [cuotaMensual, setCuotaMensual] = useState("");
 
-  function fmt(n: number) {
-    return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+  // Abono state
+  const [abonarId, setAbonarId] = useState<string | null>(null);
+  const [abonarMonto, setAbonarMonto] = useState("");
+  const [abonarUsar, setAbonarUsar] = useState<"cuota" | "custom">("cuota");
+
+  useEffect(() => { load(); }, []);
+
+  async function load() {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase.from("deudas").select("*").eq("user_id", user.id).order("total_pendiente", { ascending: true });
+    if (data) setDeudas(data);
+    setLoading(false);
   }
 
-  const totalPendiente = deudas.reduce((s, d) => s + d.total_pendiente, 0);
-  const totalCuotas = deudas.reduce((s, d) => s + d.cuota_mensual, 0);
-  const maxPendiente = deudas[0]?.total_pendiente || 1;
 
-  const method = METHOD_LABELS[debtMethod] || METHOD_LABELS.snowball;
-  const sortedByMethod = [...deudas].sort((a, b) => {
-    if (debtMethod === "snowball") return a.total_pendiente - b.total_pendiente;
-    if (debtMethod === "avalanche") return b.total_pendiente - a.total_pendiente; // approximate; tasa not always available
-    return 0; // balanced
-  });
+  async function addDeuda(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nombre || !totalPendiente || !cuotaMensual) return;
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase.from("deudas").insert({
+      user_id: user.id,
+      nombre,
+      tipo,
+      total_pendiente: parseFloat(totalPendiente),
+      cuota_mensual: parseFloat(cuotaMensual),
+    }).select().single();
+    if (data) setDeudas(prev => [...prev, data].sort((a, b) => a.total_pendiente - b.total_pendiente));
+    setNombre(""); setTipo("Tarjeta de crédito"); setTotalPendiente(""); setCuotaMensual("");
+    setShowForm(false);
+  }
+
+  async function registrarAbono(id: string) {
+    const deuda = deudas.find(d => d.id === id);
+    if (!deuda) return;
+    const monto = abonarUsar === "cuota" ? deuda.cuota_mensual : parseFloat(abonarMonto);
+    if (!monto || monto <= 0) return;
+    const nuevo = Math.max(0, deuda.total_pendiente - monto);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("deudas").update({ total_pendiente: nuevo }).eq("id", id).eq("user_id", user.id);
+    setDeudas(deudas.map(d => d.id === id ? { ...d, total_pendiente: nuevo } : d));
+    setAbonarId(null); setAbonarMonto(""); setAbonarUsar("cuota");
+  }
+
+  async function removeDeuda(id: string) {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("deudas").delete().eq("id", id).eq("user_id", user.id);
+    setDeudas(deudas.filter(d => d.id !== id));
+  }
+
+  const totalPend = deudas.reduce((s, d) => s + d.total_pendiente, 0);
+  const totalCuotas = deudas.reduce((s, d) => s + d.cuota_mensual, 0);
+  const activas = deudas.filter(d => d.total_pendiente > 0);
+  // Recommend smallest debt first (easiest win)
+  const primeraDeuda = activas.length > 0 ? activas[0] : null;
+
+  const inputCls = "w-full border border-[#ffb8e0] rounded-xl px-4 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30";
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
-          Mis deudas
-        </h1>
-        <p className="text-[#1a1a2e]/50 text-sm mt-1">Tu camino para quedar libre de deudas</p>
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
+            Mis deudas
+          </h1>
+          <p className="text-[#1a1a2e]/50 text-sm mt-1">Tu camino para quedar libre de deudas</p>
+        </div>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="flex items-center gap-1.5 bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors"
+        >
+          <Plus size={14} /> Agregar deuda
+        </button>
       </div>
 
+      {/* Add form */}
+      {showForm && (
+        <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6 mb-6">
+          <h2 className="font-semibold text-[#1a1a2e] mb-4">Nueva deuda</h2>
+          <form onSubmit={addDeuda} className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Nombre</label>
+                <input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Tarjeta Bancolombia" className={inputCls} />
+              </div>
+              <div>
+                <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Tipo</label>
+                <select value={tipo} onChange={e => setTipo(e.target.value)} className={inputCls}>
+                  {TIPOS.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Saldo pendiente</label>
+                <input type="number" value={totalPendiente} onChange={e => setTotalPendiente(e.target.value)} placeholder="Ej: 5.000.000" className={inputCls} />
+              </div>
+              <div>
+                <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Cuota mensual</label>
+                <input type="number" value={cuotaMensual} onChange={e => setCuotaMensual(e.target.value)} placeholder="Ej: 300.000" className={inputCls} />
+              </div>
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button type="button" onClick={() => setShowForm(false)}
+                className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-2.5 rounded-xl hover:bg-[#ffedfa] text-sm">Cancelar</button>
+              <button type="submit"
+                className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm">Guardar deuda</button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {loading ? (
-        <div className="text-center py-20 text-[#1a1a2e]/30">Cargando...</div>
+        <div className="flex flex-col gap-4 animate-pulse">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="h-24 bg-white rounded-2xl border border-[#ffb8e0]" />
+            <div className="h-24 bg-white rounded-2xl border border-[#ffb8e0]" />
+          </div>
+          {[1,2,3].map(i => <div key={i} className="h-28 bg-white rounded-2xl border border-[#ffb8e0]" />)}
+        </div>
       ) : deudas.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-2xl border border-[#ffb8e0]">
-          <p className="text-xl font-bold text-[#1a1a2e]">¡Sin deudas registradas!</p>
-          <p className="text-sm text-[#1a1a2e]/50 mt-2">Agrega tus deudas desde el Dashboard</p>
+          <CreditCard size={36} className="mx-auto mb-3 text-[#ec7fa9] opacity-40" />
+          <p className="font-semibold text-[#1a1a2e]">No tienes deudas registradas</p>
+          <p className="text-sm text-[#1a1a2e]/50 mt-1 mb-4">Si tienes, agrégalas para hacer seguimiento</p>
+          <button onClick={() => setShowForm(true)}
+            className="bg-[#ec7fa9] text-white font-semibold px-6 py-2.5 rounded-xl text-sm hover:bg-[#d96d97]">
+            + Agregar primera deuda
+          </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-5">
 
           {/* Summary */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
-              <p className="text-xs text-[#1a1a2e]/50 mb-1">Deuda total</p>
-              <p className="text-xl font-bold text-[#ec7fa9]">{fmt(totalPendiente)}</p>
+              <p className="text-xs text-[#1a1a2e]/50 mb-1">Total pendiente</p>
+              <p className="text-2xl font-bold text-[#ec7fa9]">{fmt(totalPend)}</p>
             </div>
             <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
-              <p className="text-xs text-[#1a1a2e]/50 mb-1">Cuotas/mes</p>
-              <p className="text-xl font-bold text-[#1a1a2e]">{fmt(totalCuotas)}</p>
-            </div>
-            <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
-              <p className="text-xs text-[#1a1a2e]/50 mb-1">Deudas activas</p>
-              <p className="text-xl font-bold text-[#1a1a2e]">{deudas.filter((d) => d.total_pendiente > 0).length}</p>
+              <p className="text-xs text-[#1a1a2e]/50 mb-1">Cuotas este mes</p>
+              <p className="text-2xl font-bold text-[#1a1a2e]">{fmt(totalCuotas)}</p>
             </div>
           </div>
 
-          {/* Debt bars */}
-          <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
-            <h2 className="font-semibold text-[#1a1a2e] mb-5">Resumen de deudas</h2>
-            <div className="flex flex-col gap-5">
-              {deudas.map((d) => {
-                const meses = d.cuota_mensual > 0 ? Math.ceil(d.total_pendiente / d.cuota_mensual) : null;
-                const done = d.total_pendiente === 0;
-                return (
-                  <div key={d.id}>
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <TipoIcon tipo={d.tipo} />
-                        <div>
-                          <p className="text-sm font-semibold text-[#1a1a2e]">{d.nombre}</p>
-                          <p className="text-xs text-[#1a1a2e]/40">{d.tipo}</p>
+          {/* Where to start */}
+          {activas.length > 0 && (
+            <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl px-5 py-4 flex items-start gap-3">
+              <Lightbulb size={16} className="text-[#ec7fa9] flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
+                {activas.length === 1 ? (
+                  <>
+                    Paga tu cuota de <span className="font-semibold text-[#1a1a2e]">{primeraDeuda!.nombre}</span> cada mes sin falta, y cuando tengas dinero extra, ponlo ahí. Cada peso de más que abones te acorta el tiempo para quedar libre.
+                  </>
+                ) : (
+                  <>
+                    Te recomendamos enfocarte primero en <span className="font-semibold text-[#1a1a2e]">{primeraDeuda!.nombre}</span> — es la más pequeña y la más rápida de liquidar. Cuando la termines, usa esa cuota para atacar la siguiente. Así vas agarrando impulso.
+                  </>
+                )}
+              </p>
+            </div>
+          )}
+
+          {/* Debt cards */}
+          <div className="flex flex-col gap-4">
+            {deudas.map((d, i) => {
+              const meses = d.cuota_mensual > 0 ? Math.ceil(d.total_pendiente / d.cuota_mensual) : null;
+              const done = d.total_pendiente === 0;
+              const esPrimera = !done && activas.length > 1 && activas[0]?.id === d.id;
+              return (
+                <div key={d.id} className={`bg-white rounded-2xl border p-5 ${done ? "border-green-200" : esPrimera ? "border-[#ec7fa9]" : "border-[#ffb8e0]"}`}>
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${done ? "bg-green-100" : esPrimera ? "bg-[#ec7fa9]" : "bg-[#ffedfa]"}`}>
+                        {done
+                          ? <Check size={14} className="text-green-600" strokeWidth={2.5} />
+                          : <span className={`text-xs font-bold ${esPrimera ? "text-white" : "text-[#ec7fa9]"}`}>{i + 1}</span>
+                        }
+                      </div>
+                      <div>
+                        {esPrimera && (
+                          <span className="text-[10px] font-bold text-[#ec7fa9] uppercase tracking-wider">Empieza aquí</span>
+                        )}
+                        <p className="font-semibold text-[#1a1a2e] text-sm leading-tight">{d.nombre}</p>
+                        <p className="text-xs text-[#1a1a2e]/40 flex items-center gap-1 mt-0.5">
+                          <TipoIcon tipo={d.tipo} /> {d.tipo}
+                        </p>
+                      </div>
+                    </div>
+                    <button onClick={() => removeDeuda(d.id)} className="text-[#1a1a2e]/20 hover:text-red-400 flex items-center">
+                      <X size={14} />
+                    </button>
+                  </div>
+
+                  {done ? (
+                    <div className="flex items-center gap-2 text-sm font-semibold text-green-600">
+                      <Check size={15} strokeWidth={2.5} />¡Deuda liquidada!
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-3 gap-3 mb-4 text-center">
+                        <div className="bg-[#ffedfa] rounded-xl py-2.5 px-2">
+                          <p className="text-[10px] text-[#1a1a2e]/50 mb-0.5">Saldo</p>
+                          <p className="text-sm font-bold text-[#1a1a2e]">{fmt(d.total_pendiente)}</p>
+                        </div>
+                        <div className="bg-[#ffedfa] rounded-xl py-2.5 px-2">
+                          <p className="text-[10px] text-[#1a1a2e]/50 mb-0.5">Cuota/mes</p>
+                          <p className="text-sm font-bold text-[#ec7fa9]">{fmt(d.cuota_mensual)}</p>
+                        </div>
+                        <div className="bg-[#ffedfa] rounded-xl py-2.5 px-2">
+                          <p className="text-[10px] text-[#1a1a2e]/50 mb-0.5">~Meses</p>
+                          <p className="text-sm font-bold text-[#1a1a2e]">{meses ?? "—"}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        {done ? (
-                          <p className="text-sm font-bold text-green-600">✓ Pagada</p>
-                        ) : (
-                          <>
-                            <p className="text-sm font-bold text-[#1a1a2e]">{fmt(d.total_pendiente)}</p>
-                            <p className="text-xs text-[#1a1a2e]/40">{fmt(d.cuota_mensual)}/mes · {meses} meses</p>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="h-2 bg-[#ffb8e0] rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full transition-all duration-700 ${done ? "bg-green-400" : "bg-[#ec7fa9]"}`}
-                        style={{ width: `${(d.total_pendiente / maxPendiente) * 100}%` }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
 
-          {/* Strategy based on user's debt method */}
-          <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
-            <h2 className="font-semibold text-[#1a1a2e] mb-1 flex items-center gap-2">{method.icon} Estrategia: {method.nombre}</h2>
-            <p className="text-xs text-[#1a1a2e]/50 mb-5">{method.desc}</p>
-            <div className="flex flex-col gap-3">
-              {sortedByMethod.filter((d) => d.total_pendiente > 0).map((d, i) => (
-                <div key={d.id} className="flex items-center gap-3">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                    i === 0 ? "bg-[#ec7fa9] text-white" : "bg-[#ffedfa] text-[#ec7fa9]"
-                  }`}>
-                    {i + 1}
-                  </div>
-                  <div className="flex-1 flex items-center justify-between bg-[#ffedfa] rounded-xl px-4 py-2.5">
-                    <p className="text-sm font-medium text-[#1a1a2e] flex items-center gap-2">
-                      <TipoIcon tipo={d.tipo} /> {d.nombre}
-                      {i === 0 && debtMethod !== "balanced" && <span className="ml-2 text-xs text-[#ec7fa9] font-semibold">← empieza aquí</span>}
-                    </p>
-                    <p className="text-sm font-bold text-[#1a1a2e]">{fmt(d.total_pendiente)}</p>
-                  </div>
+                      {abonarId === d.id ? (
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setAbonarUsar("cuota")}
+                              className={`flex-1 text-xs py-2 rounded-xl border font-medium transition-colors ${abonarUsar === "cuota" ? "bg-[#ec7fa9] border-[#ec7fa9] text-white" : "border-[#ffb8e0] text-[#1a1a2e]/60 hover:bg-[#ffedfa]"}`}
+                            >
+                              Cuota normal ({fmt(d.cuota_mensual)})
+                            </button>
+                            <button
+                              onClick={() => setAbonarUsar("custom")}
+                              className={`flex-1 text-xs py-2 rounded-xl border font-medium transition-colors ${abonarUsar === "custom" ? "bg-[#ec7fa9] border-[#ec7fa9] text-white" : "border-[#ffb8e0] text-[#1a1a2e]/60 hover:bg-[#ffedfa]"}`}
+                            >
+                              Otro monto
+                            </button>
+                          </div>
+                          {abonarUsar === "custom" && (
+                            <input
+                              type="number"
+                              value={abonarMonto}
+                              onChange={e => setAbonarMonto(e.target.value)}
+                              placeholder="Monto pagado"
+                              autoFocus
+                              className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none"
+                            />
+                          )}
+                          <div className="flex gap-2">
+                            <button onClick={() => registrarAbono(d.id)}
+                              className="flex-1 bg-[#ec7fa9] text-white text-sm font-medium py-2 rounded-xl hover:bg-[#d96d97] flex items-center justify-center gap-1">
+                              <Check size={14} /> Registrar pago
+                            </button>
+                            <button onClick={() => { setAbonarId(null); setAbonarMonto(""); setAbonarUsar("cuota"); }}
+                              className="border border-[#ffb8e0] text-[#1a1a2e]/50 text-sm px-4 py-2 rounded-xl flex items-center">
+                              <X size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button onClick={() => setAbonarId(d.id)}
+                          className="text-xs text-[#ec7fa9] font-semibold hover:underline">
+                          + Registrar pago
+                        </button>
+                      )}
+                    </>
+                  )}
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
 
-          {/* Tips */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Simple tips */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
             <div className="bg-[#ec7fa9] rounded-2xl p-5 text-white">
-              <p className="font-bold mb-2 flex items-center gap-2"><Lightbulb size={15} />El mínimo no es suficiente</p>
+              <p className="font-bold mb-1.5 text-sm">Paga más del mínimo cuando puedas</p>
               <p className="text-sm text-white/80 leading-relaxed">
-                Pagar solo el mínimo de una tarjeta puede hacer que esa deuda dure años más y que pagues el doble en intereses. Si puedes, siempre paga más del mínimo.
-              </p>
-            </div>
-            <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
-              <p className="font-bold text-[#1a1a2e] mb-2 flex items-center gap-2"><Target size={15} className="text-[#ec7fa9]" />Una deuda a la vez</p>
-              <p className="text-sm text-[#1a1a2e]/60 leading-relaxed">
-                Intentar pagar todas a la vez genera sensación de no avanzar. Concentrarte en una sola deuda y celebrar cuando la terminas genera motivación real.
-              </p>
-            </div>
-            <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
-              <p className="font-bold text-[#1a1a2e] mb-2 flex items-center gap-2"><Ban size={15} className="text-[#ec7fa9]" />No más deuda nueva</p>
-              <p className="text-sm text-[#1a1a2e]/60 leading-relaxed">
-                Mientras pagas deudas, evita crear deuda nueva. Cada peso nuevo que debes es un paso hacia atrás en tu progreso.
+                Pagar solo el mínimo de una tarjeta puede hacer que la deuda dure el doble. Cualquier peso extra que pongas acorta el tiempo y los intereses.
               </p>
             </div>
             <div className="bg-[#ffedfa] rounded-2xl border border-[#ffb8e0] p-5">
-              <p className="font-bold text-[#1a1a2e] mb-2 flex items-center gap-2"><Trophy size={15} className="text-[#ec7fa9]" />Celebra cada logro</p>
+              <p className="font-bold text-[#1a1a2e] mb-1.5 text-sm">Mientras pagas, no crees deuda nueva</p>
               <p className="text-sm text-[#1a1a2e]/60 leading-relaxed">
-                Cada deuda que pagas es una victoria enorme. Date el crédito — literalmente estás recuperando tu libertad financiera.
+                Cada peso nuevo que debes es un paso hacia atrás. Si puedes, pausa las compras a cuotas hasta que tengas más control.
               </p>
             </div>
           </div>

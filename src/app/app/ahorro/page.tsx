@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { PiggyBank, Target, Check, X, PartyPopper, Star } from "lucide-react";
+import { useFmt } from "@/lib/useFmt";
+import { PiggyBank, Target, Check, X, PartyPopper, Star, Plus, Pencil } from "lucide-react";
 
 type Bolsillo = {
   id: string;
@@ -54,10 +55,13 @@ function Stars({ value, onChange }: { value: number; onChange?: (v: number) => v
 }
 
 export default function AhorroPage() {
+  const fmt = useFmt();
   const [bolsillos, setBolsillos] = useState<Bolsillo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"fondos" | "metas">("fondos");
-  const [showForm, setShowForm] = useState(false);
+  const [formType, setFormType] = useState<"fondos" | "metas" | null>(null);
+
+  // Capacidad de ahorro disponible (ingreso - gastos fijos - cuotas deudas)
+  const [capacidadBase, setCapacidadBase] = useState(0);
 
   // Form fondos
   const [fNombre, setFNombre] = useState("");
@@ -65,6 +69,7 @@ export default function AhorroPage() {
   const [fImportancia, setFImportancia] = useState(3);
   const [fMeta, setFMeta] = useState("");
   const [fCuota, setFCuota] = useState("");
+  const [editingCuota, setEditingCuota] = useState(false);
 
   // Form metas
   const [mNombre, setMNombre] = useState("");
@@ -73,9 +78,11 @@ export default function AhorroPage() {
   const [mMeta, setMMeta] = useState("");
   const [mFecha, setMFecha] = useState("");
 
-  // Abonar
+  // Abonar / Retirar
   const [abonarId, setAbonarId] = useState<string | null>(null);
   const [abonarMonto, setAbonarMonto] = useState("");
+  const [retirarId, setRetirarId] = useState<string | null>(null);
+  const [retirarMonto, setRetirarMonto] = useState("");
 
   // Celebration modal
   const [celebrando, setCelebrando] = useState<Bolsillo | null>(null);
@@ -88,14 +95,25 @@ export default function AhorroPage() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from("bolsillos").select("*").eq("user_id", user.id).order("importancia", { ascending: false });
-    if (data) {
-      setBolsillos(data);
-      // Check for uncelebrated completed metas
-      const pendingCelebration = data.find(
+    const now = new Date();
+    const [bolRes, dashRes, deudasRes] = await Promise.all([
+      supabase.from("bolsillos").select("*").eq("user_id", user.id).order("importancia", { ascending: false }),
+      supabase.from("dashboard_mensual").select("ingreso_fijo,ingresos_otros,gastos_fijos").eq("user_id", user.id).eq("month", now.getMonth() + 1).eq("year", now.getFullYear()).single(),
+      supabase.from("deudas").select("cuota_mensual").eq("user_id", user.id),
+    ]);
+    if (bolRes.data) {
+      setBolsillos(bolRes.data);
+      const pending = bolRes.data.find(
         (b: Bolsillo) => b.tipo === "metas" && b.meta > 0 && b.actual >= b.meta && !b.celebrado
       );
-      if (pendingCelebration) setCelebrando(pendingCelebration);
+      if (pending) setCelebrando(pending);
+    }
+    if (dashRes.data) {
+      const ingreso = (dashRes.data.ingreso_fijo || 0)
+        + ((dashRes.data.ingresos_otros || []) as { valor: number }[]).reduce((s, i) => s + i.valor, 0);
+      const gastos = dashRes.data.gastos_fijos || 0;
+      const cuotas = (deudasRes.data || []).reduce((s: number, d: { cuota_mensual: number }) => s + d.cuota_mensual, 0);
+      setCapacidadBase(Math.max(0, ingreso - gastos - cuotas));
     }
     setLoading(false);
   }
@@ -113,10 +131,6 @@ export default function AhorroPage() {
     return Math.ceil(falta / monthsUntil(b.fecha_meta));
   }
 
-  function fmt(n: number) {
-    return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
-  }
-
   async function addFondo(e: React.FormEvent) {
     e.preventDefault();
     if (!fNombre) return;
@@ -132,8 +146,8 @@ export default function AhorroPage() {
       actual: 0, celebrado: false,
     }).select().single();
     if (data) setBolsillos(prev => [...prev, data].sort((a, b) => b.importancia - a.importancia));
-    setFNombre(""); setFEmoji("🐷"); setFImportancia(3); setFMeta(""); setFCuota("");
-    setShowForm(false);
+    setFNombre(""); setFEmoji("🐷"); setFImportancia(3); setFMeta(""); setFCuota(""); setEditingCuota(false);
+    setFormType(null);
   }
 
   async function addMeta(e: React.FormEvent) {
@@ -155,7 +169,7 @@ export default function AhorroPage() {
     }).select().single();
     if (data) setBolsillos(prev => [...prev, data]);
     setMNombre(""); setMEmoji("✈️"); setMImportancia(3); setMMeta(""); setMFecha("");
-    setShowForm(false);
+    setFormType(null);
   }
 
   async function abonar(id: string) {
@@ -165,20 +179,37 @@ export default function AhorroPage() {
     if (!monto) return;
     const nuevoActual = b.actual + monto;
     const supabase = createClient();
-    await supabase.from("bolsillos").update({ actual: nuevoActual }).eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("bolsillos").update({ actual: nuevoActual }).eq("id", id).eq("user_id", user.id);
     const updated = bolsillos.map(x => x.id === id ? { ...x, actual: nuevoActual } : x);
     setBolsillos(updated);
     setAbonarId(null); setAbonarMonto("");
-    // Check celebration
     const updatedB = updated.find(x => x.id === id);
     if (updatedB && updatedB.tipo === "metas" && updatedB.meta > 0 && nuevoActual >= updatedB.meta && !updatedB.celebrado) {
       setCelebrando(updatedB);
     }
   }
 
+  async function retirar(id: string) {
+    const b = bolsillos.find(x => x.id === id);
+    if (!b) return;
+    const monto = parseFloat(retirarMonto);
+    if (!monto || monto <= 0) return;
+    const nuevoActual = Math.max(0, b.actual - monto);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("bolsillos").update({ actual: nuevoActual }).eq("id", id).eq("user_id", user.id);
+    setBolsillos(bolsillos.map(x => x.id === id ? { ...x, actual: nuevoActual } : x));
+    setRetirarId(null); setRetirarMonto("");
+  }
+
   async function marcarCelebrado(id: string) {
     const supabase = createClient();
-    await supabase.from("bolsillos").update({ celebrado: true }).eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("bolsillos").update({ celebrado: true }).eq("id", id).eq("user_id", user.id);
     setBolsillos(bolsillos.map(b => b.id === id ? { ...b, celebrado: true } : b));
     setCelebrando(null);
     setReasignarId(""); setReasignarMonto("");
@@ -190,8 +221,10 @@ export default function AhorroPage() {
     if (!destino) return;
     const monto = parseFloat(reasignarMonto);
     const supabase = createClient();
-    await supabase.from("bolsillos").update({ actual: destino.actual + monto }).eq("id", reasignarId);
-    await supabase.from("bolsillos").update({ celebrado: true }).eq("id", celebrando.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("bolsillos").update({ actual: destino.actual + monto }).eq("id", reasignarId).eq("user_id", user.id);
+    await supabase.from("bolsillos").update({ celebrado: true }).eq("id", celebrando.id).eq("user_id", user.id);
     setBolsillos(bolsillos.map(b => {
       if (b.id === reasignarId) return { ...b, actual: b.actual + monto };
       if (b.id === celebrando.id) return { ...b, celebrado: true };
@@ -202,7 +235,9 @@ export default function AhorroPage() {
 
   async function removeBolsillo(id: string) {
     const supabase = createClient();
-    await supabase.from("bolsillos").delete().eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("bolsillos").delete().eq("id", id).eq("user_id", user.id);
     setBolsillos(bolsillos.filter(b => b.id !== id));
   }
 
@@ -211,6 +246,11 @@ export default function AhorroPage() {
   const totalAhorrado = bolsillos.reduce((s, b) => s + b.actual, 0);
   const totalMensual = fondos.reduce((s, b) => s + (b.cuota_mensual || 0), 0)
     + metas.reduce((s, b) => s + cuotaMeta(b), 0);
+
+  const disponibleParaAhorro = Math.max(0, capacidadBase - totalMensual);
+  const recomendacionFCuota = disponibleParaAhorro > 0
+    ? Math.round((fImportancia / 15) * disponibleParaAhorro)
+    : 0;
 
   const inputCls = "w-full border border-[#ffb8e0] rounded-xl px-4 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30";
 
@@ -254,9 +294,9 @@ export default function AhorroPage() {
                 </div>
               )}
               <button
-                onClick={() => { marcarCelebrado(celebrando.id); setShowForm(true); setActiveTab("metas"); }}
+                onClick={() => { marcarCelebrado(celebrando.id); setFormType("metas"); }}
                 className="w-full border-2 border-[#ffb8e0] rounded-2xl p-3 text-sm text-[#ec7fa9] font-medium hover:bg-[#ffedfa] transition-colors">
-                + Crear una nueva bolsita de metas
+                + Crear una nueva meta de ahorro
               </button>
               <button onClick={() => marcarCelebrado(celebrando.id)}
                 className="w-full text-xs text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-1">
@@ -267,21 +307,16 @@ export default function AhorroPage() {
         </div>
       )}
 
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
-            Mis ahorros
-          </h1>
-          <p className="text-[#1a1a2e]/50 text-sm mt-1">Tu dinero con propósito, guardado en tu banco</p>
-        </div>
-        <button onClick={() => { setShowForm(!showForm); }}
-          className="bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors">
-          + Agregar
-        </button>
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
+          Bolsitas de ahorro
+        </h1>
+        <p className="text-[#1a1a2e]/50 text-sm mt-1">Tu dinero con propósito, guardado en tu banco</p>
       </div>
 
       {/* Summary */}
-      <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5 mb-6">
+      <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5 mb-8">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-xs text-[#1a1a2e]/50 mb-1">Total ahorrado</p>
@@ -294,290 +329,395 @@ export default function AhorroPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        {(["fondos", "metas"] as const).map(tab => (
-          <button key={tab} onClick={() => { setActiveTab(tab); setShowForm(false); }}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${activeTab === tab ? "bg-[#ec7fa9] text-white" : "bg-white border border-[#ffb8e0] text-[#1a1a2e]/60 hover:bg-[#ffedfa]"}`}>
-            {tab === "fondos" ? <span className="flex items-center justify-center gap-2"><PiggyBank size={15} />Mis fondos</span> : <span className="flex items-center justify-center gap-2"><Target size={15} />Mis metas</span>}
-          </button>
-        ))}
-      </div>
-
-      {/* Add Form */}
-      {showForm && (
-        <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6 mb-6">
-          {activeTab === "fondos" ? (
-            <>
-              <h2 className="font-semibold text-[#1a1a2e] mb-4">Nuevo fondo permanente</h2>
-              <div className="mb-3">
-                <p className="text-xs text-[#1a1a2e]/50 mb-2">Ejemplos:</p>
-                <div className="flex flex-wrap gap-2">
-                  {FONDOS_PREDEFINIDOS.map(f => (
-                    <button key={f.nombre} type="button"
-                      onClick={() => { setFNombre(f.nombre); setFEmoji(f.emoji); }}
-                      className="text-xs bg-[#ffedfa] border border-[#ffb8e0] text-[#ec7fa9] px-3 py-1.5 rounded-lg hover:bg-[#ffb8e0] transition-colors">
-                      {f.emoji} {f.nombre}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <form onSubmit={addFondo} className="space-y-3">
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Nombre</label>
-                    <input value={fNombre} onChange={(e) => setFNombre(e.target.value)} placeholder="Ej: Emergencias del hogar" className={inputCls} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Emoji</label>
-                    <select value={fEmoji} onChange={(e) => setFEmoji(e.target.value)}
-                      className="border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none">
-                      {EMOJIS_FONDOS.map(e => <option key={e} value={e}>{e}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-[#1a1a2e]/50 mb-1.5 block">Importancia</label>
-                  <Stars value={fImportancia} onChange={setFImportancia} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Cuánto apartas por mes?</label>
-                    <input type="number" value={fCuota} onChange={(e) => setFCuota(e.target.value)} placeholder="Ej: 100.000" className={inputCls} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Meta total (opcional)</label>
-                    <input type="number" value={fMeta} onChange={(e) => setFMeta(e.target.value)} placeholder="Ej: 2.000.000" className={inputCls} />
-                  </div>
-                </div>
-                <div className="flex gap-3 pt-1">
-                  <button type="button" onClick={() => setShowForm(false)}
-                    className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-2.5 rounded-xl hover:bg-[#ffedfa] text-sm">Cancelar</button>
-                  <button type="submit"
-                    className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm">Guardar fondo</button>
-                </div>
-              </form>
-            </>
-          ) : (
-            <>
-              <h2 className="font-semibold text-[#1a1a2e] mb-4">Nueva meta de ahorro</h2>
-              <div className="mb-3">
-                <p className="text-xs text-[#1a1a2e]/50 mb-2">Ejemplos:</p>
-                <div className="flex flex-wrap gap-2">
-                  {METAS_EJEMPLOS.map(m => (
-                    <button key={m.nombre} type="button"
-                      onClick={() => { setMNombre(m.nombre); setMEmoji(m.emoji); }}
-                      className="text-xs bg-[#ffedfa] border border-[#ffb8e0] text-[#ec7fa9] px-3 py-1.5 rounded-lg hover:bg-[#ffb8e0] transition-colors">
-                      {m.emoji} {m.nombre}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <form onSubmit={addMeta} className="space-y-3">
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Qué quieres lograr?</label>
-                    <input value={mNombre} onChange={(e) => setMNombre(e.target.value)} placeholder="Ej: Viaje a Disney" className={inputCls} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Emoji</label>
-                    <select value={mEmoji} onChange={(e) => setMEmoji(e.target.value)}
-                      className="border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none">
-                      {EMOJIS_METAS.map(e => <option key={e} value={e}>{e}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-[#1a1a2e]/50 mb-1.5 block">Importancia</label>
-                  <Stars value={mImportancia} onChange={setMImportancia} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Cuánto cuesta?</label>
-                    <input type="number" value={mMeta} onChange={(e) => setMMeta(e.target.value)} placeholder="Ej: 5.000.000" className={inputCls} />
-                  </div>
-                  <div>
-                    <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Para cuándo?</label>
-                    <input type="date" value={mFecha} onChange={(e) => setMFecha(e.target.value)} className={inputCls} />
-                  </div>
-                </div>
-                {mMeta && mFecha && (
-                  <div className="bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-xl px-4 py-2.5 text-sm">
-                    <span className="text-[#1a1a2e]/60">Finly calcula que necesitas apartar </span>
-                    <span className="font-bold text-[#ec7fa9]">
-                      {fmt(Math.ceil(parseFloat(mMeta) / Math.max(1, monthsUntil(mFecha))))}
-                    </span>
-                    <span className="text-[#1a1a2e]/60"> por mes para llegar a tiempo</span>
-                  </div>
-                )}
-                <div className="flex gap-3 pt-1">
-                  <button type="button" onClick={() => setShowForm(false)}
-                    className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-2.5 rounded-xl hover:bg-[#ffedfa] text-sm">Cancelar</button>
-                  <button type="submit"
-                    className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm">Guardar meta</button>
-                </div>
-              </form>
-            </>
-          )}
-        </div>
-      )}
-
       {loading ? (
-        <div className="text-center py-20 text-[#1a1a2e]/30">Cargando...</div>
+        <div className="flex flex-col gap-6 animate-pulse">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1,2,3,4].map(i => <div key={i} className="h-44 bg-white rounded-2xl border border-[#ffb8e0]" />)}
+          </div>
+        </div>
       ) : (
         <>
-          {/* FONDOS TAB */}
-          {activeTab === "fondos" && (
-            <div>
-              {fondos.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-2xl border border-[#ffb8e0]">
-                  <PiggyBank size={36} className="mx-auto mb-3 text-[#ec7fa9] opacity-40" />
-                  <p className="font-semibold text-[#1a1a2e]">Aún no tienes fondos permanentes</p>
-                  <p className="text-sm text-[#1a1a2e]/50 mt-1 mb-4">Son para emergencias y gastos recurrentes de tu vida</p>
-                  <button onClick={() => setShowForm(true)}
-                    className="bg-[#ec7fa9] text-white font-semibold px-6 py-2.5 rounded-xl text-sm hover:bg-[#d96d97]">
-                    + Crear primer fondo
-                  </button>
+          {/* ── AHORRO CONTINUO ── */}
+          <section className="mb-10">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <PiggyBank size={18} className="text-[#ec7fa9]" />
+                <h2 className="text-lg font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
+                  Ahorro continuo
+                </h2>
+              </div>
+              <button
+                onClick={() => setFormType(formType === "fondos" ? null : "fondos")}
+                className="flex items-center gap-1.5 text-sm font-semibold text-[#ec7fa9] border border-[#ffb8e0] bg-white hover:bg-[#ffedfa] px-4 py-2 rounded-xl transition-colors"
+              >
+                <Plus size={14} />Nueva bolsita
+              </button>
+            </div>
+
+            {/* Explanation card */}
+            <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl px-5 py-4 mb-4">
+              <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
+                <span className="font-semibold text-[#ec7fa9]">Son fondos que nunca se acaban.</span> Apartas una cantidad fija cada mes para gastos que van y vienen: skincare, regalos, salud, emergencias... Cuando usas el dinero, el bolsillo se recarga el mes siguiente.
+              </p>
+            </div>
+
+            {/* Form */}
+            {formType === "fondos" && (
+              <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6 mb-4">
+                <h3 className="font-semibold text-[#1a1a2e] mb-4">Nueva bolsita de ahorro continuo</h3>
+                <div className="mb-3">
+                  <p className="text-xs text-[#1a1a2e]/50 mb-2">Ejemplos frecuentes:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {FONDOS_PREDEFINIDOS.map(f => (
+                      <button key={f.nombre} type="button"
+                        onClick={() => { setFNombre(f.nombre); setFEmoji(f.emoji); }}
+                        className="text-xs bg-[#ffedfa] border border-[#ffb8e0] text-[#ec7fa9] px-3 py-1.5 rounded-lg hover:bg-[#ffb8e0] transition-colors">
+                        {f.emoji} {f.nombre}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {fondos.map((b) => {
-                    const pct = b.meta > 0 ? Math.min((b.actual / b.meta) * 100, 100) : null;
-                    return (
-                      <div key={b.id} className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">{b.emoji}</span>
-                            <div>
-                              <p className="font-semibold text-[#1a1a2e] text-sm">{b.nombre}</p>
-                              <Stars value={b.importancia || 3} />
-                            </div>
-                          </div>
-                          <button onClick={() => removeBolsillo(b.id)} className="text-[#1a1a2e]/20 hover:text-red-400 flex items-center"><X size={14} /></button>
+                <form onSubmit={addFondo} className="space-y-4">
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Nombre</label>
+                      <input value={fNombre} onChange={(e) => setFNombre(e.target.value)} placeholder="Ej: Emergencias del hogar" className={inputCls} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Emoji</label>
+                      <select value={fEmoji} onChange={(e) => setFEmoji(e.target.value)}
+                        className="border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none">
+                        {EMOJIS_FONDOS.map(e => <option key={e} value={e}>{e}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Importancia → recomendación */}
+                  <div>
+                    <label className="text-xs text-[#1a1a2e]/50 mb-1.5 block">¿Qué tan importante es esta bolsita?</label>
+                    <Stars value={fImportancia} onChange={(v) => { setFImportancia(v); setFCuota(""); setEditingCuota(false); }} />
+                  </div>
+
+                  {/* Cuota: recomendación o edición manual */}
+                  <div>
+                    <label className="text-xs text-[#1a1a2e]/50 mb-1.5 block">¿Cuánto apartas por mes?</label>
+                    {fCuota && !editingCuota ? (
+                      <div className="flex items-center justify-between bg-[#ec7fa9]/10 border border-[#ec7fa9]/40 rounded-xl px-4 py-3">
+                        <div>
+                          <p className="text-xs text-[#1a1a2e]/50">Apartando</p>
+                          <p className="text-lg font-bold text-[#ec7fa9]">{fmt(parseFloat(fCuota))}/mes</p>
                         </div>
-                        <div className="flex items-center justify-between mb-3">
-                          <div>
-                            <p className="text-xs text-[#1a1a2e]/50">Ahorrado</p>
-                            <p className="text-lg font-bold text-green-600">{fmt(b.actual)}</p>
+                        <button type="button" onClick={() => setEditingCuota(true)}
+                          className="p-2 text-[#1a1a2e]/40 hover:text-[#ec7fa9] transition-colors rounded-lg hover:bg-white">
+                          <Pencil size={15} />
+                        </button>
+                      </div>
+                    ) : editingCuota ? (
+                      <div className="flex gap-2">
+                        <input type="number" value={fCuota} onChange={(e) => setFCuota(e.target.value)}
+                          autoFocus placeholder={recomendacionFCuota > 0 ? String(recomendacionFCuota) : "Ej: 100000"}
+                          className={`${inputCls} flex-1`} />
+                        <button type="button" onClick={() => setEditingCuota(false)} disabled={!fCuota}
+                          className="bg-[#ec7fa9] text-white px-4 py-2.5 rounded-xl hover:bg-[#d96d97] disabled:opacity-40 flex items-center">
+                          <Check size={15} />
+                        </button>
+                      </div>
+                    ) : recomendacionFCuota > 0 ? (
+                      <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3">
+                        <p className="text-xs text-[#1a1a2e]/50 mb-2">Amy recomienda apartar</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xl font-bold text-[#ec7fa9]">{fmt(recomendacionFCuota)}<span className="text-sm font-normal text-[#1a1a2e]/40">/mes</span></p>
+                          <div className="flex gap-2">
+                            <button type="button" onClick={() => { setFCuota(String(recomendacionFCuota)); setEditingCuota(false); }}
+                              className="bg-[#ec7fa9] text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-[#d96d97] flex items-center gap-1.5">
+                              <Check size={14} />Aceptar
+                            </button>
+                            <button type="button" onClick={() => { setFCuota(String(recomendacionFCuota)); setEditingCuota(true); }}
+                              className="border border-[#ffb8e0] bg-white text-[#1a1a2e]/50 text-sm px-3 py-2 rounded-xl hover:text-[#ec7fa9] hover:border-[#ec7fa9] flex items-center">
+                              <Pencil size={14} />
+                            </button>
                           </div>
-                          {b.cuota_mensual > 0 && (
-                            <div className="text-right">
-                              <p className="text-xs text-[#1a1a2e]/50">Por mes</p>
-                              <p className="text-sm font-semibold text-[#ec7fa9]">{fmt(b.cuota_mensual)}</p>
-                            </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <input type="number" value={fCuota} onChange={(e) => setFCuota(e.target.value)}
+                        placeholder="Ej: 100000" className={inputCls} />
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Meta total (opcional)</label>
+                    <input type="number" value={fMeta} onChange={(e) => setFMeta(e.target.value)} placeholder="Ej: 2000000" className={inputCls} />
+                  </div>
+                  <div className="flex gap-3 pt-1">
+                    <button type="button" onClick={() => { setFormType(null); setFCuota(""); setEditingCuota(false); }}
+                      className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-2.5 rounded-xl hover:bg-[#ffedfa] text-sm">Cancelar</button>
+                    <button type="submit" disabled={!fNombre || !fCuota}
+                      className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm disabled:opacity-40">Guardar bolsita</button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {fondos.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-2xl border border-[#ffb8e0]">
+                <PiggyBank size={32} className="mx-auto mb-3 text-[#ec7fa9] opacity-40" />
+                <p className="font-semibold text-[#1a1a2e] text-sm">Aún no tienes bolsitas de ahorro continuo</p>
+                <p className="text-xs text-[#1a1a2e]/50 mt-1 mb-4">Empieza con una para emergencias o skincare</p>
+                <button onClick={() => setFormType("fondos")}
+                  className="bg-[#ec7fa9] text-white font-semibold px-5 py-2 rounded-xl text-sm hover:bg-[#d96d97]">
+                  + Crear primera bolsita
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {fondos.map((b) => {
+                  const pct = b.meta > 0 ? Math.min((b.actual / b.meta) * 100, 100) : null;
+                  return (
+                    <div key={b.id} className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{b.emoji}</span>
+                          <div>
+                            <span className="text-[10px] font-semibold text-[#ec7fa9] bg-[#ffedfa] border border-[#ffb8e0] px-2 py-0.5 rounded-full uppercase tracking-wide">Ahorro continuo</span>
+                            <p className="font-semibold text-[#1a1a2e] text-sm mt-1">{b.nombre}</p>
+                            <Stars value={b.importancia || 3} />
+                          </div>
+                        </div>
+                        <button onClick={() => removeBolsillo(b.id)} className="text-[#1a1a2e]/20 hover:text-red-400 flex items-center"><X size={14} /></button>
+                      </div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <p className="text-xs text-[#1a1a2e]/50">Ahorrado</p>
+                          <p className="text-lg font-bold text-green-600">{fmt(b.actual)}</p>
+                        </div>
+                        {b.cuota_mensual > 0 && (
+                          <div className="text-right">
+                            <p className="text-xs text-[#1a1a2e]/50">Por mes</p>
+                            <p className="text-sm font-semibold text-[#ec7fa9]">{fmt(b.cuota_mensual)}</p>
+                          </div>
+                        )}
+                      </div>
+                      {pct !== null && (
+                        <div className="mb-3">
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-[#1a1a2e]/50">Meta: {fmt(b.meta)}</span>
+                            <span className="font-semibold text-[#ec7fa9]">{pct.toFixed(0)}%</span>
+                          </div>
+                          <div className="h-2 bg-[#ffb8e0] rounded-full overflow-hidden">
+                            <div className="h-full bg-[#ec7fa9] rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      )}
+                      {abonarId === b.id ? (
+                        <div className="flex gap-2">
+                          <input type="number" value={abonarMonto} onChange={(e) => setAbonarMonto(e.target.value)}
+                            placeholder="Monto a abonar" autoFocus
+                            className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
+                          <button onClick={() => abonar(b.id)} className="bg-[#ec7fa9] text-white text-sm px-4 py-2 rounded-xl hover:bg-[#d96d97] flex items-center"><Check size={14} /></button>
+                          <button onClick={() => { setAbonarId(null); setAbonarMonto(""); }}
+                            className="border border-[#ffb8e0] text-[#1a1a2e]/50 text-sm px-3 py-2 rounded-xl flex items-center"><X size={14} /></button>
+                        </div>
+                      ) : retirarId === b.id ? (
+                        <div className="flex gap-2">
+                          <input type="number" value={retirarMonto} onChange={(e) => setRetirarMonto(e.target.value)}
+                            placeholder={`Máx. ${fmt(b.actual)}`} autoFocus
+                            className="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm bg-slate-50 outline-none" />
+                          <button onClick={() => retirar(b.id)} className="bg-slate-500 text-white text-sm px-4 py-2 rounded-xl hover:bg-slate-600 flex items-center"><Check size={14} /></button>
+                          <button onClick={() => { setRetirarId(null); setRetirarMonto(""); }}
+                            className="border border-slate-200 text-[#1a1a2e]/50 text-sm px-3 py-2 rounded-xl flex items-center"><X size={14} /></button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => { setAbonarId(b.id); setRetirarId(null); }} className="text-xs text-[#ec7fa9] font-medium hover:underline">+ Abonar</button>
+                          {b.actual > 0 && (
+                            <button onClick={() => { setRetirarId(b.id); setAbonarId(null); }} className="text-xs text-slate-400 font-medium hover:underline">− Retirar</button>
                           )}
                         </div>
-                        {pct !== null && (
-                          <div className="mb-3">
-                            <div className="flex justify-between text-xs mb-1">
-                              <span className="text-[#1a1a2e]/50">Meta: {fmt(b.meta)}</span>
-                              <span className="font-semibold text-[#ec7fa9]">{pct.toFixed(0)}%</span>
-                            </div>
-                            <div className="h-2 bg-[#ffb8e0] rounded-full overflow-hidden">
-                              <div className="h-full bg-[#ec7fa9] rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
-                            </div>
-                          </div>
-                        )}
-                        {abonarId === b.id ? (
-                          <div className="flex gap-2">
-                            <input type="number" value={abonarMonto} onChange={(e) => setAbonarMonto(e.target.value)}
-                              placeholder="Monto" autoFocus
-                              className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
-                            <button onClick={() => abonar(b.id)} className="bg-[#ec7fa9] text-white text-sm px-4 py-2 rounded-xl hover:bg-[#d96d97] flex items-center"><Check size={14} /></button>
-                            <button onClick={() => { setAbonarId(null); setAbonarMonto(""); }}
-                              className="border border-[#ffb8e0] text-[#1a1a2e]/50 text-sm px-3 py-2 rounded-xl flex items-center"><X size={14} /></button>
-                          </div>
-                        ) : (
-                          <button onClick={() => setAbonarId(b.id)} className="text-xs text-[#ec7fa9] font-medium hover:underline">+ Abonar</button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
 
-          {/* METAS TAB */}
-          {activeTab === "metas" && (
-            <div>
-              {metas.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-2xl border border-[#ffb8e0]">
-                  <Target size={36} className="mx-auto mb-3 text-[#ec7fa9] opacity-40" />
-                  <p className="font-semibold text-[#1a1a2e]">Aún no tienes metas de ahorro</p>
-                  <p className="text-sm text-[#1a1a2e]/50 mt-1 mb-4">Agrega algo que quieras lograr con fecha y costo</p>
-                  <button onClick={() => setShowForm(true)}
-                    className="bg-[#ec7fa9] text-white font-semibold px-6 py-2.5 rounded-xl text-sm hover:bg-[#d96d97]">
-                    + Crear primera meta
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {metas.map((b) => {
-                    const pct = b.meta > 0 ? Math.min((b.actual / b.meta) * 100, 100) : 0;
-                    const falta = Math.max(0, b.meta - b.actual);
-                    const cuota = cuotaMeta(b);
-                    const done = b.actual >= b.meta && b.meta > 0;
-                    const meses = b.fecha_meta ? monthsUntil(b.fecha_meta) : null;
-                    const fechaStr = b.fecha_meta
-                      ? new Date(b.fecha_meta + "T12:00:00").toLocaleDateString("es-CO", { month: "long", year: "numeric" })
-                      : null;
-                    return (
-                      <div key={b.id} className={`bg-white rounded-2xl border p-5 ${done ? "border-green-200 bg-green-50" : "border-[#ffb8e0]"}`}>
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">{b.emoji}</span>
-                            <div>
-                              <p className="font-semibold text-[#1a1a2e]">{b.nombre}</p>
-                              <Stars value={b.importancia || 3} />
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {!done && cuota > 0 && (
-                              <span className="text-xs bg-[#ffedfa] text-[#ec7fa9] font-semibold px-2.5 py-1 rounded-full">{fmt(cuota)}/mes</span>
-                            )}
-                            {done && <span className="text-xs bg-green-100 text-green-600 font-semibold px-2.5 py-1 rounded-full flex items-center gap-1"><Check size={11} />Meta lograda</span>}
-                            <button onClick={() => removeBolsillo(b.id)} className="text-[#1a1a2e]/20 hover:text-red-400 flex items-center"><X size={14} /></button>
-                          </div>
-                        </div>
-                        <div className="mb-3">
-                          <div className="flex justify-between text-xs mb-1.5">
-                            <span className="text-[#1a1a2e]/60">{fmt(b.actual)} de {fmt(b.meta)}</span>
-                            <span className={`font-semibold ${done ? "text-green-600" : "text-[#ec7fa9]"}`}>{pct.toFixed(0)}%</span>
-                          </div>
-                          <div className={`h-3 rounded-full overflow-hidden ${done ? "bg-green-200" : "bg-[#ffb8e0]"}`}>
-                            <div className={`h-full rounded-full transition-all duration-700 ${done ? "bg-green-500" : "bg-[#ec7fa9]"}`}
-                              style={{ width: `${pct}%` }} />
-                          </div>
-                        </div>
-                        {fechaStr && !done && (
-                          <p className="text-xs text-[#1a1a2e]/40 mb-2">
-                            Para: {fechaStr} · Faltan {fmt(falta)} · {meses} mes{meses !== 1 ? "es" : ""}
-                          </p>
-                        )}
-                        {done ? (
-                          <p className="text-sm font-semibold text-green-600 flex items-center gap-1.5"><PartyPopper size={14} />¡Lo lograste!</p>
-                        ) : (
-                          abonarId === b.id ? (
-                            <div className="flex gap-2">
-                              <input type="number" value={abonarMonto} onChange={(e) => setAbonarMonto(e.target.value)}
-                                placeholder="Monto" autoFocus
-                                className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
-                              <button onClick={() => abonar(b.id)} className="bg-[#ec7fa9] text-white text-sm px-4 py-2 rounded-xl hover:bg-[#d96d97] flex items-center"><Check size={14} /></button>
-                              <button onClick={() => { setAbonarId(null); setAbonarMonto(""); }}
-                                className="border border-[#ffb8e0] text-[#1a1a2e]/50 text-sm px-3 py-2 rounded-xl flex items-center"><X size={14} /></button>
-                            </div>
-                          ) : (
-                            <button onClick={() => setAbonarId(b.id)} className="text-xs text-[#ec7fa9] font-medium hover:underline">+ Abonar</button>
-                          )
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+          {/* ── META CON FECHA ── */}
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Target size={18} className="text-[#ec7fa9]" />
+                <h2 className="text-lg font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
+                  Meta con fecha
+                </h2>
+              </div>
+              <button
+                onClick={() => setFormType(formType === "metas" ? null : "metas")}
+                className="flex items-center gap-1.5 text-sm font-semibold text-[#ec7fa9] border border-[#ffb8e0] bg-white hover:bg-[#ffedfa] px-4 py-2 rounded-xl transition-colors"
+              >
+                <Plus size={14} />Nueva meta
+              </button>
             </div>
-          )}
+
+            {/* Explanation card */}
+            <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl px-5 py-4 mb-4">
+              <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
+                <span className="font-semibold text-[#ec7fa9]">Son sueños con fecha de llegada.</span> Defines cuánto cuesta y cuándo lo quieres lograr — Amy calcula cuánto apartar cada mes para que llegues a tiempo. Cuando lo logres, ¡celebramos juntas!
+              </p>
+            </div>
+
+            {/* Form */}
+            {formType === "metas" && (
+              <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6 mb-4">
+                <h3 className="font-semibold text-[#1a1a2e] mb-4">Nueva meta de ahorro</h3>
+                <div className="mb-3">
+                  <p className="text-xs text-[#1a1a2e]/50 mb-2">Ejemplos:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {METAS_EJEMPLOS.map(m => (
+                      <button key={m.nombre} type="button"
+                        onClick={() => { setMNombre(m.nombre); setMEmoji(m.emoji); }}
+                        className="text-xs bg-[#ffedfa] border border-[#ffb8e0] text-[#ec7fa9] px-3 py-1.5 rounded-lg hover:bg-[#ffb8e0] transition-colors">
+                        {m.emoji} {m.nombre}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <form onSubmit={addMeta} className="space-y-3">
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Qué quieres lograr?</label>
+                      <input value={mNombre} onChange={(e) => setMNombre(e.target.value)} placeholder="Ej: Viaje a Disney" className={inputCls} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Emoji</label>
+                      <select value={mEmoji} onChange={(e) => setMEmoji(e.target.value)}
+                        className="border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none">
+                        {EMOJIS_METAS.map(e => <option key={e} value={e}>{e}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#1a1a2e]/50 mb-1.5 block">Importancia</label>
+                    <Stars value={mImportancia} onChange={setMImportancia} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Cuánto cuesta?</label>
+                      <input type="number" value={mMeta} onChange={(e) => setMMeta(e.target.value)} placeholder="Ej: 5.000.000" className={inputCls} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Para cuándo?</label>
+                      <input type="date" value={mFecha} onChange={(e) => setMFecha(e.target.value)} className={inputCls} />
+                    </div>
+                  </div>
+                  {mMeta && mFecha && (
+                    <div className="bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-xl px-4 py-2.5 text-sm">
+                      <span className="text-[#1a1a2e]/60">Amy calcula que necesitas apartar </span>
+                      <span className="font-bold text-[#ec7fa9]">
+                        {fmt(Math.ceil(parseFloat(mMeta) / Math.max(1, monthsUntil(mFecha))))}
+                      </span>
+                      <span className="text-[#1a1a2e]/60"> por mes para llegar a tiempo</span>
+                    </div>
+                  )}
+                  <div className="flex gap-3 pt-1">
+                    <button type="button" onClick={() => setFormType(null)}
+                      className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-2.5 rounded-xl hover:bg-[#ffedfa] text-sm">Cancelar</button>
+                    <button type="submit"
+                      className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm">Guardar meta</button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {metas.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-2xl border border-[#ffb8e0]">
+                <Target size={32} className="mx-auto mb-3 text-[#ec7fa9] opacity-40" />
+                <p className="font-semibold text-[#1a1a2e] text-sm">Aún no tienes metas de ahorro</p>
+                <p className="text-xs text-[#1a1a2e]/50 mt-1 mb-4">Agrega algo que quieras lograr con fecha y costo</p>
+                <button onClick={() => setFormType("metas")}
+                  className="bg-[#ec7fa9] text-white font-semibold px-5 py-2 rounded-xl text-sm hover:bg-[#d96d97]">
+                  + Crear primera meta
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {metas.map((b) => {
+                  const pct = b.meta > 0 ? Math.min((b.actual / b.meta) * 100, 100) : 0;
+                  const falta = Math.max(0, b.meta - b.actual);
+                  const cuota = cuotaMeta(b);
+                  const done = b.actual >= b.meta && b.meta > 0;
+                  const meses = b.fecha_meta ? monthsUntil(b.fecha_meta) : null;
+                  const fechaStr = b.fecha_meta
+                    ? new Date(b.fecha_meta + "T12:00:00").toLocaleDateString("es-CO", { month: "long", year: "numeric" })
+                    : null;
+                  return (
+                    <div key={b.id} className={`bg-white rounded-2xl border p-5 ${done ? "border-green-200 bg-green-50" : "border-[#ffb8e0]"}`}>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{b.emoji}</span>
+                          <div>
+                            <span className="text-[10px] font-semibold text-purple-500 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full uppercase tracking-wide">Meta con fecha</span>
+                            <p className="font-semibold text-[#1a1a2e] mt-1">{b.nombre}</p>
+                            <Stars value={b.importancia || 3} />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {!done && cuota > 0 && (
+                            <span className="text-xs bg-[#ffedfa] text-[#ec7fa9] font-semibold px-2.5 py-1 rounded-full">{fmt(cuota)}/mes</span>
+                          )}
+                          {done && <span className="text-xs bg-green-100 text-green-600 font-semibold px-2.5 py-1 rounded-full flex items-center gap-1"><Check size={11} />Meta lograda</span>}
+                          <button onClick={() => removeBolsillo(b.id)} className="text-[#1a1a2e]/20 hover:text-red-400 flex items-center"><X size={14} /></button>
+                        </div>
+                      </div>
+                      <div className="mb-3">
+                        <div className="flex justify-between text-xs mb-1.5">
+                          <span className="text-[#1a1a2e]/60">{fmt(b.actual)} de {fmt(b.meta)}</span>
+                          <span className={`font-semibold ${done ? "text-green-600" : "text-[#ec7fa9]"}`}>{pct.toFixed(0)}%</span>
+                        </div>
+                        <div className={`h-3 rounded-full overflow-hidden ${done ? "bg-green-200" : "bg-[#ffb8e0]"}`}>
+                          <div className={`h-full rounded-full transition-all duration-700 ${done ? "bg-green-500" : "bg-[#ec7fa9]"}`}
+                            style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                      {fechaStr && !done && (
+                        <p className="text-xs text-[#1a1a2e]/40 mb-2">
+                          Para: {fechaStr} · Faltan {fmt(falta)} · {meses} mes{meses !== 1 ? "es" : ""}
+                        </p>
+                      )}
+                      {done ? (
+                        <p className="text-sm font-semibold text-green-600 flex items-center gap-1.5"><PartyPopper size={14} />¡Lo lograste!</p>
+                      ) : abonarId === b.id ? (
+                        <div className="flex gap-2">
+                          <input type="number" value={abonarMonto} onChange={(e) => setAbonarMonto(e.target.value)}
+                            placeholder="Monto a abonar" autoFocus
+                            className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
+                          <button onClick={() => abonar(b.id)} className="bg-[#ec7fa9] text-white text-sm px-4 py-2 rounded-xl hover:bg-[#d96d97] flex items-center"><Check size={14} /></button>
+                          <button onClick={() => { setAbonarId(null); setAbonarMonto(""); }}
+                            className="border border-[#ffb8e0] text-[#1a1a2e]/50 text-sm px-3 py-2 rounded-xl flex items-center"><X size={14} /></button>
+                        </div>
+                      ) : retirarId === b.id ? (
+                        <div className="flex gap-2">
+                          <input type="number" value={retirarMonto} onChange={(e) => setRetirarMonto(e.target.value)}
+                            placeholder={`Máx. ${fmt(b.actual)}`} autoFocus
+                            className="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm bg-slate-50 outline-none" />
+                          <button onClick={() => retirar(b.id)} className="bg-slate-500 text-white text-sm px-4 py-2 rounded-xl hover:bg-slate-600 flex items-center"><Check size={14} /></button>
+                          <button onClick={() => { setRetirarId(null); setRetirarMonto(""); }}
+                            className="border border-slate-200 text-[#1a1a2e]/50 text-sm px-3 py-2 rounded-xl flex items-center"><X size={14} /></button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => { setAbonarId(b.id); setRetirarId(null); }} className="text-xs text-[#ec7fa9] font-medium hover:underline">+ Abonar</button>
+                          {b.actual > 0 && (
+                            <button onClick={() => { setRetirarId(b.id); setAbonarId(null); }} className="text-xs text-slate-400 font-medium hover:underline">− Retirar</button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         </>
       )}
     </div>

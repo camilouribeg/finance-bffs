@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" fill="#ec7fa9"/>
+  <rect x="9" y="9" width="174" height="174" rx="36" fill="#e8729e"/>
+  <text
+    x="96"
+    y="131"
+    text-anchor="middle"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="116"
+    font-weight="700"
+    fill="white"
+    opacity="0.97"
+  >A</text>
+  <text
+    x="96"
+    y="165"
+    text-anchor="middle"
+    font-size="27"
+    fill="white"
+    opacity="0.70"
+  >♥</text>
+</svg>
