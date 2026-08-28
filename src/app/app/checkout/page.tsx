@@ -1,23 +1,43 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const searchParams = useSearchParams();
+  const expired = searchParams.get("expired") === "true";
 
   async function handleCheckout() {
     setLoading(true);
-    const res = await fetch("/api/stripe/checkout", { method: "POST" });
-    const data = await res.json();
-    if (data.url) {
+    setError("");
+
+    try {
+      const res = await fetch("/api/stripe/checkout", { method: "POST" });
+      const data = await res.json();
+
+      if (!res.ok || !data.url) {
+        throw new Error(data.error ?? "No fue posible iniciar el pago.");
+      }
+
       window.location.href = data.url;
-    } else {
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No fue posible iniciar el pago.");
       setLoading(false);
     }
   }
 
   return (
     <div className="max-w-lg mx-auto pt-8">
+      {expired && (
+        <div className="bg-orange-50 border border-orange-200 rounded-2xl px-5 py-4 mb-6 text-center">
+          <p className="text-sm font-semibold text-orange-600">Tu periodo de prueba de 40 días ha terminado</p>
+          <p className="text-xs text-orange-500 mt-1">Activa tu plan para seguir usando Finance BFFs</p>
+        </div>
+      )}
+
       <div className="bg-white rounded-3xl border border-[#ffb8e0] p-8 text-center shadow-xl">
         <p className="text-5xl mb-4">💕</p>
         <h1
@@ -30,7 +50,7 @@ export default function CheckoutPage() {
           Accede a todas las herramientas de Finance BFFs y toma el control de tu dinero.
         </p>
 
-        <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl p-6 mb-8 text-left">
+        <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl p-6 mb-6 text-left">
           <p className="text-xs text-[#ec7fa9] font-semibold uppercase tracking-wide mb-3">Incluye</p>
           {[
             "📋 Dashboard mensual con cálculos automáticos",
@@ -46,11 +66,12 @@ export default function CheckoutPage() {
           ))}
         </div>
 
-        <div className="mb-6">
+        <div className="mb-6 bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-2xl px-5 py-4">
+          <p className="text-xs text-[#ec7fa9] font-bold uppercase tracking-wider mb-1">Precio de preventa</p>
           <p className="text-4xl font-bold text-[#ec7fa9]" style={{ fontFamily: "var(--font-playfair)" }}>
-            $X<span className="text-lg text-[#1a1a2e]/50 font-normal">/mes</span>
+            $24.900<span className="text-lg text-[#1a1a2e]/50 font-normal"> COP/mes</span>
           </p>
-          <p className="text-xs text-[#1a1a2e]/40 mt-1">Cancela cuando quieras</p>
+          <p className="text-xs text-[#1a1a2e]/40 mt-1">Este precio se mantiene para siempre · Cancela cuando quieras</p>
         </div>
 
         <button
@@ -61,10 +82,24 @@ export default function CheckoutPage() {
           {loading ? "Redirigiendo..." : "Activar mi cuenta 💕"}
         </button>
 
+        {error && (
+          <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-3 mt-4">
+            {error}
+          </p>
+        )}
+
         <p className="text-xs text-[#1a1a2e]/40 mt-4">
           Pago seguro con Stripe. Sin sorpresas.
         </p>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense>
+      <CheckoutContent />
+    </Suspense>
   );
 }

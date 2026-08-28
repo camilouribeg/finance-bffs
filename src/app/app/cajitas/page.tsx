@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useFmt } from "@/lib/useFmt";
 import { Archive, Lightbulb, Check, X, PartyPopper } from "lucide-react";
 
 type Cajita = {
@@ -27,10 +28,17 @@ const EJEMPLOS = [
   { nombre: "Mantenimiento del hogar", emoji: "🏠" },
 ];
 
+function mesKey() {
+  const now = new Date();
+  return `cajitas_transferido_${now.getFullYear()}_${now.getMonth() + 1}`;
+}
+
 export default function CajitasPage() {
+  const fmt = useFmt();
   const [cajitas, setCajitas] = useState<Cajita[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [transferido, setTransferido] = useState(false);
 
   const [nombre, setNombre] = useState("");
   const [montoTotal, setMontoTotal] = useState("");
@@ -40,7 +48,10 @@ export default function CajitasPage() {
   const [abonarId, setAbonarId] = useState<string | null>(null);
   const [abonarMonto, setAbonarMonto] = useState("");
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    setTransferido(localStorage.getItem(mesKey()) === "1");
+  }, []);
 
   async function load() {
     const supabase = createClient();
@@ -63,9 +74,6 @@ export default function CajitasPage() {
     return Math.ceil(falta / monthsUntil(cajita.fecha_pago));
   }
 
-  function fmt(n: number) {
-    return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
-  }
 
   async function addCajita(e: React.FormEvent) {
     e.preventDefault();
@@ -87,7 +95,9 @@ export default function CajitasPage() {
     if (!monto) return;
     const nuevoActual = Math.min(cajita.actual + monto, cajita.monto_total);
     const supabase = createClient();
-    await supabase.from("cajitas").update({ actual: nuevoActual }).eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("cajitas").update({ actual: nuevoActual }).eq("id", id).eq("user_id", user.id);
     setCajitas(cajitas.map(c => c.id === id ? { ...c, actual: nuevoActual } : c));
     setAbonarId(null);
     setAbonarMonto("");
@@ -100,21 +110,32 @@ export default function CajitasPage() {
     d.setFullYear(d.getFullYear() + 1);
     const nuevaFecha = d.toISOString().split("T")[0];
     const supabase = createClient();
-    await supabase.from("cajitas").update({ actual: 0, fecha_pago: nuevaFecha }).eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("cajitas").update({ actual: 0, fecha_pago: nuevaFecha }).eq("id", id).eq("user_id", user.id);
     setCajitas(cajitas.map(c => c.id === id ? { ...c, actual: 0, fecha_pago: nuevaFecha } : c));
   }
 
   async function removeCajita(id: string) {
     const supabase = createClient();
-    await supabase.from("cajitas").delete().eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("cajitas").delete().eq("id", id).eq("user_id", user.id);
     setCajitas(cajitas.filter(c => c.id !== id));
+  }
+
+  function toggleTransferido() {
+    const next = !transferido;
+    setTransferido(next);
+    if (next) localStorage.setItem(mesKey(), "1");
+    else localStorage.removeItem(mesKey());
   }
 
   const totalMensual = cajitas.reduce((s, c) => s + cuotaMensual(c), 0);
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
             Cajitas
@@ -127,6 +148,58 @@ export default function CajitasPage() {
         >
           + Nueva cajita
         </button>
+      </div>
+
+      {/* How cajitas work */}
+      <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl p-5 mb-6">
+        <p className="text-xs font-bold text-[#ec7fa9] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <Lightbulb size={12} /> Cómo funcionan las cajitas
+        </p>
+        <p className="text-sm text-[#1a1a2e]/70 leading-relaxed mb-3">
+          Amy divide el costo total de cada cajita en cuotas mensuales y las descuenta de tu presupuesto disponible — igual que un gasto fijo.
+        </p>
+        <p className="text-sm font-semibold text-[#1a1a2e] mb-1">¿Qué debes hacer en tu banco?</p>
+        <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
+          Cada mes, crea un bolsillo o sobre en tu banco por cada cajita y etiquétalo{" "}
+          {cajitas.length === 0 ? (
+            <span className="font-semibold">"Cajita de [nombre]"</span>
+          ) : cajitas.length === 1 ? (
+            <span className="font-semibold">"Cajita de {cajitas[0].nombre}"</span>
+          ) : (
+            <>
+              {cajitas.map((c, i) => (
+                <span key={c.id}>
+                  <span className="font-semibold">"Cajita de {c.nombre}"</span>
+                  {i < cajitas.length - 1 ? ", " : ""}
+                </span>
+              ))}
+            </>
+          )}
+          . Así el dinero estará apartado cuando llegue ese gasto.
+        </p>
+        {totalMensual > 0 && (
+          <>
+            <div className="mt-3 flex items-center gap-2 bg-white border border-[#ffb8e0] rounded-xl px-4 py-2.5">
+              <span className="text-xs text-[#1a1a2e]/50">Transferencia mensual recomendada:</span>
+              <span className="text-sm font-bold text-[#ec7fa9]">{fmt(totalMensual)}</span>
+            </div>
+            <button
+              onClick={toggleTransferido}
+              className={`mt-3 w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-colors ${
+                transferido
+                  ? "bg-green-50 border-green-200 text-green-700"
+                  : "bg-white border-[#ffb8e0] text-[#1a1a2e]/60 hover:bg-white/80"
+              }`}
+            >
+              <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                transferido ? "bg-green-500 border-green-500" : "border-[#ffb8e0]"
+              }`}>
+                {transferido && <Check size={12} className="text-white" strokeWidth={3} />}
+              </span>
+              {transferido ? "¡Transferencia de este mes registrada!" : "Marcar transferencia de este mes como hecha"}
+            </button>
+          </>
+        )}
       </div>
 
       {showForm && (
@@ -174,7 +247,7 @@ export default function CajitasPage() {
             </div>
             {nombre && montoTotal && fechaPago && (
               <div className="bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-xl px-4 py-2.5 text-sm">
-                <span className="text-[#1a1a2e]/60">Finly reservará </span>
+                <span className="text-[#1a1a2e]/60">Amy reservará </span>
                 <span className="font-bold text-[#ec7fa9]">
                   {fmt(Math.ceil(parseFloat(montoTotal) / Math.max(1, monthsUntil(fechaPago))))}
                 </span>
@@ -196,7 +269,9 @@ export default function CajitasPage() {
       )}
 
       {loading ? (
-        <div className="text-center py-20 text-[#1a1a2e]/30">Cargando...</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-pulse">
+          {[1,2,3,4].map(i => <div key={i} className="h-48 bg-white rounded-2xl border border-[#ffb8e0]" />)}
+        </div>
       ) : cajitas.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-2xl border border-[#ffb8e0]">
           <Archive size={36} className="mx-auto mb-3 text-[#ec7fa9] opacity-40" />
@@ -212,7 +287,7 @@ export default function CajitasPage() {
           <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5 mb-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-[#1a1a2e]/50">Finly reserva cada mes</p>
+                <p className="text-xs text-[#1a1a2e]/50">Amy reserva cada mes</p>
                 <p className="text-2xl font-bold text-[#ec7fa9]">{fmt(totalMensual)}<span className="text-sm font-normal text-[#1a1a2e]/40">/mes</span></p>
               </div>
               <div className="text-right">
@@ -299,7 +374,7 @@ export default function CajitasPage() {
         <p className="text-sm text-[#1a1a2e]/60 leading-relaxed">
           Hay gastos que no llegan cada mes, pero cuando llegan duelen si no estás preparada.
           Las cajitas reservan una parte de tu dinero cada mes para que no te sorprendan.
-          Finly descuenta la cuota mensual de tu dinero disponible automáticamente.
+          Amy descuenta la cuota mensual de tu dinero disponible automáticamente.
         </p>
       </div>
     </div>

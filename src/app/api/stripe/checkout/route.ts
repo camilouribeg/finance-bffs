@@ -3,7 +3,11 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 export async function POST() {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+  if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_PRICE_ID || !process.env.NEXT_PUBLIC_APP_URL) {
+    return NextResponse.json({ error: "Stripe no esta configurado correctamente." }, { status: 500 });
+  }
+
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -22,6 +26,9 @@ export async function POST() {
       },
     ],
     metadata: { user_id: user.id },
+    subscription_data: {
+      metadata: { user_id: user.id },
+    },
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/app?success=true`,
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/app/checkout?cancelled=true`,
   });

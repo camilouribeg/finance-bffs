@@ -1,18 +1,28 @@
 import type { NextConfig } from "next";
 
 const securityHeaders = [
-  // Prevents clickjacking (embedding in iframes)
   { key: "X-Frame-Options", value: "DENY" },
-  // Prevents MIME-type sniffing
   { key: "X-Content-Type-Options", value: "nosniff" },
-  // Controls referrer info sent with requests
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  // Disables access to browser features the app doesn't need
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-  // Forces HTTPS for 1 year (only active in production via Vercel)
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
-  // Basic XSS protection for older browsers
   { key: "X-XSS-Protection", value: "1; mode=block" },
+  {
+    key: "Content-Security-Policy",
+    value: [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https://*.stripe.com https://*.supabase.co",
+      "font-src 'self'",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://checkout.stripe.com https://m.stripe.network",
+      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "upgrade-insecure-requests",
+    ].join("; "),
+  },
 ];
 
 const nextConfig: NextConfig = {

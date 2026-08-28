@@ -18,7 +18,7 @@ const NAV = [
   { href: "/app", label: "Mis finanzas", icon: LayoutDashboard },
   { href: "/app/gastos", label: "Mis gastos", icon: ShoppingCart },
   { href: "/app/cajitas", label: "Cajitas", icon: Archive },
-  { href: "/app/ahorro", label: "Bolsillos de ahorro", icon: PiggyBank },
+  { href: "/app/ahorro", label: "Bolsitas de ahorro", icon: PiggyBank },
   { href: "/app/deudas", label: "Deudas", icon: CreditCard },
 ];
 
@@ -51,7 +51,7 @@ export default function AppSidebar({
             className="text-xl font-bold text-[#ec7fa9]"
             style={{ fontFamily: "var(--font-playfair)" }}
           >
-            Finly
+            Amy
           </span>
           <span className="flex items-center gap-1 text-xs text-[#1a1a2e]/40 font-medium">
             by Finance BFFs <Heart size={10} className="fill-[#ec7fa9] text-[#ec7fa9]" />
@@ -119,7 +119,7 @@ export default function AppSidebar({
           className="text-lg font-bold text-[#ec7fa9]"
           style={{ fontFamily: "var(--font-playfair)" }}
         >
-          Finly <span className="text-xs text-[#1a1a2e]/40 font-normal">by Finance BFFs</span>
+          Amy <span className="text-xs text-[#1a1a2e]/40 font-normal">by Finance BFFs</span>
         </span>
         <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 text-[#ec7fa9]">
           <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -142,8 +142,6 @@ export default function AppSidebar({
         </div>
       )}
 
-      {/* Mobile top padding */}
-      <div className="md:hidden h-14 w-full" />
     </>
   );
 }

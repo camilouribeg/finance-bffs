@@ -2,9 +2,10 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const COUNTRY_CODES = [
   { code: "+57", flag: "🇨🇴", name: "Colombia" },
@@ -22,6 +23,7 @@ const COUNTRY_CODES = [
 ];
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -29,8 +31,60 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(false);
+
+  const checkConfirmedSession = useCallback(async () => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user?.email_confirmed_at) {
+      router.replace("/onboarding");
+      return true;
+    }
+
+    return false;
+  }, [router]);
+
+  // When on step 3, poll every 3s for a confirmed session
+  useEffect(() => {
+    if (step !== 3) return;
+    const supabase = createClient();
+    const interval = setInterval(() => {
+      void checkConfirmedSession();
+    }, 3000);
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.email_confirmed_at) {
+        router.replace("/onboarding");
+      }
+    });
+
+    void checkConfirmedSession();
+
+    return () => {
+      clearInterval(interval);
+      subscription.unsubscribe();
+    };
+  }, [checkConfirmedSession, step]);
+
+  async function handleCheckSession() {
+    setCheckingSession(true);
+    setError("");
+
+    const isConfirmed = await checkConfirmedSession();
+    if (!isConfirmed) {
+      setError("Aun no vemos la confirmacion del correo. Intenta de nuevo en unos segundos.");
+    }
+
+    setCheckingSession(false);
+  }
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -39,6 +93,12 @@ export default function RegisterPage() {
 
     if (password.length < 8) {
       setError("La contraseña debe tener al menos 8 caracteres.");
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Las contraseñas no coinciden. Verifica e intenta de nuevo.");
       setLoading(false);
       return;
     }
@@ -66,7 +126,7 @@ export default function RegisterPage() {
       if (data.user) {
         if (data.session) {
           // Email confirmation disabled — session active
-          window.location.href = "/onboarding";
+          router.replace("/onboarding");
         } else {
           // Email confirmation required
           setStep(3);
@@ -77,7 +137,12 @@ export default function RegisterPage() {
         setLoading(false);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error inesperado. Intenta de nuevo.");
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.toLowerCase().includes("load failed") || msg.toLowerCase().includes("network") || msg.toLowerCase().includes("fetch")) {
+        setError("No se pudo conectar al servidor. Verifica tu conexión a internet e intenta de nuevo.");
+      } else {
+        setError(msg || "Error inesperado. Intenta de nuevo.");
+      }
       setLoading(false);
     }
   }
@@ -92,7 +157,7 @@ export default function RegisterPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
             <span className="text-3xl font-bold text-[#ec7fa9]" style={{ fontFamily: "var(--font-playfair)" }}>
-              Finly
+              Amy
             </span>
             <span className="text-xs text-[#1a1a2e]/40 font-medium ml-2">by Finance BFFs 💕</span>
           </Link>
@@ -122,13 +187,27 @@ export default function RegisterPage() {
                   Te enviamos un enlace de confirmación a
                 </p>
                 <p className="font-semibold text-[#ec7fa9] text-sm mb-5">{email}</p>
-                <p className="text-[#1a1a2e]/50 text-xs leading-relaxed mb-6">
-                  Haz clic en el enlace del correo para activar tu cuenta y empezar a usar Finly. Si no lo ves, revisa tu carpeta de spam.
+                <p className="text-[#1a1a2e]/50 text-xs leading-relaxed mb-2">
+                  Haz clic en el enlace del correo para activar tu cuenta. Una vez que lo confirmes, esta página te llevará automáticamente a Amy.
                 </p>
-                <a href="/login"
-                  className="inline-block bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold px-8 py-3 rounded-xl text-sm transition-colors">
-                  Ya confirmé, iniciar sesión →
-                </a>
+                <p className="text-[#1a1a2e]/40 text-xs mb-6">
+                  ¿No lo ves? Revisa tu carpeta de spam.
+                </p>
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <span className="w-2 h-2 rounded-full bg-[#ec7fa9] animate-pulse" />
+                  <span className="text-xs text-[#1a1a2e]/40">Esperando confirmación...</span>
+                </div>
+                {error && (
+                  <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
+                    {error}
+                  </p>
+                )}
+                <button
+                  onClick={handleCheckSession}
+                  disabled={checkingSession}
+                  className="inline-block bg-[#ec7fa9] hover:bg-[#d96d97] disabled:opacity-60 text-white font-semibold px-8 py-3 rounded-xl text-sm transition-colors">
+                  {checkingSession ? "Verificando..." : "Ya confirmé →"}
+                </button>
               </div>
             )}
 
@@ -233,6 +312,29 @@ export default function RegisterPage() {
                           placeholder="Mínimo 8 caracteres"
                           className="w-full border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all bg-[#ffedfa]"
                         />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Confirmar contraseña</label>
+                        <input
+                          type="password"
+                          required
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Repite tu contraseña"
+                          className={`w-full border rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 transition-all bg-[#ffedfa] ${
+                            confirmPassword.length > 0
+                              ? password === confirmPassword
+                                ? "border-green-400 focus:ring-green-300/30 focus:border-green-400"
+                                : "border-red-300 focus:ring-red-200/30 focus:border-red-400"
+                              : "border-[#ffb8e0] focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9]"
+                          }`}
+                        />
+                        {confirmPassword.length > 0 && (
+                          <p className={`text-xs mt-1 ${password === confirmPassword ? "text-green-500" : "text-red-400"}`}>
+                            {password === confirmPassword ? "Las contraseñas coinciden ✓" : "Las contraseñas no coinciden"}
+                          </p>
+                        )}
                       </div>
 
                       {error && (
