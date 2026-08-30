@@ -1,5 +1,11 @@
 import type { NextConfig } from "next";
 
+// `upgrade-insecure-requests` le ordena al navegador pedir todos los recursos
+// por HTTPS. En produccion es correcto, pero en local trabajamos sobre HTTP y
+// Safari intenta cargar el CSS por https://localhost, no lo encuentra, y
+// renderiza la pagina sin estilos. Por eso solo se aplica fuera de desarrollo.
+const isDev = process.env.NODE_ENV === "development";
+
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -20,7 +26,7 @@ const securityHeaders = [
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
-      "upgrade-insecure-requests",
+      ...(isDev ? [] : ["upgrade-insecure-requests"]),
     ].join("; "),
   },
 ];
