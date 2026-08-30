@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
+import { ordenarDeudas, METHOD_META, type DebtMethod } from "@/lib/debtMethods";
 import { CreditCard, Landmark, Home, Car, Users, FileText, Check, X, Plus, Lightbulb } from "lucide-react";
 
-type Deuda = { id: string; nombre: string; tipo: string; cuota_mensual: number; total_pendiente: number };
+type Deuda = { id: string; nombre: string; tipo: string; cuota_mensual: number; total_pendiente: number; tasa: number | null };
 
 const TIPOS = ["Tarjeta de crédito", "Préstamo personal", "Crédito hipotecario", "Crédito de vehículo", "Deuda familiar", "Otro"];
 
@@ -30,6 +31,10 @@ export default function DeudasPage() {
   const [tipo, setTipo] = useState("Tarjeta de crédito");
   const [totalPendiente, setTotalPendiente] = useState("");
   const [cuotaMensual, setCuotaMensual] = useState("");
+  const [tasa, setTasa] = useState("");
+
+  // Metodología elegida en el onboarding (profiles.debt_method)
+  const [metodo, setMetodo] = useState<DebtMethod>("snowball");
 
   // Abono state
   const [abonarId, setAbonarId] = useState<string | null>(null);
@@ -42,8 +47,13 @@ export default function DeudasPage() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from("deudas").select("*").eq("user_id", user.id).order("total_pendiente", { ascending: true });
-    if (data) setDeudas(data);
+    const [{ data }, { data: perfil }] = await Promise.all([
+      supabase.from("deudas").select("*").eq("user_id", user.id),
+      supabase.from("profiles").select("debt_method").eq("id", user.id).single(),
+    ]);
+    const m = (perfil?.debt_method as DebtMethod) || "snowball";
+    setMetodo(m);
+    if (data) setDeudas(ordenarDeudas(data as Deuda[], m));
     setLoading(false);
   }
 
@@ -60,9 +70,10 @@ export default function DeudasPage() {
       tipo,
       total_pendiente: parseFloat(totalPendiente),
       cuota_mensual: parseFloat(cuotaMensual),
+      tasa: tasa ? parseFloat(tasa) : null,
     }).select().single();
-    if (data) setDeudas(prev => [...prev, data].sort((a, b) => a.total_pendiente - b.total_pendiente));
-    setNombre(""); setTipo("Tarjeta de crédito"); setTotalPendiente(""); setCuotaMensual("");
+    if (data) setDeudas(prev => ordenarDeudas([...prev, data as Deuda], metodo));
+    setNombre(""); setTipo("Tarjeta de crédito"); setTotalPendiente(""); setCuotaMensual(""); setTasa("");
     setShowForm(false);
   }
 
@@ -91,8 +102,9 @@ export default function DeudasPage() {
   const totalPend = deudas.reduce((s, d) => s + d.total_pendiente, 0);
   const totalCuotas = deudas.reduce((s, d) => s + d.cuota_mensual, 0);
   const activas = deudas.filter(d => d.total_pendiente > 0);
-  // Recommend smallest debt first (easiest win)
-  const primeraDeuda = activas.length > 0 ? activas[0] : null;
+  const meta = METHOD_META[metodo];
+  // En el método equilibrado no hay una sola deuda prioritaria: todas avanzan juntas.
+  const primeraDeuda = meta.unaPrioridad && activas.length > 0 ? activas[0] : null;
 
   const inputCls = "w-full border border-[#ffb8e0] rounded-xl px-4 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30";
 
@@ -104,6 +116,11 @@ export default function DeudasPage() {
             Mis deudas
           </h1>
           <p className="text-[#1a1a2e]/50 text-sm mt-1">Tu camino para quedar libre de deudas</p>
+          {!loading && deudas.length > 0 && (
+            <p className="text-xs text-[#ec7fa9] font-medium mt-1.5">
+              {meta.emoji} Método {meta.nombre.toLowerCase()}
+            </p>
+          )}
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -139,6 +156,17 @@ export default function DeudasPage() {
                 <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Cuota mensual</label>
                 <input type="number" value={cuotaMensual} onChange={e => setCuotaMensual(e.target.value)} placeholder="Ej: 300.000" className={inputCls} />
               </div>
+            </div>
+            <div>
+              <label className="text-xs text-[#1a1a2e]/50 mb-1 block">
+                Tasa de interés anual <span className="text-[#1a1a2e]/30">(opcional)</span>
+              </label>
+              <input type="number" step="0.01" value={tasa} onChange={e => setTasa(e.target.value)} placeholder="Ej: 28.5" className={inputCls} />
+              {metodo === "avalanche" && (
+                <p className="text-[11px] text-[#ec7fa9] mt-1">
+                  Con tu método {METHOD_META.avalanche.nombre.toLowerCase()} usamos la tasa para saber cuál atacar primero.
+                </p>
+              )}
             </div>
             <div className="flex gap-3 pt-1">
               <button type="button" onClick={() => setShowForm(false)}
@@ -192,9 +220,13 @@ export default function DeudasPage() {
                   <>
                     Paga tu cuota de <span className="font-semibold text-[#1a1a2e]">{primeraDeuda!.nombre}</span> cada mes sin falta, y cuando tengas dinero extra, ponlo ahí. Cada peso de más que abones te acorta el tiempo para quedar libre.
                   </>
+                ) : primeraDeuda ? (
+                  <>
+                    Te recomendamos enfocarte primero en <span className="font-semibold text-[#1a1a2e]">{primeraDeuda.nombre}</span> — {meta.enfoque}. Cuando la termines, usa esa cuota para atacar la siguiente. Así vas agarrando impulso.
+                  </>
                 ) : (
                   <>
-                    Te recomendamos enfocarte primero en <span className="font-semibold text-[#1a1a2e]">{primeraDeuda!.nombre}</span> — es la más pequeña y la más rápida de liquidar. Cuando la termines, usa esa cuota para atacar la siguiente. Así vas agarrando impulso.
+                    Con tu método <span className="font-semibold text-[#1a1a2e]">{meta.nombre.toLowerCase()}</span> no te enfocas en una sola: la idea es que todas avancen juntas. Paga cada cuota sin falta y, si te queda dinero extra, repártelo entre todas.
                   </>
                 )}
               </p>
@@ -206,7 +238,7 @@ export default function DeudasPage() {
             {deudas.map((d, i) => {
               const meses = d.cuota_mensual > 0 ? Math.ceil(d.total_pendiente / d.cuota_mensual) : null;
               const done = d.total_pendiente === 0;
-              const esPrimera = !done && activas.length > 1 && activas[0]?.id === d.id;
+              const esPrimera = !done && meta.unaPrioridad && activas.length > 1 && activas[0]?.id === d.id;
               return (
                 <div key={d.id} className={`bg-white rounded-2xl border p-5 ${done ? "border-green-200" : esPrimera ? "border-[#ec7fa9]" : "border-[#ffb8e0]"}`}>
                   <div className="flex items-start justify-between mb-4">
