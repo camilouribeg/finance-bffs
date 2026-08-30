@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AmyMockup from "@/components/landing/AmyMockup";
 
 const NAV_LINKS = [
@@ -91,25 +91,65 @@ const PLANS = [
 
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  // El header gana sombra al bajar, para despegarse del contenido.
+  const [scrolled, setScrolled] = useState(false);
+  // Seccion visible actualmente, para orientar a la usuaria mientras navega.
+  const [activeSection, setActiveSection] = useState<string>("");
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const secciones = NAV_LINKS
+      .map((l) => document.querySelector(l.href))
+      .filter((el): el is Element => el !== null);
+    if (secciones.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (visible) setActiveSection(`#${visible.target.id}`);
+      },
+      // La banda superior evita que la seccion cambie demasiado pronto.
+      { rootMargin: "-20% 0px -70% 0px" }
+    );
+    secciones.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#ffedfa]">
 
       {/* ───── NAVBAR ───── */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#ffb8e0]">
+      <nav className={`sticky top-0 z-50 backdrop-blur-md border-b transition-all duration-300 ${scrolled ? "bg-white/95 border-[#ffb8e0] shadow-sm" : "bg-white/80 border-[#ffb8e0]/60"}`}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <a href="#" className="flex items-center gap-2">
             <span className="text-2xl font-bold text-[#ec7fa9]" style={{ fontFamily: "var(--font-playfair)" }}>
               Amy
             </span>
-            <span className="text-xs text-[#1a1a2e]/40 font-medium mt-1">by Finance BFFs 💕</span>
+            <span className="hidden sm:inline text-xs text-[#1a1a2e]/40 font-medium mt-1">by Finance BFFs 💕</span>
           </a>
 
           <ul className="hidden md:flex items-center gap-8">
             {NAV_LINKS.map((l) => (
               <li key={l.href}>
-                <a href={l.href} className="text-sm font-medium text-[#1a1a2e]/70 hover:text-[#ec7fa9] transition-colors">
+                <a
+                  href={l.href}
+                  aria-current={activeSection === l.href ? "true" : undefined}
+                  className={`relative text-sm font-medium transition-colors ${
+                    activeSection === l.href ? "text-[#ec7fa9]" : "text-[#1a1a2e]/70 hover:text-[#ec7fa9]"
+                  }`}
+                >
                   {l.label}
+                  {activeSection === l.href && (
+                    <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 rounded-full bg-[#ec7fa9]" />
+                  )}
                 </a>
               </li>
             ))}
@@ -126,17 +166,33 @@ export default function LandingPage() {
             </a>
           </div>
 
-          <button className="md:hidden p-2 text-[#ec7fa9]" onClick={() => setMenuOpen(!menuOpen)}>
+          {/* En movil el CTA se mantiene visible: registrarse no deberia exigir
+              abrir el menu primero. */}
+          <div className="flex md:hidden items-center gap-1">
+            <a
+              href="/register"
+              className="bg-[#ec7fa9] hover:bg-[#d96d97] text-white text-xs font-semibold px-3.5 py-2 rounded-full transition-colors"
+            >
+              Empezar gratis
+            </a>
+            <button
+              className="p-2 text-[#ec7fa9]"
+              aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-expanded={menuOpen}
+              aria-controls="menu-movil"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               {menuOpen
                 ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />}
-            </svg>
-          </button>
+              </svg>
+            </button>
+          </div>
         </div>
 
         {menuOpen && (
-          <div className="md:hidden bg-white border-t border-[#ffb8e0] px-6 py-4 flex flex-col gap-4">
+          <div id="menu-movil" className="md:hidden bg-white border-t border-[#ffb8e0] px-6 py-4 flex flex-col gap-4">
             {NAV_LINKS.map((l) => (
               <a key={l.href} href={l.href} className="text-sm font-medium text-[#1a1a2e]/70" onClick={() => setMenuOpen(false)}>
                 {l.label}
@@ -145,9 +201,7 @@ export default function LandingPage() {
             <a href="/login" className="text-sm font-semibold text-[#ec7fa9] text-center" onClick={() => setMenuOpen(false)}>
               Iniciar sesión
             </a>
-            <a href="/register" className="bg-[#ec7fa9] text-white text-sm font-semibold px-5 py-2.5 rounded-full text-center" onClick={() => setMenuOpen(false)}>
-              Empezar gratis
-            </a>
+
           </div>
         )}
       </nav>
@@ -225,7 +279,7 @@ export default function LandingPage() {
       </section>
 
       {/* ───── QUÉ ES ───── */}
-      <section className="py-16 px-6 bg-white">
+      <section id="que-incluye" className="py-16 px-6 bg-white">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a2e] mb-6" style={{ fontFamily: "var(--font-playfair)" }}>
             ¿Qué es <span className="italic text-[#ec7fa9]">Amy</span>?
