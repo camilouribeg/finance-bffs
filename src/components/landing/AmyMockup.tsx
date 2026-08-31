@@ -31,7 +31,9 @@ export default function AmyMockup() {
           <span className="ml-2 text-xs font-medium text-[#1a1a2e]/40">Mis finanzas · Marzo</span>
         </div>
 
-        <div className="p-5">
+        {/* pb generoso: reserva el espacio que ocupa la burbuja de Amy, que
+            flota encima. Sin esto tapaba las ultimas filas del desglose. */}
+        <div className="p-5 pb-36 sm:pb-32">
           {/* Dinero libre — el número protagonista */}
           <div className="rounded-2xl bg-[#ffedfa] border border-[#ffb8e0] p-5 mb-5">
             <p className="text-xs font-medium text-[#1a1a2e]/50 mb-1">Tu dinero libre este mes</p>
@@ -67,7 +69,7 @@ export default function AmyMockup() {
       </div>
 
       {/* Burbuja de recomendación de Amy — la superposición da profundidad */}
-      <div className="absolute -bottom-6 -left-4 sm:-left-8 w-[85%] rounded-2xl bg-white border border-[#ffb8e0] shadow-[0_12px_32px_-8px_rgba(236,127,169,0.4)] p-4 animate-float">
+      <div className="absolute bottom-3 left-3 right-3 sm:-left-6 sm:right-6 rounded-2xl bg-white border border-[#ffb8e0] shadow-[0_12px_32px_-8px_rgba(236,127,169,0.4)] p-4 animate-float">
         <div className="flex items-start gap-3">
           <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#ec7fa9] text-white grid place-items-center text-sm font-bold">
             A
