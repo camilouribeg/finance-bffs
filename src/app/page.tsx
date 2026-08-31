@@ -1,51 +1,96 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AmyMockup from "@/components/landing/AmyMockup";
 
 const NAV_LINKS = [
-  { label: "¿Para quién?", href: "#para-quien" },
-  { label: "¿Qué incluye?", href: "#que-incluye" },
+  { label: "¿Por qué Amy?", href: "#por-que" },
+  { label: "¿Qué es Amy?", href: "#que-incluye" },
   { label: "¿Cómo funciona?", href: "#como-funciona" },
   { label: "Precios", href: "#precios" },
 ];
 
+// Lo que encontrabamos al intentar aprender de dinero. Van tachados: son el
+// "antes" que la cita de abajo resuelve.
+const RUIDO = ["Términos complicados", "Hojas de cálculo", "Consejos sin el cómo"];
+
+// El manifiesto es aspiracional; los BENEFITS de abajo son lo concreto que
+// pasa al usar Amy. El eco entre ambos es intencional.
+//
+// Iconos de trazo propios en vez de emoji: el emoji mete su propia paleta y
+// su propio estilo, y rompia el tono editorial de la seccion. Todos comparten
+// viewBox 24, trazo 1.75 y heredan el rosa por `currentColor`.
+const MANIFIESTO = [
+  {
+    text: "Ahorro que sí dura",
+    icon: (
+      <>
+        <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+        <path d="M21 3v6h-6" />
+      </>
+    ),
+  },
+  {
+    text: "Deudas con un plan",
+    icon: (
+      <>
+        <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" />
+        <path d="M9.2 12.2l1.9 1.9 3.7-3.8" />
+      </>
+    ),
+  },
+  {
+    text: "Metas con una fecha",
+    icon: (
+      <>
+        <circle cx="12" cy="12" r="8.5" />
+        <circle cx="12" cy="12" r="4" />
+        <circle cx="12" cy="12" r="0.6" fill="currentColor" stroke="none" />
+      </>
+    ),
+  },
+  {
+    text: "Finanzas sin susto",
+    icon: <path d="M12 20.3s-7.2-4.4-7.2-9.2a4.1 4.1 0 0 1 7.2-2.7 4.1 4.1 0 0 1 7.2 2.7c0 4.8-7.2 9.2-7.2 9.2z" />,
+  },
+];
+
 const BENEFITS = [
-  "Empiezas a entender en qué se te va cada mes",
-  "Dejas de sentirte perdida con tu dinero",
-  "Tomas decisiones con más tranquilidad",
-  "Dejas de evitar ver tus números",
-  "Tienes claridad sin sentirte abrumada",
-  "Sientes que por fin tienes control",
+  "Sabes en qué se te va el dinero",
+  "Sabes qué hacer primero, sin adivinar",
+  "Dejas de evitar mirar tus números",
+  "Ahorras con método, no con lo que sobra",
+  "Cada meta y cada deuda, con su plan",
+  "Decides con más tranquilidad",
 ];
 
 const SIMPLE = [
   "Sin Excel complicados",
   "Sin fórmulas",
-  "Sin procesos largos",
-  "Sin tener que saber de finanzas o matemáticas",
+  "Sin jerga financiera",
+  "Sin volverte experta en finanzas",
 ];
 
 const HOW_STEPS = [
   {
     num: "01",
-    title: "Entras a la plataforma",
-    desc: "Creas tu cuenta, es tuya y solo tuya. Tus datos son privados.",
+    title: "Le cuentas cómo estás hoy",
+    desc: "Cuánto ganas, en qué gastas, qué debes y qué quieres lograr.",
   },
   {
     num: "02",
-    title: "Registras tu mes",
-    desc: "Anotas tus ingresos y lo que gastas. Amy hace los cálculos por ti. Además, te muestra cómo ahorrar mejor y, si tienes deudas, cómo empezar a salir de ellas.",
+    title: "Amy organiza y calcula",
+    desc: "Gastos fijos, cajitas, ahorro y cuotas de deudas: todo en un solo lugar.",
   },
   {
     num: "03",
-    title: "Ves tu dinero claro",
-    desc: "Amy te muestra exactamente a dónde se va tu dinero y qué podrías ajustar.",
+    title: "Te dice por dónde empezar",
+    desc: "Qué ajustar primero, qué mejorar y cuál es tu siguiente paso.",
   },
   {
     num: "04",
-    title: "Empiezas el nuevo mes con claridad",
-    desc: "Al inicio de cada mes, Amy te muestra cómo terminó el anterior y te deja todo listo para el siguiente, con saldos actualizados.",
+    title: "Mes a mes creas el hábito",
+    desc: "Cada mes cierra solo y el siguiente arranca con los saldos al día.",
   },
 ];
 
@@ -91,25 +136,65 @@ const PLANS = [
 
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  // El header gana sombra al bajar, para despegarse del contenido.
+  const [scrolled, setScrolled] = useState(false);
+  // Seccion visible actualmente, para orientar a la usuaria mientras navega.
+  const [activeSection, setActiveSection] = useState<string>("");
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const secciones = NAV_LINKS
+      .map((l) => document.querySelector(l.href))
+      .filter((el): el is Element => el !== null);
+    if (secciones.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (visible) setActiveSection(`#${visible.target.id}`);
+      },
+      // La banda superior evita que la seccion cambie demasiado pronto.
+      { rootMargin: "-20% 0px -70% 0px" }
+    );
+    secciones.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#ffedfa]">
 
       {/* ───── NAVBAR ───── */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-[#ffb8e0]">
+      <nav className={`sticky top-0 z-50 backdrop-blur-md border-b transition-all duration-300 ${scrolled ? "bg-white/95 border-[#ffb8e0] shadow-sm" : "bg-white/80 border-[#ffb8e0]/60"}`}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <a href="#" className="flex items-center gap-2">
             <span className="text-2xl font-bold text-[#ec7fa9]" style={{ fontFamily: "var(--font-playfair)" }}>
               Amy
             </span>
-            <span className="text-xs text-[#1a1a2e]/40 font-medium mt-1">by Finance BFFs 💕</span>
+            <span className="hidden sm:inline text-xs text-[#1a1a2e]/40 font-medium mt-1">by Finance BFFs 💕</span>
           </a>
 
           <ul className="hidden md:flex items-center gap-8">
             {NAV_LINKS.map((l) => (
               <li key={l.href}>
-                <a href={l.href} className="text-sm font-medium text-[#1a1a2e]/70 hover:text-[#ec7fa9] transition-colors">
+                <a
+                  href={l.href}
+                  aria-current={activeSection === l.href ? "true" : undefined}
+                  className={`relative text-sm font-medium transition-colors ${
+                    activeSection === l.href ? "text-[#ec7fa9]" : "text-[#1a1a2e]/70 hover:text-[#ec7fa9]"
+                  }`}
+                >
                   {l.label}
+                  {activeSection === l.href && (
+                    <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 rounded-full bg-[#ec7fa9]" />
+                  )}
                 </a>
               </li>
             ))}
@@ -126,17 +211,33 @@ export default function LandingPage() {
             </a>
           </div>
 
-          <button className="md:hidden p-2 text-[#ec7fa9]" onClick={() => setMenuOpen(!menuOpen)}>
+          {/* En movil el CTA se mantiene visible: registrarse no deberia exigir
+              abrir el menu primero. */}
+          <div className="flex md:hidden items-center gap-1">
+            <a
+              href="/register"
+              className="bg-[#ec7fa9] hover:bg-[#d96d97] text-white text-xs font-semibold px-3.5 py-2 rounded-full transition-colors"
+            >
+              Empezar gratis
+            </a>
+            <button
+              className="p-2 text-[#ec7fa9]"
+              aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-expanded={menuOpen}
+              aria-controls="menu-movil"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               {menuOpen
                 ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />}
-            </svg>
-          </button>
+              </svg>
+            </button>
+          </div>
         </div>
 
         {menuOpen && (
-          <div className="md:hidden bg-white border-t border-[#ffb8e0] px-6 py-4 flex flex-col gap-4">
+          <div id="menu-movil" className="md:hidden bg-white border-t border-[#ffb8e0] px-6 py-4 flex flex-col gap-4">
             {NAV_LINKS.map((l) => (
               <a key={l.href} href={l.href} className="text-sm font-medium text-[#1a1a2e]/70" onClick={() => setMenuOpen(false)}>
                 {l.label}
@@ -145,9 +246,7 @@ export default function LandingPage() {
             <a href="/login" className="text-sm font-semibold text-[#ec7fa9] text-center" onClick={() => setMenuOpen(false)}>
               Iniciar sesión
             </a>
-            <a href="/register" className="bg-[#ec7fa9] text-white text-sm font-semibold px-5 py-2.5 rounded-full text-center" onClick={() => setMenuOpen(false)}>
-              Empezar gratis
-            </a>
+
           </div>
         )}
       </nav>
@@ -182,11 +281,12 @@ export default function LandingPage() {
               Te entra dinero… pero no sabes en qué se va. Y eso cansa.
             </p>
             <p className="text-base text-[#1a1a2e]/80 mb-3 font-medium lg:max-w-lg animate-fade-in-up opacity-0 [animation-delay:280ms]">
-              No necesitas hacerlo perfecto ni sola.<br />
-              Solo necesitas empezar.
+              No necesitas volverte experta en finanzas.<br />
+              Ni hacerlo sola.
             </p>
             <p className="text-base text-[#1a1a2e]/60 mb-9 lg:max-w-lg leading-relaxed animate-fade-in-up opacity-0 [animation-delay:340ms]">
-              Amy te guía paso a paso, mes a mes, hasta que ver tus números deje de darte susto.
+              Amy organiza tus finanzas, hace los cálculos por ti y te va diciendo qué hacer primero,
+              paso a paso, hasta que ver tus números deje de darte susto.
             </p>
 
             {/* CTA principal dominante · secundario deliberadamente discreto */}
@@ -224,26 +324,178 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ───── QUÉ ES ───── */}
-      <section className="py-16 px-6 bg-white">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a2e] mb-6" style={{ fontFamily: "var(--font-playfair)" }}>
-            ¿Qué es <span className="italic text-[#ec7fa9]">Amy</span>?
-          </h2>
-          <p className="text-lg text-[#1a1a2e]/70 leading-relaxed mb-4">
-            Una herramienta mensual donde organizas tu dinero sin enredos.
-          </p>
-          <p className="text-lg text-[#1a1a2e]/70 leading-relaxed mb-4">
-            Registras tus ingresos y tus gastos, y automáticamente ves todo claro: en qué se va tu dinero, cuánto puedes ahorrar y cómo organizarte mejor.
-          </p>
-          <p className="text-lg text-[#1a1a2e]/70 leading-relaxed mb-8">
-            Incluye pantallas visuales, guías simples y métodos de ahorro, todo pensado para que no tengas que entender fórmulas ni complicarte.
-          </p>
-          <div className="inline-block bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl px-8 py-4">
-            <p className="text-[#1a1a2e] font-semibold text-lg">
-              Tú solo escribes tus números.<br />
-              <span className="text-[#ec7fa9]">Amy hace el resto.</span>
+      {/* ───── MANIFIESTO ─────
+          El "por que existimos" va antes que el "que es": primero el problema
+          que la usuaria reconoce, despues el producto. */}
+      <section id="por-que" className="px-6 pb-20 -mt-14">
+        <div className="relative max-w-3xl mx-auto bg-white border border-[#ffb8e0] rounded-[2rem] p-8 md:p-14 overflow-hidden">
+          {/* Mancha suave: rompe el bloque blanco sin competir con el texto. */}
+          <div className="absolute -top-24 -right-24 w-72 h-72 bg-[#ffedfa] blob" aria-hidden="true" />
+
+          <div className="relative text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#ec7fa9] mb-5">
+              Por qué existimos
             </p>
+            <h2
+              className="text-3xl md:text-5xl font-bold text-[#1a1a2e] leading-[1.15] mb-6"
+              style={{ fontFamily: "var(--font-playfair)" }}
+            >
+              Nadie nos enseñó qué hacer con{" "}
+              <span className="italic text-[#ec7fa9]">nuestro dinero</span>
+            </h2>
+
+            <p className="text-[#1a1a2e]/60 leading-relaxed max-w-md mx-auto mb-7">
+              Llegó el primer sueldo y ya se suponía que sabíamos. Y al buscar ayuda, siempre lo
+              mismo:
+            </p>
+
+            {/* El "antes", tachado — se lee de un vistazo, sin párrafo. */}
+            <div className="flex flex-wrap justify-center gap-2 mb-10">
+              {RUIDO.map((r, i) => (
+                <span
+                  key={i}
+                  className="text-sm text-[#1a1a2e]/40 line-through decoration-[#ec7fa9]/50 bg-[#ffedfa] rounded-full px-4 py-2"
+                >
+                  {r}
+                </span>
+              ))}
+            </div>
+
+            {/* Las comillas van en pareja y en esquinas opuestas: enmarcan la
+                cita en diagonal en vez de dejarla abierta. */}
+            <div className="relative bg-[#ffedfa] rounded-3xl px-8 py-9 md:px-12 md:py-10 mb-10">
+              <span
+                className="absolute left-3 top-2 text-7xl md:text-8xl text-[#ffb8e0] leading-none select-none"
+                style={{ fontFamily: "var(--font-playfair)" }}
+                aria-hidden="true"
+              >
+                “
+              </span>
+              <p className="relative text-lg md:text-2xl text-[#1a1a2e] leading-snug">
+                Somos esa mejor amiga que se sienta contigo, mira tus finanzas y te dice:{" "}
+                <span className="italic font-semibold text-[#ec7fa9]">empecemos por aquí.</span>
+              </p>
+              <span
+                className="absolute right-3 bottom-0 text-7xl md:text-8xl text-[#ffb8e0] leading-none select-none"
+                style={{ fontFamily: "var(--font-playfair)" }}
+                aria-hidden="true"
+              >
+                ”
+              </span>
+            </div>
+
+            {/* Sin cajas: cuatro ideas cortas no necesitan borde cada una.
+                El circulo del icono ya da el ritmo visual. */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8 mb-11">
+              {MANIFIESTO.map((m, i) => (
+                <div key={i} className="flex flex-col items-center">
+                  <span className="w-12 h-12 rounded-full bg-[#ffedfa] text-[#ec7fa9] grid place-items-center mb-3">
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      {m.icon}
+                    </svg>
+                  </span>
+                  <p className="text-sm font-medium text-[#1a1a2e]/75 leading-snug text-balance">
+                    {m.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <p
+              className="text-xl md:text-2xl font-bold text-[#1a1a2e] leading-snug"
+              style={{ fontFamily: "var(--font-playfair)" }}
+            >
+              Una buena relación con el dinero también se aprende.
+              <br />
+              <span className="text-[#ec7fa9]">Y no tienes que aprenderla sola.</span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ───── QUÉ ES ───── */}
+      <section id="que-incluye" className="py-16 px-6 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a2e] mb-5" style={{ fontFamily: "var(--font-playfair)" }}>
+              ¿Qué es <span className="italic text-[#ec7fa9]">Amy</span>?
+            </h2>
+            <p
+              className="text-2xl md:text-3xl text-[#1a1a2e] leading-snug max-w-xl mx-auto"
+              style={{ fontFamily: "var(--font-playfair)" }}
+            >
+              Tu mejor amiga para entender y manejar mejor tu dinero.
+            </p>
+          </div>
+
+          {/* Las dos mitades del producto: entender (lo que ya hacía) y
+              acompañar (el scope nuevo). El numero grande hace de ancla visual. */}
+          <div className="grid md:grid-cols-2 gap-5 mb-8">
+            {[
+              {
+                num: "1",
+                label: "Primero",
+                title: "Entiendes",
+                desc: "Le cuentas cómo estás hoy: cuánto ganas, en qué gastas, qué debes. Amy organiza y calcula por ti.",
+              },
+              {
+                num: "2",
+                label: "Después",
+                title: "Mejoras",
+                desc: "No se queda en los números: te dice qué hacer primero y cómo crear hábitos que sí mantienes.",
+              },
+            ].map((c) => (
+              <div
+                key={c.num}
+                className="relative bg-[#ffedfa] border border-[#ffb8e0] rounded-3xl p-7 overflow-hidden"
+              >
+                <span
+                  className="absolute -top-3 right-4 text-8xl font-bold text-[#ffb8e0]/50 leading-none select-none"
+                  style={{ fontFamily: "var(--font-playfair)" }}
+                  aria-hidden="true"
+                >
+                  {c.num}
+                </span>
+                <div className="relative">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#ec7fa9] mb-1">
+                    {c.label}
+                  </p>
+                  <p
+                    className="text-2xl font-bold text-[#1a1a2e] mb-3"
+                    style={{ fontFamily: "var(--font-playfair)" }}
+                  >
+                    {c.title}
+                  </p>
+                  <p className="text-[#1a1a2e]/70 leading-relaxed">{c.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <span className="inline-block text-sm text-[#1a1a2e]/55 bg-[#ffedfa] rounded-full px-5 py-2.5 mb-10">
+              ✦ Con metodologías y conocimiento financiero detrás — explicado simple
+            </span>
+
+            <div className="inline-block bg-[#ffedfa] border border-[#ffb8e0] rounded-3xl px-8 py-6 md:px-12">
+              <p
+                className="text-2xl md:text-3xl font-bold text-[#1a1a2e] leading-snug"
+                style={{ fontFamily: "var(--font-playfair)" }}
+              >
+                Amy hace fácil entender tus finanzas.<br />
+                <span className="text-[#ec7fa9]">Y te acompaña a mejorarlas.</span>
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -279,7 +531,7 @@ export default function LandingPage() {
               ))}
             </div>
             <p className="text-[#ec7fa9] font-semibold text-lg">
-              Solo registras tus números y todo se ordena para ti
+              Tú cuentas cómo estás hoy. Amy ordena, calcula y te dice por dónde empezar.
             </p>
           </div>
         </div>
@@ -289,19 +541,26 @@ export default function LandingPage() {
       <section id="como-funciona" className="py-20 px-6 bg-white">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
               Así de simple funciona
             </h2>
+            <p className="text-[#1a1a2e]/60">Paso a paso, sin que tengas que adivinar el siguiente.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {HOW_STEPS.map((s, i) => (
-              <div key={i} className="bg-[#ffedfa] rounded-2xl border border-[#ffb8e0] p-6">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#ec7fa9] mb-4">
-                  <span className="text-white font-bold text-sm">{s.num}</span>
+              <div key={i} className="flex gap-4 bg-[#ffedfa] rounded-2xl border border-[#ffb8e0] p-6">
+                <span
+                  className="text-3xl font-bold text-[#ec7fa9]/40 leading-none flex-shrink-0"
+                  style={{ fontFamily: "var(--font-playfair)" }}
+                  aria-hidden="true"
+                >
+                  {s.num}
+                </span>
+                <div>
+                  <h3 className="font-semibold text-[#1a1a2e] text-lg mb-1.5">{s.title}</h3>
+                  <p className="text-[#1a1a2e]/60 text-sm leading-relaxed">{s.desc}</p>
                 </div>
-                <h3 className="font-semibold text-[#1a1a2e] text-lg mb-2">{s.title}</h3>
-                <p className="text-[#1a1a2e]/60 text-sm leading-relaxed">{s.desc}</p>
               </div>
             ))}
           </div>
@@ -400,7 +659,9 @@ export default function LandingPage() {
           Amy
         </p>
         <p className="text-white/30 text-xs mb-1">by Finance BFFs 💕</p>
-        <p className="text-white/40 text-sm mb-4">Tu mejor amiga en las finanzas.</p>
+        <p className="text-white/40 text-sm mb-4">
+          Porque una buena relación con el dinero también se aprende.
+        </p>
         <a
           href="https://www.instagram.com/financebestfriends"
           target="_blank"
