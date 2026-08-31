@@ -171,6 +171,16 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#ffedfa]">
 
+      {/* Capa decorativa fija: las manchas se quedan quietas mientras el
+          contenido sube por encima, y ese desfase es el que da profundidad al
+          bajar. Va detras de todo el contenido pero por delante del fondo rosa
+          (z negativo), y nunca intercepta clicks. */}
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="absolute top-[12%] -left-40 w-[30rem] h-[30rem] bg-[#ffb8e0] opacity-30 blur-3xl blob" />
+        <div className="absolute top-[55%] -right-48 w-[34rem] h-[34rem] bg-[#ec7fa9] opacity-15 blur-3xl blob" />
+        <div className="absolute -bottom-40 left-[15%] w-[26rem] h-[26rem] bg-[#ffb8e0] opacity-25 blur-3xl blob" />
+      </div>
+
       {/* ───── NAVBAR ───── */}
       <nav className={`sticky top-0 z-50 backdrop-blur-md border-b transition-all duration-300 ${scrolled ? "bg-white/95 border-[#ffb8e0] shadow-sm" : "bg-white/80 border-[#ffb8e0]/60"}`}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -424,7 +434,10 @@ export default function LandingPage() {
       </section>
 
       {/* ───── QUÉ ES ───── */}
-      <section id="que-incluye" className="py-16 px-6 bg-white">
+      {/* Las secciones blancas se disuelven por arriba y por abajo hacia el
+          rosa de la pagina: asi ninguna costura entre secciones se ve como un
+          corte plano. Las rosas quedan en color solido y encajan sin borde. */}
+      <section id="que-incluye" className="py-20 px-6 bg-[linear-gradient(to_bottom,#ffedfa_0px,#ffffff_5rem,#ffffff_calc(100%_-_5rem),#ffedfa_100%)]">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a2e] mb-5" style={{ fontFamily: "var(--font-playfair)" }}>
@@ -501,7 +514,9 @@ export default function LandingPage() {
       </section>
 
       {/* ───── BENEFITS ───── */}
-      <section id="para-quien" className="py-20 px-6 bg-[#ffedfa]">
+      {/* Sin fondo propio: deja pasar la capa decorativa. El rosa lo pone el
+          contenedor de la pagina. */}
+      <section id="para-quien" className="relative py-20 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
@@ -538,7 +553,7 @@ export default function LandingPage() {
       </section>
 
       {/* ───── HOW IT WORKS ───── */}
-      <section id="como-funciona" className="py-20 px-6 bg-white">
+      <section id="como-funciona" className="py-20 px-6 bg-[linear-gradient(to_bottom,#ffedfa_0px,#ffffff_5rem,#ffffff_calc(100%_-_5rem),#ffedfa_100%)]">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
@@ -568,8 +583,11 @@ export default function LandingPage() {
       </section>
 
       {/* ───── PRICING ───── */}
-      <section id="precios" className="py-20 px-6 bg-[#ffedfa]">
-        <div className="max-w-5xl mx-auto">
+      <section id="precios" className="relative overflow-hidden py-20 pb-28 px-6">
+        {/* Misma mancha suave del hero: cierra la pagina con el mismo lenguaje
+            visual con el que abre. */}
+        <div className="absolute -top-24 -right-24 w-80 h-80 bg-white opacity-50 blob" aria-hidden="true" />
+        <div className="relative max-w-5xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
               Elige tu plan
@@ -654,7 +672,9 @@ export default function LandingPage() {
       </section>
 
       {/* ───── FOOTER ───── */}
-      <footer className="bg-[#1a1a2e] py-12 px-6 text-center">
+      {/* Las esquinas redondeadas dejan ver el rosa detras: el bloque oscuro
+          cierra la pagina en vez de cortarla en seco. */}
+      <footer className="bg-[#1a1a2e] rounded-t-[2.5rem] py-14 px-6 text-center">
         <p className="text-2xl font-bold text-[#ec7fa9] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
           Amy
         </p>
