@@ -23,7 +23,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Finance BFFs — Tu mejor amiga en las finanzas",
+  title: "Finance BFFs: Tu mejor amiga en las finanzas",
   description:
     "La plataforma de finanzas personales diseñada para mujeres que quieren tomar el control de su dinero, sin estrés y sin juicio.",
   manifest: "/manifest.json",
