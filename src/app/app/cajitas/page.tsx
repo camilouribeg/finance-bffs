@@ -140,7 +140,7 @@ export default function CajitasPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
             Cajitas
           </h1>
-          <p className="text-[#1a1a2e]/50 text-sm mt-1">Gastos grandes que no llegan cada mes — pero que puedes preparar</p>
+          <p className="text-[#1a1a2e]/50 text-sm mt-1">Gastos grandes que no llegan cada mes, pero que puedes preparar</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -156,7 +156,7 @@ export default function CajitasPage() {
           <Lightbulb size={12} /> Cómo funcionan las cajitas
         </p>
         <p className="text-sm text-[#1a1a2e]/70 leading-relaxed mb-3">
-          Amy divide el costo total de cada cajita en cuotas mensuales y las descuenta de tu presupuesto disponible — igual que un gasto fijo.
+          Amy divide el costo total de cada cajita en cuotas mensuales y las descuenta de tu presupuesto disponible, igual que un gasto fijo.
         </p>
         <p className="text-sm font-semibold text-[#1a1a2e] mb-1">¿Qué debes hacer en tu banco?</p>
         <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">

@@ -220,7 +220,7 @@ export default function RegisterPage() {
                       {step === 1 ? "Cuéntanos de ti ✨" : "Crea tu acceso 🔐"}
                     </h1>
                     <p className="text-[#1a1a2e]/50 text-sm mt-1">
-                      {step === 1 ? "Paso 1 de 2 — tus datos" : "Paso 2 de 2 — tu cuenta"}
+                      {step === 1 ? "Paso 1 de 2: tus datos" : "Paso 2 de 2: tu cuenta"}
                     </p>
                   </div>
                 </div>

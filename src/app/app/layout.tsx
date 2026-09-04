@@ -50,7 +50,7 @@ export default async function AppLayout({
               banner.type === "trial-ending" ? "text-orange-600" : "text-[#ec7fa9]"
             }`}>
               {banner.type === "trial-ending"
-                ? `⏳ Tu periodo de prueba termina en ${banner.days} día${banner.days !== 1 ? "s" : ""} — activa tu plan para no perder el acceso`
+                ? `⏳ Tu periodo de prueba termina en ${banner.days} día${banner.days !== 1 ? "s" : ""}. Activa tu plan para no perder el acceso`
                 : `✨ Tienes ${banner.days} días gratis restantes`}
             </p>
             <a

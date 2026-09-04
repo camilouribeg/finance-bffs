@@ -562,7 +562,7 @@ export default function AhorroPage() {
             {/* Explanation card */}
             <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl px-5 py-4 mb-4">
               <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
-                <span className="font-semibold text-[#ec7fa9]">Son sueños con fecha de llegada.</span> Defines cuánto cuesta y cuándo lo quieres lograr — Amy calcula cuánto apartar cada mes para que llegues a tiempo. Cuando lo logres, ¡celebramos juntas!
+                <span className="font-semibold text-[#ec7fa9]">Son sueños con fecha de llegada.</span> Defines cuánto cuesta y cuándo lo quieres lograr. Amy calcula cuánto apartar cada mes para que llegues a tiempo. Cuando lo logres, ¡celebramos juntas!
               </p>
             </div>
 
