@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import AmyMockup from "@/components/landing/AmyMockup";
 
 const NAV_LINKS = [
-  { label: "¿Por qué Amy?", href: "#por-que" },
   { label: "¿Qué es Amy?", href: "#que-incluye" },
+  { label: "¿Por qué Amy?", href: "#por-que" },
   { label: "¿Cómo funciona?", href: "#como-funciona" },
   { label: "Precios", href: "#precios" },
 ];
@@ -95,7 +95,7 @@ const HOW_STEPS = [
 ];
 
 const PRESALE_PERKS = [
-  "Tu precio de hoy se queda así para siempre — aunque mañana suba, tú sigues pagando lo mismo",
+  "Tu precio de hoy se queda así para siempre. Aunque mañana suba, tú sigues pagando lo mismo",
   "Acceso prioritario a nuevas funciones antes que cualquier otra persona",
   "Comunidad privada de Finance BFFs 💕",
   "Soporte directo con el equipo",
@@ -275,7 +275,7 @@ export default function LandingPage() {
               className="inline-flex items-center gap-2 bg-white border border-[#ffb8e0] text-[#ec7fa9] text-sm font-medium px-4 py-1.5 rounded-full mb-7 hover:bg-[#ffedfa] transition-colors cursor-pointer animate-fade-in-up opacity-0 [animation-delay:60ms]"
             >
               <span className="w-2 h-2 bg-[#ec7fa9] rounded-full inline-block animate-pulse" />
-              Preventa abierta — plazas limitadas →
+              Preventa abierta, plazas limitadas →
             </a>
 
             <h1
@@ -334,110 +334,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ───── MANIFIESTO ─────
-          El "por que existimos" va antes que el "que es": primero el problema
-          que la usuaria reconoce, despues el producto. */}
-      <section id="por-que" className="px-6 pb-20 -mt-14">
-        <div className="relative max-w-3xl mx-auto bg-white border border-[#ffb8e0] rounded-[2rem] p-8 md:p-14 overflow-hidden">
-          {/* Mancha suave: rompe el bloque blanco sin competir con el texto. */}
-          <div className="absolute -top-24 -right-24 w-72 h-72 bg-[#ffedfa] blob" aria-hidden="true" />
-
-          <div className="relative text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#ec7fa9] mb-5">
-              Por qué existimos
-            </p>
-            <h2
-              className="text-3xl md:text-5xl font-bold text-[#1a1a2e] leading-[1.15] mb-6"
-              style={{ fontFamily: "var(--font-playfair)" }}
-            >
-              Nadie nos enseñó qué hacer con{" "}
-              <span className="italic text-[#ec7fa9]">nuestro dinero</span>
-            </h2>
-
-            <p className="text-[#1a1a2e]/60 leading-relaxed max-w-md mx-auto mb-7">
-              Llegó el primer sueldo y ya se suponía que sabíamos. Y al buscar ayuda, siempre lo
-              mismo:
-            </p>
-
-            {/* El "antes", tachado — se lee de un vistazo, sin párrafo. */}
-            <div className="flex flex-wrap justify-center gap-2 mb-10">
-              {RUIDO.map((r, i) => (
-                <span
-                  key={i}
-                  className="text-sm text-[#1a1a2e]/40 line-through decoration-[#ec7fa9]/50 bg-[#ffedfa] rounded-full px-4 py-2"
-                >
-                  {r}
-                </span>
-              ))}
-            </div>
-
-            {/* Las comillas van en pareja y en esquinas opuestas: enmarcan la
-                cita en diagonal en vez de dejarla abierta. */}
-            <div className="relative bg-[#ffedfa] rounded-3xl px-8 py-9 md:px-12 md:py-10 mb-10">
-              <span
-                className="absolute left-3 top-2 text-7xl md:text-8xl text-[#ffb8e0] leading-none select-none"
-                style={{ fontFamily: "var(--font-playfair)" }}
-                aria-hidden="true"
-              >
-                “
-              </span>
-              <p className="relative text-lg md:text-2xl text-[#1a1a2e] leading-snug">
-                Somos esa mejor amiga que se sienta contigo, mira tus finanzas y te dice:{" "}
-                <span className="italic font-semibold text-[#ec7fa9]">empecemos por aquí.</span>
-              </p>
-              <span
-                className="absolute right-3 bottom-0 text-7xl md:text-8xl text-[#ffb8e0] leading-none select-none"
-                style={{ fontFamily: "var(--font-playfair)" }}
-                aria-hidden="true"
-              >
-                ”
-              </span>
-            </div>
-
-            {/* Sin cajas: cuatro ideas cortas no necesitan borde cada una.
-                El circulo del icono ya da el ritmo visual. */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8 mb-11">
-              {MANIFIESTO.map((m, i) => (
-                <div key={i} className="flex flex-col items-center">
-                  <span className="w-12 h-12 rounded-full bg-[#ffedfa] text-[#ec7fa9] grid place-items-center mb-3">
-                    <svg
-                      width="22"
-                      height="22"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      {m.icon}
-                    </svg>
-                  </span>
-                  <p className="text-sm font-medium text-[#1a1a2e]/75 leading-snug text-balance">
-                    {m.text}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <p
-              className="text-xl md:text-2xl font-bold text-[#1a1a2e] leading-snug"
-              style={{ fontFamily: "var(--font-playfair)" }}
-            >
-              Una buena relación con el dinero también se aprende.
-              <br />
-              <span className="text-[#ec7fa9]">Y no tienes que aprenderla sola.</span>
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* ───── QUÉ ES ───── */}
       {/* Las secciones blancas se disuelven por arriba y por abajo hacia el
           rosa de la pagina: asi ninguna costura entre secciones se ve como un
           corte plano. Las rosas quedan en color solido y encajan sin borde. */}
-      <section id="que-incluye" className="py-20 px-6 bg-[linear-gradient(to_bottom,#ffedfa_0px,#ffffff_5rem,#ffffff_calc(100%_-_5rem),#ffedfa_100%)]">
+      <section id="que-incluye" className="py-20 px-6 -mt-14 bg-[linear-gradient(to_bottom,#ffedfa_0px,#ffffff_5rem,#ffffff_calc(100%_-_5rem),#ffedfa_100%)]">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-[#1a1a2e] mb-5" style={{ fontFamily: "var(--font-playfair)" }}>
@@ -497,7 +398,7 @@ export default function LandingPage() {
 
           <div className="text-center">
             <span className="inline-block text-sm text-[#1a1a2e]/55 bg-[#ffedfa] rounded-full px-5 py-2.5 mb-10">
-              ✦ Con metodologías y conocimiento financiero detrás — explicado simple
+              ✦ Con metodologías y conocimiento financiero detrás, explicado simple
             </span>
 
             <div className="inline-block bg-[#ffedfa] border border-[#ffb8e0] rounded-3xl px-8 py-6 md:px-12">
@@ -509,6 +410,89 @@ export default function LandingPage() {
                 <span className="text-[#ec7fa9]">Y te acompaña a mejorarlas.</span>
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ───── MANIFIESTO ─────
+          Va despues del "que es": primero explicamos que es Amy y despues por
+          que existe, que es como el relato se entiende mas natural. */}
+      <section id="por-que" className="px-6 pt-4 pb-20">
+        <div className="relative max-w-3xl mx-auto bg-white border border-[#ffb8e0] rounded-[2rem] p-8 md:p-14 overflow-hidden">
+          {/* Mancha suave: rompe el bloque blanco sin competir con el texto. */}
+          <div className="absolute -top-24 -right-24 w-72 h-72 bg-[#ffedfa] blob" aria-hidden="true" />
+
+          <div className="relative text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#ec7fa9] mb-5">
+              Por qué existimos
+            </p>
+            <h2
+              className="text-3xl md:text-5xl font-bold text-[#1a1a2e] leading-[1.15] mb-6"
+              style={{ fontFamily: "var(--font-playfair)" }}
+            >
+              Nadie nos enseñó qué hacer con{" "}
+              <span className="italic text-[#ec7fa9]">nuestro dinero</span>
+            </h2>
+
+            <p className="text-[#1a1a2e]/60 leading-relaxed max-w-md mx-auto mb-7">
+              Llegó el primer sueldo y ya se suponía que sabíamos. Y al buscar ayuda, siempre lo
+              mismo:
+            </p>
+
+            {/* El "antes", tachado — se lee de un vistazo, sin párrafo. */}
+            <div className="flex flex-wrap justify-center gap-2 mb-10">
+              {RUIDO.map((r, i) => (
+                <span
+                  key={i}
+                  className="text-sm text-[#1a1a2e]/40 line-through decoration-[#ec7fa9]/50 bg-[#ffedfa] rounded-full px-4 py-2"
+                >
+                  {r}
+                </span>
+              ))}
+            </div>
+
+            <div className="bg-[#ffedfa] rounded-3xl px-8 py-9 md:px-12 md:py-10 mb-10">
+              <p className="text-lg md:text-2xl text-[#1a1a2e] leading-snug">
+                Somos esa mejor amiga que se sienta contigo, mira tus finanzas y te dice:{" "}
+                <span className="italic font-semibold text-[#ec7fa9]">empecemos por aquí.</span>
+              </p>
+            </div>
+
+            {/* Sin cajas: cuatro ideas cortas no necesitan borde cada una.
+                El circulo del icono ya da el ritmo visual. */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8 mb-11">
+              {MANIFIESTO.map((m, i) => (
+                <div key={i} className="flex flex-col items-center">
+                  <span className="w-12 h-12 rounded-full bg-[#ffedfa] text-[#ec7fa9] grid place-items-center mb-3">
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      {m.icon}
+                    </svg>
+                  </span>
+                  <p className="text-sm font-medium text-[#1a1a2e]/75 leading-snug text-balance">
+                    {m.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <p
+              className="text-xl md:text-2xl font-bold text-[#1a1a2e] leading-snug"
+              style={{ fontFamily: "var(--font-playfair)" }}
+            >
+              Una buena relación con el dinero también se aprende.
+              <br />
+              <span className="text-[#ec7fa9]">Y no tienes que aprenderla sola.</span>
+            </p>
           </div>
         </div>
       </section>
@@ -540,7 +524,10 @@ export default function LandingPage() {
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               {SIMPLE.map((s, i) => (
-                <div key={i} className="bg-[#ffedfa] rounded-xl p-4">
+                <div
+                  key={i}
+                  className="bg-[#ffedfa] rounded-xl p-4 flex items-center justify-center text-center"
+                >
                   <p className="text-sm text-[#1a1a2e]/70 font-medium">✗ {s}</p>
                 </div>
               ))}
@@ -610,7 +597,7 @@ export default function LandingPage() {
               ))}
             </div>
             <p className="text-white/70 text-xs mt-4 text-center">
-              Plazas limitadas — estos precios son exclusivos de preventa y pueden cambiar en cualquier momento
+              Plazas limitadas. Estos precios son exclusivos de preventa y pueden cambiar en cualquier momento
             </p>
           </div>
 
