@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import MoneyInput from "@/components/MoneyInput";
 import { Pencil, Check, X, Search, Zap, Archive, PiggyBank, Target } from "lucide-react";
 
 type ListItem = { id: string; nombre: string; valor: number };
@@ -219,6 +220,10 @@ export default function OnboardingPage() {
     const cur = paisSeleccionado?.divisa ?? "COP";
     return new Intl.NumberFormat(loc, { style: "currency", currency: cur, maximumFractionDigits: 0 }).format(n);
   }
+
+  // El país se guarda en localStorage al final del primer paso, pero el hook de
+  // MoneyInput lo lee una sola vez al montar; le pasamos el país en vivo.
+  const monedaProps = { locale: paisSeleccionado?.locale, currency: paisSeleccionado?.divisa };
 
   function showReinforcement(_msg: string, onContinue: () => void) {
     onContinue();
@@ -617,10 +622,10 @@ export default function OnboardingPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Ingreso principal del mes</label>
-                  <input
-                    type="number"
+                  <MoneyInput
+                    {...monedaProps}
                     value={ingresoFijo}
-                    onChange={(e) => setIngresoFijo(e.target.value)}
+                    onChange={setIngresoFijo}
                     placeholder="Ej: 3.000.000"
                     className={inputCls}
                   />
@@ -651,7 +656,7 @@ export default function OnboardingPage() {
                         placeholder="¿De dónde?"
                         onKeyDown={(e) => e.key === "Enter" && addIngreso()}
                         className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
-                      <input type="number" value={nuevoIngValor} onChange={(e) => setNuevoIngValor(e.target.value)}
+                      <MoneyInput {...monedaProps} value={nuevoIngValor} onChange={setNuevoIngValor}
                         placeholder="Valor"
                         onKeyDown={(e) => e.key === "Enter" && addIngreso()}
                         className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
@@ -714,7 +719,7 @@ export default function OnboardingPage() {
                     placeholder="Nombre del gasto"
                     onKeyDown={(e) => e.key === "Enter" && addGasto()}
                     className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
-                  <input type="number" value={nuevoGastValor} onChange={(e) => setNuevoGastValor(e.target.value)}
+                  <MoneyInput {...monedaProps} value={nuevoGastValor} onChange={setNuevoGastValor}
                     placeholder="Valor"
                     onKeyDown={(e) => e.key === "Enter" && addGasto()}
                     className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
@@ -843,13 +848,13 @@ export default function OnboardingPage() {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Cuánto pagas al mes?</label>
-                    <input type="number" value={dCuota} onChange={(e) => setDCuota(e.target.value)}
+                    <MoneyInput {...monedaProps} value={dCuota} onChange={setDCuota}
                       placeholder="Ej: 300.000"
                       className={inputCls} />
                   </div>
                   <div>
                     <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Cuánto debes en total?</label>
-                    <input type="number" value={dTotal} onChange={(e) => setDTotal(e.target.value)}
+                    <MoneyInput {...monedaProps} value={dTotal} onChange={setDTotal}
                       placeholder="Ej: 5.000.000"
                       className={inputCls} />
                   </div>
@@ -1305,7 +1310,7 @@ export default function OnboardingPage() {
                   <input value={cajNombre} onChange={e => setCajNombre(e.target.value)} placeholder="Nombre" className={`${inputCls} flex-1`} />
                 </div>
                 <div className="flex gap-2">
-                  <input type="number" value={cajMonto} onChange={e => setCajMonto(e.target.value)} placeholder="Monto total" className={`${inputCls} flex-1`} />
+                  <MoneyInput {...monedaProps} value={cajMonto} onChange={setCajMonto} placeholder="Monto total" className={`${inputCls} flex-1`} />
                   <div className="flex flex-col gap-1 w-44">
                     <label className="text-xs text-[#1a1a2e]/50 font-medium">¿Cada cuánto te llega ese gasto?</label>
                     <input
@@ -1482,8 +1487,8 @@ export default function OnboardingPage() {
                       </div>
                     ) : editingBolCuota ? (
                       <div className="flex gap-2">
-                        <input type="number" value={bolCuota} onChange={e => setBolCuota(e.target.value)}
-                          autoFocus max={bolsitasDisponible}
+                        <MoneyInput {...monedaProps} value={bolCuota} onChange={setBolCuota}
+                          autoFocus
                           placeholder={bolCuotaRecomendada > 0 ? String(bolCuotaRecomendada) : "Monto mensual"}
                           className={`${inputCls} flex-1 ${bolCuota && parseFloat(bolCuota) > bolsitasDisponible ? "border-red-400" : ""}`} />
                         <button type="button" onClick={() => setEditingBolCuota(false)} disabled={!bolCuota}
@@ -1509,7 +1514,7 @@ export default function OnboardingPage() {
                         </div>
                       </div>
                     ) : (
-                      <input type="number" value={bolCuota} onChange={e => setBolCuota(e.target.value)}
+                      <MoneyInput {...monedaProps} value={bolCuota} onChange={setBolCuota}
                         placeholder="¿Cuánto apartas al mes?"
                         className={inputCls} />
                     )}
@@ -1520,7 +1525,7 @@ export default function OnboardingPage() {
                 )}
                 {bolTipo === "metas" && (
                   <div className="grid grid-cols-2 gap-2 mb-2">
-                    <input type="number" value={bolMeta} onChange={e => setBolMeta(e.target.value)} placeholder="Meta total" className={inputCls} />
+                    <MoneyInput {...monedaProps} value={bolMeta} onChange={setBolMeta} placeholder="Meta total" className={inputCls} />
                     <input type="date" value={bolFecha} onChange={e => setBolFecha(e.target.value)} className={inputCls} />
                   </div>
                 )}

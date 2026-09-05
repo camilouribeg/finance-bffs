@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
+import MoneyInput from "@/components/MoneyInput";
 import Link from "next/link";
 import {
   TrendingUp,
@@ -266,7 +267,7 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 <div>
                   <label className="text-xs font-medium text-[#1a1a2e]/60 mb-1.5 block">Ingreso fijo (salario)</label>
-                  <input type="number" value={ingresoFijo} onChange={(e) => setIngresoFijo(e.target.value)}
+                  <MoneyInput value={ingresoFijo} onChange={setIngresoFijo}
                     className="w-full md:w-64 border border-[#ffb8e0] rounded-xl px-4 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 text-right" />
                 </div>
                 <div>
@@ -283,7 +284,7 @@ export default function DashboardPage() {
                   <div className="flex gap-2 mt-2">
                     <input value={nuevoIngNombre} onChange={e => setNuevoIngNombre(e.target.value)} placeholder="Ej: Freelance"
                       className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
-                    <input type="number" value={nuevoIngValor} onChange={e => setNuevoIngValor(e.target.value)} placeholder="0"
+                    <MoneyInput value={nuevoIngValor} onChange={setNuevoIngValor} placeholder="0"
                       className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none text-right" />
                     <button onClick={() => { if (!nuevoIngNombre || !nuevoIngValor) return; setIngresosOtros([...ingresosOtros, { id: crypto.randomUUID(), descripcion: nuevoIngNombre, valor: parseFloat(nuevoIngValor) }]); setNuevoIngNombre(""); setNuevoIngValor(""); }}
                       className="bg-[#ec7fa9] text-white px-3 py-2 rounded-xl font-semibold hover:bg-[#d96d97]">+</button>
@@ -336,7 +337,7 @@ export default function DashboardPage() {
                 <div className="flex gap-2 mt-2">
                   <input value={nuevoGastNombre} onChange={e => setNuevoGastNombre(e.target.value)} placeholder="Ej: Arriendo"
                     className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
-                  <input type="number" value={nuevoGastValor} onChange={e => setNuevoGastValor(e.target.value)} placeholder="0"
+                  <MoneyInput value={nuevoGastValor} onChange={setNuevoGastValor} placeholder="0"
                     className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none text-right" />
                   <button onClick={() => { if (!nuevoGastNombre || !nuevoGastValor) return; setGastosFijosItems([...gastosFijosItems, { id: crypto.randomUUID(), descripcion: nuevoGastNombre, valor: parseFloat(nuevoGastValor) }]); setNuevoGastNombre(""); setNuevoGastValor(""); }}
                     className="bg-[#ec7fa9] text-white px-3 py-2 rounded-xl font-semibold hover:bg-[#d96d97]">+</button>

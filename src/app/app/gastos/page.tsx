@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
+import MoneyInput from "@/components/MoneyInput";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { Inbox, X, Mic, Square, ChevronDown, ChevronUp, Pencil, Check, Plus } from "lucide-react";
 import Link from "next/link";
@@ -422,7 +423,7 @@ export default function GastosPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium text-[#1a1a2e]/50 mb-1 block">Valor</label>
-                <input type="number" value={valor} onChange={e => setValor(e.target.value)} placeholder="0" required className={inputCls} />
+                <MoneyInput value={valor} onChange={setValor} placeholder="0" required className={inputCls} />
               </div>
               <div>
                 <label className="text-xs font-medium text-[#1a1a2e]/50 mb-1 block">Fecha</label>
@@ -493,7 +494,7 @@ export default function GastosPage() {
                           </select>
                           <input type="text" value={editDesc} onChange={e => setEditDesc(e.target.value)} className={inputSmCls} placeholder="Descripción" />
                           <div className="grid grid-cols-2 gap-2">
-                            <input type="number" value={editVal} onChange={e => setEditVal(e.target.value)} className={inputSmCls} placeholder="Valor" />
+                            <MoneyInput value={editVal} onChange={setEditVal} className={inputSmCls} placeholder="Valor" />
                             <input type="date" value={editFecha} onChange={e => setEditFecha(e.target.value)} className={`${inputSmCls} text-[#1a1a2e]/50`} />
                           </div>
                         </div>
@@ -590,7 +591,7 @@ export default function GastosPage() {
                     <div className="p-4 bg-[#ffedfa]">
                       <div className="flex gap-2 mb-2">
                         <input value={editFijoNombre} onChange={e => setEditFijoNombre(e.target.value)} className={`${inputSmCls} flex-1`} placeholder="Nombre" />
-                        <input type="number" value={editFijoValor} onChange={e => setEditFijoValor(e.target.value)} className={`${inputSmCls} w-28`} placeholder="Valor" />
+                        <MoneyInput value={editFijoValor} onChange={setEditFijoValor} className={`${inputSmCls} w-28`} placeholder="Valor" />
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => updateFijo(f.id)}
@@ -623,7 +624,7 @@ export default function GastosPage() {
                 <form onSubmit={addFijo} className="p-4 border-t border-[#ffb8e0]/40">
                   <div className="flex gap-2 mb-2">
                     <input value={newFijoNombre} onChange={e => setNewFijoNombre(e.target.value)} placeholder="Nombre (ej: Arriendo)" className={`${inputSmCls} flex-1`} />
-                    <input type="number" value={newFijoValor} onChange={e => setNewFijoValor(e.target.value)} placeholder="Valor" className={`${inputSmCls} w-28`} />
+                    <MoneyInput value={newFijoValor} onChange={setNewFijoValor} placeholder="Valor" className={`${inputSmCls} w-28`} />
                   </div>
                   <div className="flex gap-2">
                     <button type="submit" className="flex-1 flex items-center justify-center gap-1.5 bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2 rounded-xl text-sm">

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
+import MoneyInput from "@/components/MoneyInput";
 import { ordenarDeudas, METHOD_META, type DebtMethod } from "@/lib/debtMethods";
 import { CreditCard, Landmark, Home, Car, Users, FileText, Check, X, Plus, Lightbulb } from "lucide-react";
 
@@ -150,11 +151,11 @@ export default function DeudasPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Saldo pendiente</label>
-                <input type="number" value={totalPendiente} onChange={e => setTotalPendiente(e.target.value)} placeholder="Ej: 5.000.000" className={inputCls} />
+                <MoneyInput value={totalPendiente} onChange={setTotalPendiente} placeholder="Ej: 5.000.000" className={inputCls} />
               </div>
               <div>
                 <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Cuota mensual</label>
-                <input type="number" value={cuotaMensual} onChange={e => setCuotaMensual(e.target.value)} placeholder="Ej: 300.000" className={inputCls} />
+                <MoneyInput value={cuotaMensual} onChange={setCuotaMensual} placeholder="Ej: 300.000" className={inputCls} />
               </div>
             </div>
             <div>
@@ -302,10 +303,9 @@ export default function DeudasPage() {
                             </button>
                           </div>
                           {abonarUsar === "custom" && (
-                            <input
-                              type="number"
+                            <MoneyInput
                               value={abonarMonto}
-                              onChange={e => setAbonarMonto(e.target.value)}
+                              onChange={setAbonarMonto}
                               placeholder="Monto pagado"
                               autoFocus
                               className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none"

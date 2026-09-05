@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
+import MoneyInput from "@/components/MoneyInput";
 import { Archive, Lightbulb, Check, X, PartyPopper } from "lucide-react";
 
 type Cajita = {
@@ -235,7 +236,7 @@ export default function CajitasPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Monto total a pagar</label>
-                <input type="number" value={montoTotal} onChange={(e) => setMontoTotal(e.target.value)}
+                <MoneyInput value={montoTotal} onChange={setMontoTotal}
                   placeholder="Ej: 1.200.000"
                   className="w-full border border-[#ffb8e0] rounded-xl px-4 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
               </div>
@@ -346,7 +347,7 @@ export default function CajitasPage() {
                     <div>
                       {abonarId === cajita.id ? (
                         <div className="flex gap-2">
-                          <input type="number" value={abonarMonto} onChange={(e) => setAbonarMonto(e.target.value)}
+                          <MoneyInput value={abonarMonto} onChange={setAbonarMonto}
                             placeholder="Monto a abonar" autoFocus
                             className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
                           <button onClick={() => abonar(cajita.id)}
