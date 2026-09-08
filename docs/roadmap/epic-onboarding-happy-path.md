@@ -4,6 +4,19 @@
 **Rama sugerida:** `feat/epic-onboarding-happy-path`
 **Detalle completo de cada story:** ver [`roadmap.md`](./roadmap.md#detalle-por-user-story)
 
+> **Nota:** durante la revisión en navegador de 3.2 (2026-09-05) salieron dos ideas que
+> **no estaban en el Excel original** y se construyeron ahí mismo por ser pequeñas y
+> vivir en la misma pantalla: (1) ampliar la lista de países a 20 + "Otro", (2) elegir
+> la moneda de forma independiente al país, y (3) capturar un ingreso en una moneda
+> distinta a la principal (freelance en USD, conversión manual, sin API de tasas de
+> cambio). Vale la pena que quede visible para tu socio que esto se agregó fuera del
+> proceso normal de planeación.
+>
+> **Pendiente de pulir (no bloquea, queda para después):** hoy se puede agregar más de
+> un "otro ingreso" con monedas distintas (cada toggle "¿Es en otra moneda?" se resetea
+> después de cada "+ Agregar", así que funciona uno por uno), pero no hay una forma más
+> visual de verlo de un vistazo en la lista — solo el subtítulo chiquito bajo el monto.
+
 ## Objetivo del epic
 
 El "Happy Path" es la usuaria **sin deudas y con capacidad de ahorro**. Hoy llega al tramo final

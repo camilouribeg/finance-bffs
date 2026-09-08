@@ -113,7 +113,13 @@ Cuando haga falta probar checkout:
 - [x] Esquema aplicado a staging
 - [x] Confirmación de email apagada en staging
 - [x] Variables en Vercel — scope Development
-- [ ] Variables en Vercel — scope Preview (tuyo, ver arriba)
+- [x] Variables en Vercel — scope Preview (2026-09-05: costó dos intentos — el primero
+      quedó con las 3 en **valor vacío** sin error visible, el segundo con
+      `SUPABASE_SERVICE_ROLE_KEY` guardando el texto del comando en vez del valor real.
+      Verificado el tercer intento con `GET /v9/projects/{id}/env/{envId}?decrypt=true`
+      contra la API de Vercel directamente — los 3 valores y su `gitBranch: null` —
+      antes de confiar en el mensaje "✅ Added". Marcar "Make it sensitive?" como **no**
+      en las 3 para poder seguir verificando así en el futuro.)
 - [x] `.env.local` apunta a staging, `.env.production` borrado del disco
 - [x] Probado de punta a punta (signup → trigger → RLS) contra staging
 - [ ] Groq en Development/Preview (cuando se necesite)
