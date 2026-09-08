@@ -92,18 +92,35 @@ todos los inputs y es mejor tenerlo estable antes de mover pantallas; el resto e
 4. **3.5 — ¿cómo se ve la "microcelebración"?** ¿Confeti, ilustración de Amy, solo cambio de color + emoji? ¿Existe ya un patrón de celebración en `bolsillos` (`celebrado` flag) que debamos reusar?
 5. **3.2 — ¿lista blanca de inputs NO monetarios?** Confirmar cuáles `type="number"` son meses / porcentaje / importancia para no romperlos.
 
-## Checklist de la sesión
+## Avance de la sesión
 
-- [ ] Leí `roadmap.md` (stories 3.1–3.5 completas) y este doc
-- [ ] Cerré las 5 preguntas abiertas con el humano
-- [ ] Escribí el plan definitivo (orden + archivos) y lo confirmé
-- [ ] `git checkout -b feat/epic-onboarding-happy-path` desde `main`
-- [ ] 3.2 → commit `feat: MoneyInput con formato de miles en todos los campos (roadmap 3.2)`
-- [ ] 3.1 → commit `feat: guardado de progreso y navegación atrás en onboarding (roadmap 3.1)`
-- [ ] 3.3 → commit `feat: Amy reconoce primero el avance en el Happy Path (roadmap 3.3)`
-- [ ] 3.4 → commit `feat: explicar la secuencia del cálculo antes de elegir ahorro (roadmap 3.4)`
-- [ ] 3.5 → commit `feat: saldo por repartir siempre visible + estado de éxito en bolsitas (roadmap 3.5)`
-- [ ] `npm run lint` y `npm run build` en verde
-- [ ] Probado el flujo Happy Path completo en `npm run dev`
-- [ ] Marcadas 3.1–3.5 como `Completo` en el Excel + `python3 docs/roadmap/sync.py`
+- [x] `feat/epic-onboarding-happy-path` desde `main`
+- [x] **3.2 · Formato de dinero** — `<MoneyInput>` en los 30 campos monetarios (`f64ac0a`).
+      Extra que salió acá: selector de moneda + 20 países + ingresos en otra divisa (`0cc9ee2`).
+- [x] **3.1 · Guardar progreso y volver atrás** — 2 partes:
+  - navegación Atrás en los 7 pasos que faltaban + fix del quiz (`0cc9ee2`)
+  - guardado de progreso en localStorage por usuario (`01efe31`)
+  - Decisión: localStorage, no Supabase. Cruzar dispositivos queda anotado como idea
+    pendiente (memoria `feature_ideas`), a revisar si vemos abandono real entre dispositivos.
+  - Verificado end-to-end con Playwright (skill `browser-test`, `08b1dca`).
+- [x] Extra fuera del Excel: ruta `/demo` (login anónimo, probar sin cuenta) + migración
+      `ON DELETE CASCADE` (`22fecc2`).
+- [ ] **3.3 · Amy Detective reconoce primero el progreso** — siguiente
+- [ ] **3.4 · Explicar el punto de partida del ahorro**
+- [ ] **3.5 · Saldo por repartir visible + estado de éxito en bolsitas**
+- [ ] `npm run lint` y `npm run build` en verde — ✅ hasta ahora (13 errores preexistentes, 0 nuevos)
+- [ ] Marcar en el Excel + `python3 docs/roadmap/sync.py`
+- [ ] Push de la rama para que el socio pueda revisar (al final del día)
 - [ ] PR contra `main`
+
+### Preguntas abiertas que quedan (3.3–3.5)
+
+- **3.3** — confirmado por prueba: en el Happy Path (sin deudas, con capacidad) la usuaria
+  **no** pasa por `amy_detective`; va directo de `deudas` → `ahorro_intro` → `cajitas`.
+  `amy_detective` solo aparece si `(ingresos - gastos) < 0.35 * ingresos` (presión de
+  gastos fijos alta). Falta decidir: ¿el reconocimiento positivo va en `amy_detective`
+  (para quien sí lo ve) y/o hay que agregar un mensaje de Amy en `ahorro_intro` para el
+  Happy Path puro?
+- **3.3 / 3.5** — ¿el copy exacto de Amy lo escribe el socio o lo propongo yo?
+- **3.5** — ¿cómo se ve la microcelebración al llegar a $0? ¿Reusamos el patrón de
+  `bolsillos.celebrado`?
