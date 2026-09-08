@@ -105,13 +105,19 @@ todos los inputs y es mejor tenerlo estable antes de mover pantallas; el resto e
   - Verificado end-to-end con Playwright (skill `browser-test`, `08b1dca`).
 - [x] Extra fuera del Excel: ruta `/demo` (login anónimo, probar sin cuenta) + migración
       `ON DELETE CASCADE` (`22fecc2`).
-- [ ] **3.3 · Amy Detective reconoce primero el progreso** — siguiente
-- [ ] **3.4 · Explicar el punto de partida del ahorro**
-- [ ] **3.5 · Saldo por repartir visible + estado de éxito en bolsitas**
-- [ ] `npm run lint` y `npm run build` en verde — ✅ hasta ahora (13 errores preexistentes, 0 nuevos)
-- [ ] Marcar en el Excel + `python3 docs/roadmap/sync.py`
+- [x] **3.3 · Amy Detective reconoce primero el progreso** (`eb7b4e1`) — reconoce lo positivo
+      antes del dato de gastos fijos, sin `¡Oops!`; de paso arregla el hardcode a COP.
+- [x] **3.4 · Explicar el punto de partida del ahorro** (`865c1d6`) — muestra la secuencia
+      Ingresos − Gastos − Deudas − Cajitas = lo que queda; explica el trade-off de las 3 opciones.
+- [x] **3.5 · Saldo por repartir visible + estado de éxito en bolsitas** (`ef113ff`) — saldo
+      prominente, `$0` es éxito rosa con 🎉, sin naranja.
+- [x] `npm run lint` y `npm run build` en verde (13 errores preexistentes, 0 nuevos)
+- [x] Marcadas 3.1–3.5 como `Completo` en el Excel + `sync.py`
 - [ ] Push de la rama para que el socio pueda revisar (al final del día)
 - [ ] PR contra `main`
+
+**Epic A completo.** Las 5 stories (3.1–3.5) + 3 extras (moneda, `/demo`, cascade FK),
+todas verificadas end-to-end con Playwright contra staging.
 
 ### Preguntas abiertas que quedan (3.3–3.5)
 

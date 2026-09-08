@@ -3,7 +3,7 @@
 > Fuente de verdad: [`Finance-BFF-Experience-Roadmap.xlsx`](./Finance-BFF-Experience-Roadmap.xlsx), generado con el socio del proyecto.
 > Este `.md` es un espejo fiel y legible/diff-eable. Regenerar con `python3 docs/roadmap/sync.py`.
 
-Última sincronización del espejo: 2026-09-04
+Última sincronización del espejo: 2026-09-08
 
 ## Tablero de estado
 
@@ -16,11 +16,11 @@
 | 2.5 | Animaciones del Hero | Primera impresión de la Landing | Media | Completo |
 | 2.6 | Responsive del Hero | Primera impresión de la Landing | Alta | Completo |
 | 2.7 | Optimización emocional del Hero | Primera impresión de la Landing | Alta | Completo |
-| 3.1 | Guardar progreso y permitir volver atrás | Onboarding Happy Path | Alta | Pendiente |
-| 3.2 | Formato inteligente para valores de dinero | Onboarding Happy Path | Alta | Pendiente |
-| 3.3 | Amy Detective reconoce primero el progreso | Onboarding Happy Path | Alta | Pendiente |
-| 3.4 | Explicar claramente el punto de partida del ahorro | Onboarding Happy Path | Alta | Pendiente |
-| 3.5 | Mostrar dinero restante al crear bolsitas | Onboarding Happy Path | Alta | Pendiente |
+| 3.1 | Guardar progreso y permitir volver atrás | Onboarding Happy Path | Alta | Completo |
+| 3.2 | Formato inteligente para valores de dinero | Onboarding Happy Path | Alta | Completo |
+| 3.3 | Amy Detective reconoce primero el progreso | Onboarding Happy Path | Alta | Completo |
+| 3.4 | Explicar claramente el punto de partida del ahorro | Onboarding Happy Path | Alta | Completo |
+| 3.5 | Mostrar dinero restante al crear bolsitas | Onboarding Happy Path | Alta | Completo |
 | 3.6 | Convertir Mis finanzas en un plan de acción | Acompañamiento después del onboarding | Alta | Pendiente |
 | 3.7 | Guiar la creación de cajitas y bolsitas en el banco | Hábitos financieros y conexión con el banco | Alta | Pendiente |
 | 3.8 | Crear el ritual semanal de registro de gastos | Hábitos financieros y conexión con el banco | Alta | Pendiente |
@@ -113,7 +113,7 @@
 - **Criterio de éxito:** El Hero transmite cercanía y confianza.
 
 ### 3.1 · Guardar progreso y permitir volver atrás
-**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Durante el onboarding la usuaria puede avanzar entre varias pantallas, pero la experiencia no deja suficientemente explícito que su progreso se conserva si necesita salir. Además, el botón para regresar no está presente de forma consistente en todos los pasos.
 - **Experiencia deseada:** La usuaria debe poder completar el onboarding a su ritmo. Todo dato confirmado o ingresado debe guardarse automáticamente y cada paso debe permitir volver atrás sin perder información ni obligarla a comenzar de nuevo.
@@ -125,7 +125,7 @@
 - **Criterio de éxito:** Salir y regresar conserva los datos y el paso alcanzado. Todos los pasos aplicables permiten volver atrás sin pérdida de información.
 
 ### 3.2 · Formato inteligente para valores de dinero
-**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Los campos monetarios no mantienen una presentación consistente mientras la usuaria escribe y algunos inputs muestran controles nativos con flechas para aumentar o disminuir números.
 - **Experiencia deseada:** Todos los valores de dinero deben ser fáciles de leer desde el momento en que se ingresan, mostrando el signo $ y separadores de miles de forma automática, sin controles numéricos que generen ruido visual.
@@ -137,7 +137,7 @@
 - **Criterio de éxito:** Todos los campos monetarios aplicables muestran $ y separadores de miles y ninguno presenta controles nativos de incremento/decremento.
 
 ### 3.3 · Amy Detective reconoce primero el progreso
-**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** En el Happy Path la usuaria no tiene deudas y cuenta con capacidad para ahorrar, pero Amy Detective abre con un mensaje de alerta sobre el porcentaje de gastos fijos. El tono puede hacer que un escenario positivo se perciba como un problema.
 - **Experiencia deseada:** Amy debe reconocer primero lo que la usuaria está haciendo bien y después mostrar oportunidades de mejora. En este escenario debe celebrar que no tiene deudas y que existe margen para organizar su ahorro antes de hablar de optimización de gastos.
@@ -149,7 +149,7 @@
 - **Criterio de éxito:** El mensaje comienza reconociendo el escenario positivo y la oportunidad de optimización aparece como segundo mensaje.
 
 ### 3.4 · Explicar claramente el punto de partida del ahorro
-**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** La pantalla 'Este es tu punto de partida' muestra cálculos y tres opciones de ahorro, pero no explica con suficiente claridad qué hizo Amy con la información registrada, de dónde sale el dinero disponible ni qué decisión debe tomar la usuaria.
 - **Experiencia deseada:** Antes de pedir una elección, Amy debe resumir en lenguaje sencillo cuánto dinero queda realmente disponible después de compromisos, cómo llegó a ese resultado y por qué propone diferentes niveles de ahorro.
@@ -161,7 +161,7 @@
 - **Criterio de éxito:** Una usuaria puede explicar con sus propias palabras de dónde sale el monto disponible y la diferencia entre las tres opciones antes de continuar.
 
 ### 3.5 · Mostrar dinero restante al crear bolsitas
-**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Durante la creación de bolsitas existe un indicador de dinero disponible para repartir, pero pierde protagonismo a medida que se agregan bolsitas. Cuando el monto llega a $0 se utiliza un estado naranja que puede interpretarse como advertencia.
 - **Experiencia deseada:** La usuaria debe saber en todo momento cuánto dinero de su ahorro mensual ya distribuyó y cuánto le queda por asignar. Llegar a $0 debe sentirse como completar exitosamente la organización del ahorro.
