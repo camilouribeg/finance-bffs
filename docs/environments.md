@@ -4,6 +4,29 @@ Hasta el 2026-09-05, `npm run dev` apuntaba a la **misma base de datos de Supaba
 producción** (`djwcpxanrzaabopkcydp.supabase.co` estaba tanto en `.env.local` como en
 `.env.production`). Esto ya quedó separado — ver estado abajo.
 
+## Probar sin cuenta: la ruta `/demo`
+
+`<preview-url>/demo` (o `localhost:3000/demo`) hace **inicio de sesión anónimo de
+Supabase** y entra directo al onboarding — sin registro, sin escribir nada. Para
+compartirle a tu socio o a cualquiera: solo el link.
+
+- Bloqueada en **producción** (`page.tsx` hace `notFound()` si `VERCEL_ENV === "production"`).
+- Requiere `enable_anonymous_sign_ins = true` en el proyecto — ya está en `config.toml` y
+  aplicado a staging vía `supabase config push`.
+- Los usuarios anónimos quedan con `is_anonymous = true`. Para limpiarlos de staging:
+  ```bash
+  URL=$(grep NEXT_PUBLIC_SUPABASE_URL .env.local | cut -d= -f2 | tr -d '"')
+  SVC=$(grep SUPABASE_SERVICE_ROLE_KEY .env.local | cut -d= -f2 | tr -d '"')
+  curl -s "$URL/auth/v1/admin/users?per_page=200" -H "apikey: $SVC" -H "Authorization: Bearer $SVC" \
+   | python3 -c "import json,sys;[print(u['id']) for u in json.load(sys.stdin)['users'] if u.get('is_anonymous')]" \
+   | xargs -I{} curl -s -X DELETE "$URL/auth/v1/admin/users/{}" -H "apikey: $SVC" -H "Authorization: Bearer $SVC" -o /dev/null -w "borrado {}: %{http_code}\n"
+  ```
+  (Desde la migración `20260908000000` el borrado del usuario ya arrastra sus datos
+  financieros; antes fallaba con error de foreign key para quien completó el onboarding.)
+
+Alternativa sin código: cuenta compartida de staging `equipo@financebffs.test` /
+`FinanceBFFs2026!` en `/login`.
+
 ## Por qué un segundo proyecto de Supabase (y no solo local)
 
 Local-only (`supabase start` con Docker) es perfecto para iterar rápido, pero no es

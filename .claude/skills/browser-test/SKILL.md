@@ -30,6 +30,10 @@ Chrome for Testing que ya está en la máquina.
 
 Las páginas `/onboarding` y `/app/*` exigen sesión de Supabase.
 
+- **Lo más rápido para pruebas de onboarding**: `nav /demo` → hace login anónimo y
+  redirige a `/onboarding`. Cero formularios. (Bloqueado en prod; requiere
+  `enable_anonymous_sign_ins` en staging, ya activo.) La sesión vive en **cookie**
+  `sb-<ref>-auth-token`, no en localStorage.
 - **Cuenta nueva y desechable** (recomendado para pruebas de onboarding): staging tiene la
   confirmación de email apagada, así que un email falso `test-<timestamp>@example.com`
   sirve. Flujo en `/register`: llenar el placeholder `María` (nombre), click `Continuar →`,
