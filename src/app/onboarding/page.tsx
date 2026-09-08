@@ -214,10 +214,70 @@ export default function OnboardingPage() {
         .select("onboarding_completed")
         .eq("id", user.id)
         .single();
-      if (profile?.onboarding_completed) { window.location.href = "/app"; }
+      if (profile?.onboarding_completed) {
+        try { localStorage.removeItem(`amy_onboarding_draft_${user.id}`); } catch {}
+        window.location.href = "/app";
+      }
     }
     init();
   }, []);
+
+  // Guardado de progreso (roadmap 3.1): el borrador vive en localStorage. Sobrevive
+  // salir y volver en el mismo navegador; no cruza dispositivos (decisión consciente).
+  const draftRestored = useRef(false);
+  const draftKey = userId ? `amy_onboarding_draft_${userId}` : null;
+
+  useEffect(() => {
+    if (!draftKey || draftRestored.current) return;
+    draftRestored.current = true;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d.step && d.step !== "perfil_inicial") {
+        setStep(d.step === "guardando" ? "bolsitas_crear" : d.step);
+      }
+      if (typeof d.ingresoFijo === "string") setIngresoFijo(d.ingresoFijo);
+      if (Array.isArray(d.ingresosOtros)) setIngresosOtros(d.ingresosOtros);
+      if (Array.isArray(d.gastosFijos)) setGastosFijos(d.gastosFijos);
+      if (Array.isArray(d.deudas)) setDeudas(d.deudas);
+      if (typeof d.quizStep === "number") setQuizStep(d.quizStep);
+      if (Array.isArray(d.quizAnswers)) setQuizAnswers(d.quizAnswers);
+      if (d.debtMethod) setDebtMethod(d.debtMethod);
+      if (Array.isArray(d.cajitasOB)) setCajitasOB(d.cajitasOB);
+      if (typeof d.selectedAhorro === "number") setSelectedAhorro(d.selectedAhorro);
+      if (Array.isArray(d.bolsitasOB)) setBolsitasOB(d.bolsitasOB);
+      if (d.paisSeleccionado) {
+        setPaisSeleccionado(d.paisSeleccionado);
+        try {
+          localStorage.setItem("amy_pais", JSON.stringify({
+            ...d.paisSeleccionado,
+            divisa: d.monedaSeleccionada || d.paisSeleccionado.divisa,
+          }));
+        } catch {}
+      }
+      if (d.monedaSeleccionada) setMonedaSeleccionada(d.monedaSeleccionada);
+      if (d.edadRango) setEdadRango(d.edadRango);
+    } catch {
+      // borrador corrupto: empezar de cero
+    }
+  }, [draftKey]);
+
+  useEffect(() => {
+    if (!draftKey || !draftRestored.current || step === "perfil_inicial" || step === "guardando") return;
+    try {
+      localStorage.setItem(draftKey, JSON.stringify({
+        step, ingresoFijo, ingresosOtros, gastosFijos, deudas,
+        quizStep, quizAnswers, debtMethod,
+        cajitasOB, selectedAhorro, bolsitasOB,
+        paisSeleccionado, monedaSeleccionada, edadRango,
+      }));
+    } catch {
+      // cuota de localStorage llena u otro error: no bloquear el onboarding
+    }
+  }, [draftKey, step, ingresoFijo, ingresosOtros, gastosFijos, deudas, quizStep,
+      quizAnswers, debtMethod, cajitasOB, selectedAhorro, bolsitasOB,
+      paisSeleccionado, monedaSeleccionada, edadRango]);
 
   // Calculations
   const totalIngresos = (parseFloat(ingresoFijo) || 0) + ingresosOtros.reduce((s, i) => s + i.valor, 0);
@@ -437,6 +497,7 @@ export default function OnboardingPage() {
         throw new Error("No se pudo completar el onboarding.");
       }
 
+      try { localStorage.removeItem(`amy_onboarding_draft_${userId}`); } catch {}
       window.location.href = "/app";
     } catch {
       setSaving(false);
@@ -658,7 +719,7 @@ export default function OnboardingPage() {
                 <p>Este es un proceso que vamos a hacer <strong>juntas</strong>.</p>
                 <p>No tienes que saber de finanzas ni hacerlo perfecto.</p>
                 <p>Yo te voy a ir guiando <strong>paso a paso</strong>.</p>
-                <p>Confía en el proceso. 🌸</p>
+                <p>Voy guardando tu avance, así que puedes salir y volver cuando quieras. 🌸</p>
               </div>
               <div className="flex gap-3">
                 <button type="button" onClick={() => setStep("perfil_inicial")}
