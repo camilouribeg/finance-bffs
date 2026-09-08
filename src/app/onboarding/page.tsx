@@ -1143,31 +1143,41 @@ export default function OnboardingPage() {
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
                 Este es tu punto de partida
               </h2>
-              <p className="text-sm text-[#1a1a2e]/60 mb-2 leading-relaxed">
-                Con lo que registraste, Amy analizó tu situación y te propone diferentes formas de ahorrar.
-              </p>
-              <p className="text-sm text-[#ec7fa9] font-medium mb-6">
-                Puedes elegir la que mejor se adapte a ti.
+              <p className="text-sm text-[#1a1a2e]/60 mb-4 leading-relaxed">
+                Con todo lo que registraste hice la cuenta: a tus ingresos les resté tus gastos fijos{totalDeudas > 0 ? ", las cuotas de deudas" : ""}{totalCajitasOBMensual > 0 ? " y lo que apartas para cajitas" : ""}. Esto es lo que te queda para decidir cuánto ahorrar.
               </p>
 
-              <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm mb-4 space-y-1">
+              <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm mb-5 space-y-1.5">
                 <div className="flex justify-between">
-                  <span className="text-[#1a1a2e]/60">Después de gastos y deudas</span>
-                  <span className="font-semibold text-[#1a1a2e]">{fmt(capacidad)}/mes</span>
+                  <span className="text-[#1a1a2e]/60">Ingresos del mes</span>
+                  <span className="font-semibold text-[#1a1a2e]">{fmt(totalIngresos)}</span>
                 </div>
-                {totalCajitasOBMensual > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-[#1a1a2e]/60">− Gastos fijos</span>
+                  <span className="font-semibold text-[#1a1a2e]/70">− {fmt(totalGastos)}</span>
+                </div>
+                {totalDeudas > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-[#1a1a2e]/60">Reserva cajitas mensuales</span>
-                    <span className="font-semibold text-orange-400">- {fmt(totalCajitasOBMensual)}/mes</span>
+                    <span className="text-[#1a1a2e]/60">− Cuotas de deudas</span>
+                    <span className="font-semibold text-[#1a1a2e]/70">− {fmt(totalDeudas)}</span>
                   </div>
                 )}
-                <div className="flex justify-between border-t border-[#ffb8e0] pt-1 mt-1">
-                  <span className="text-[#1a1a2e]/60 font-medium">Disponible para ahorrar</span>
-                  <span className="font-bold text-[#ec7fa9]">{fmt(capacidadNeta)}/mes</span>
+                {totalCajitasOBMensual > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-[#1a1a2e]/60">− Reserva para cajitas</span>
+                    <span className="font-semibold text-[#1a1a2e]/70">− {fmt(totalCajitasOBMensual)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t border-[#ffb8e0] pt-1.5 mt-1.5">
+                  <span className="text-[#1a1a2e] font-semibold">Te queda para decidir</span>
+                  <span className="font-bold text-[#ec7fa9] text-base">{fmt(capacidadNeta)}/mes</span>
                 </div>
               </div>
 
-              <p className="text-sm font-semibold text-[#1a1a2e] mb-4">Selecciona la opción que más te guste 👇</p>
+              <p className="text-sm font-semibold text-[#1a1a2e] mb-1">¿Cuánto de eso quieres ahorrar?</p>
+              <p className="text-xs text-[#1a1a2e]/50 mb-4">
+                Entre más ahorres, más rápido avanzas — pero menos te queda libre cada mes. Elige el equilibrio que te sirva.
+              </p>
 
               <div className="space-y-3 mb-6">
                 {savingsOptions.map((opt) => {
@@ -1195,7 +1205,7 @@ export default function OnboardingPage() {
                           <p className="text-lg font-bold text-[#1a1a2e]">Ahorrar {fmt(monto)} al mes</p>
                           <p className="text-xs text-[#1a1a2e]/50 mt-1">{opt.desc}</p>
                           <p className="text-xs text-green-600 font-medium mt-2">
-                            Te quedan {fmt(restante)} libres para el mes
+                            Te quedan {fmt(restante)} libres para gastos del día a día
                           </p>
                         </div>
                         <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-1 ml-3 flex items-center justify-center ${
