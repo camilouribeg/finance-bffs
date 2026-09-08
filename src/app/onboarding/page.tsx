@@ -948,51 +948,65 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ─── FINLY DETECTIVE ─── */}
-          {step === "amy_detective" && (
+          {/* ─── AMY DETECTIVE (roadmap 3.3: reconocer el avance primero) ─── */}
+          {step === "amy_detective" && (() => {
+            const disponibleGF = totalIngresos - totalGastos;
+            const pctGF = totalIngresos > 0 ? Math.round((totalGastos / totalIngresos) * 100) : 0;
+            return (
             <div className="p-8">
               <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5 mb-4">
                 <span className="text-blue-600 text-sm font-bold flex items-center gap-1.5"><Search size={13} />Amy Detective</span>
               </div>
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
-                Tus gastos fijos están tomando mucho espacio
+                Primero, lo que estás haciendo bien
               </h2>
-              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-5 text-sm text-[#1a1a2e]/70 leading-relaxed space-y-2">
-                <p>¡Oops! Con lo que registraste, tus gastos fijos están usando más del 65% de tus ingresos.</p>
-                <p>Eso deja muy poco margen para deudas, ahorro y gastos del día a día.</p>
-                <p className="text-blue-700 font-medium">Pero no te preocupes, para eso existe Amy Detective: vamos a revisar juntas cada gasto y encontrar dónde puede haber un respiro.</p>
+
+              <div className="bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-2xl p-5 mb-4 text-sm text-[#1a1a2e]/75 leading-relaxed space-y-2">
+                {deudas.length === 0 ? (
+                  <p><strong className="text-[#1a1a2e]">No tienes deudas</strong> y, con lo que registraste, te queda con qué empezar a ahorrar. Esa ya es una base sólida. 🌸</p>
+                ) : (
+                  <p>Ya armamos tu plan para las deudas y <strong className="text-[#1a1a2e]">aún te queda capacidad para ahorrar</strong>. Vas por buen camino. 🌸</p>
+                )}
               </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-5 text-sm text-[#1a1a2e]/70 leading-relaxed space-y-2">
+                <p>Una cosa que noté: tus gastos fijos se están llevando cerca del <strong className="text-[#1a1a2e]">{pctGF}%</strong> de tus ingresos.</p>
+                <p>No es un problema, pero si quieres, más adelante podemos revisarlos juntas para ver si hay espacio para liberar un poco más de dinero cada mes.</p>
+              </div>
+
               <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm mb-5">
                 <div className="flex justify-between">
                   <span className="text-[#1a1a2e]/60">Tus ingresos</span>
-                  <span className="font-semibold text-[#ec7fa9]">{(parseFloat(String(totalIngresos)) || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}</span>
+                  <span className="font-semibold text-[#ec7fa9]">{fmt(totalIngresos)}</span>
                 </div>
                 <div className="flex justify-between mt-1">
                   <span className="text-[#1a1a2e]/60">Gastos fijos</span>
-                  <span className="font-semibold text-red-400">{totalGastos.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}</span>
+                  <span className="font-semibold text-[#1a1a2e]/70">{fmt(totalGastos)}</span>
                 </div>
                 <div className="flex justify-between mt-1 pt-1 border-t border-[#ffb8e0]">
-                  <span className="text-[#1a1a2e]/60">Disponible después de GF</span>
-                  <span className={`font-bold ${totalIngresos - totalGastos < 0 ? "text-red-500" : "text-[#ec7fa9]"}`}>
-                    {(totalIngresos - totalGastos).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                  <span className="text-[#1a1a2e]/60">Te queda después de gastos fijos</span>
+                  <span className={`font-bold ${disponibleGF < 0 ? "text-red-500" : "text-[#ec7fa9]"}`}>
+                    {fmt(disponibleGF)}
                   </span>
                 </div>
               </div>
+
               <p className="text-xs text-[#1a1a2e]/50 mb-5 text-center">
-                Puedes volver atrás y revisar tus gastos, o continuar y hacerlo después desde la app.
+                Puedes revisar tus gastos ahora, o seguir y hacerlo después desde la app.
               </p>
               <div className="flex gap-3">
                 <button type="button" onClick={() => setStep("gastos")}
                   className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
-                  ← Revisar gastos
+                  ← Revisar mis gastos
                 </button>
                 <button onClick={() => setStep("ahorro_intro")}
                   className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-3.5 rounded-xl text-sm transition-colors">
-                  Entendido, continuar →
+                  Seguir, continuar →
                 </button>
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* ─── DEUDAS ─── */}
           {step === "deudas" && (
