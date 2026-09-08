@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useFmt } from "@/lib/useFmt";
+import { useFmt, usePais } from "@/lib/useFmt";
 import MoneyInput from "@/components/MoneyInput";
+import { MONEDAS } from "@/lib/monedas";
 import Link from "next/link";
 import {
   TrendingUp,
@@ -16,19 +17,21 @@ import {
   X,
   Info,
   Box,
+  ChevronDown,
 } from "lucide-react";
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const currentMonth = new Date().getMonth();
 const currentYear = new Date().getFullYear();
 
-type LineItem = { id: string; descripcion: string; valor: number };
+type LineItem = { id: string; descripcion: string; valor: number; divisa_original?: string; valor_original?: number };
 type Bolsillo = { id: string; nombre: string; meta: number; actual: number; emoji: string; tipo?: string; cuota_mensual?: number; fecha_meta?: string };
 type Deuda = { id: string; nombre: string; tipo: string; cuota_mensual: number; total_pendiente: number };
 type Cajita = { id: string; nombre: string; monto_total: number; fecha_pago: string; emoji: string; actual: number };
 
 export default function DashboardPage() {
   const fmt = useFmt();
+  const pais = usePais();
   const [month, setMonth] = useState(currentMonth);
   const [year] = useState(currentYear);
   const [saving, setSaving] = useState(false);
@@ -44,6 +47,9 @@ export default function DashboardPage() {
   const [gastosFijosItems, setGastosFijosItems] = useState<LineItem[]>([]);
   const [nuevoIngNombre, setNuevoIngNombre] = useState("");
   const [nuevoIngValor, setNuevoIngValor] = useState("");
+  const [nuevoIngOtraMoneda, setNuevoIngOtraMoneda] = useState(false);
+  const [nuevoIngDivisa, setNuevoIngDivisa] = useState("USD");
+  const [nuevoIngValorOriginal, setNuevoIngValorOriginal] = useState("");
   const [nuevoGastNombre, setNuevoGastNombre] = useState("");
   const [nuevoGastValor, setNuevoGastValor] = useState("");
 
@@ -78,6 +84,8 @@ export default function DashboardPage() {
         id: (i.id as string) ?? crypto.randomUUID(),
         descripcion: ((i.descripcion ?? i.nombre ?? "") as string),
         valor: i.valor as number,
+        divisa_original: i.divisa_original as string | undefined,
+        valor_original: i.valor_original as number | undefined,
       })));
       setGastosFijosItems((data.gastos_fijos_items ?? []).map((i: Record<string, unknown>) => ({
         id: (i.id as string) ?? crypto.randomUUID(),
@@ -178,7 +186,12 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>Mis finanzas</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>Mis finanzas</h1>
+            <span className="text-[10px] font-semibold text-[#ec7fa9] bg-[#ffedfa] border border-[#ffb8e0] rounded-full px-2 py-0.5">
+              {pais.emoji} {pais.divisa}
+            </span>
+          </div>
           <p className="text-[#1a1a2e]/50 text-sm mt-1">Todo tu dinero en un solo lugar</p>
         </div>
         <select value={month} onChange={(e) => setMonth(Number(e.target.value))}
@@ -276,18 +289,72 @@ export default function DashboardPage() {
                     <div key={i.id} className="flex items-center justify-between py-1.5 border-b border-[#ffb8e0]/50 last:border-0">
                       <span className="text-sm text-[#1a1a2e]/70">{i.descripcion}</span>
                       <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium">{fmt(i.valor)}</span>
+                        <div className="text-right">
+                          <p className="text-sm font-medium">{fmt(i.valor)}</p>
+                          {i.divisa_original && i.valor_original != null && (
+                            <p className="text-[10px] text-[#1a1a2e]/40">
+                              {i.valor_original.toLocaleString(pais.locale)} {i.divisa_original}
+                            </p>
+                          )}
+                        </div>
                         <button onClick={() => setIngresosOtros(ingresosOtros.filter(x => x.id !== i.id))} className="text-[#1a1a2e]/20 hover:text-red-400 text-xs">✕</button>
                       </div>
                     </div>
                   ))}
-                  <div className="flex gap-2 mt-2">
-                    <input value={nuevoIngNombre} onChange={e => setNuevoIngNombre(e.target.value)} placeholder="Ej: Freelance"
-                      className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
-                    <MoneyInput value={nuevoIngValor} onChange={setNuevoIngValor} placeholder="0"
-                      className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none text-right" />
-                    <button onClick={() => { if (!nuevoIngNombre || !nuevoIngValor) return; setIngresosOtros([...ingresosOtros, { id: crypto.randomUUID(), descripcion: nuevoIngNombre, valor: parseFloat(nuevoIngValor) }]); setNuevoIngNombre(""); setNuevoIngValor(""); }}
-                      className="bg-[#ec7fa9] text-white px-3 py-2 rounded-xl font-semibold hover:bg-[#d96d97]">+</button>
+                  <div className="flex flex-col gap-2 mt-2">
+                    <div className="flex gap-2">
+                      <input value={nuevoIngNombre} onChange={e => setNuevoIngNombre(e.target.value)} placeholder="Ej: Freelance"
+                        className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
+                      {!nuevoIngOtraMoneda && (
+                        <MoneyInput value={nuevoIngValor} onChange={setNuevoIngValor} placeholder="0"
+                          className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none text-right" />
+                      )}
+                    </div>
+
+                    {!nuevoIngOtraMoneda ? (
+                      <button type="button" onClick={() => setNuevoIngOtraMoneda(true)}
+                        className="text-left text-xs text-[#ec7fa9] font-medium hover:underline w-fit">
+                        ¿Es en otra moneda?
+                      </button>
+                    ) : (
+                      <div className="bg-white border border-[#ffb8e0] rounded-xl p-3 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-[#1a1a2e]/60">Ingreso en otra moneda</p>
+                          <button type="button" onClick={() => { setNuevoIngOtraMoneda(false); setNuevoIngValorOriginal(""); }}
+                            className="text-[#1a1a2e]/30 hover:text-[#ec7fa9] text-xs flex items-center gap-1"><X size={11} />quitar</button>
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <select value={nuevoIngDivisa} onChange={(e) => setNuevoIngDivisa(e.target.value)}
+                              className="w-full appearance-none border border-[#ffb8e0] rounded-xl pl-3 pr-8 py-2 text-sm font-medium bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 cursor-pointer">
+                              {MONEDAS.map((m) => <option key={m.code} value={m.code}>{m.code}</option>)}
+                            </select>
+                            <ChevronDown size={15} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#ec7fa9]" />
+                          </div>
+                          <input type="text" inputMode="decimal" value={nuevoIngValorOriginal}
+                            onChange={(e) => setNuevoIngValorOriginal(e.target.value.replace(/[^0-9.]/g, ""))}
+                            placeholder={`¿Cuánto ganas en ${nuevoIngDivisa}?`}
+                            className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
+                        </div>
+                        <div>
+                          <label className="text-[11px] text-[#1a1a2e]/50 block mb-1">¿Cuánto es eso en tu moneda principal?</label>
+                          <MoneyInput value={nuevoIngValor} onChange={setNuevoIngValor} placeholder="Valor convertido"
+                            className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
+                        </div>
+                      </div>
+                    )}
+
+                    <button onClick={() => {
+                      if (!nuevoIngNombre || !nuevoIngValor) return;
+                      const item: LineItem = { id: crypto.randomUUID(), descripcion: nuevoIngNombre, valor: parseFloat(nuevoIngValor) };
+                      if (nuevoIngOtraMoneda && nuevoIngValorOriginal) {
+                        item.divisa_original = nuevoIngDivisa;
+                        item.valor_original = parseFloat(nuevoIngValorOriginal);
+                      }
+                      setIngresosOtros([...ingresosOtros, item]);
+                      setNuevoIngNombre(""); setNuevoIngValor(""); setNuevoIngValorOriginal(""); setNuevoIngOtraMoneda(false);
+                    }}
+                      className="bg-[#ec7fa9] text-white px-3 py-2 rounded-xl font-semibold hover:bg-[#d96d97] text-sm">+ Agregar</button>
                   </div>
                 </div>
               </div>
@@ -300,7 +367,14 @@ export default function DashboardPage() {
                 {ingresosOtros.map(i => (
                   <div key={i.id} className="flex justify-between items-center py-2 border-b border-[#ffb8e0]/40 last:border-0">
                     <span className="text-sm text-[#1a1a2e]/60">{i.descripcion}</span>
-                    <span className="text-sm font-semibold text-[#1a1a2e]">{fmt(i.valor)}</span>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-[#1a1a2e]">{fmt(i.valor)}</p>
+                      {i.divisa_original && i.valor_original != null && (
+                        <p className="text-[10px] text-[#1a1a2e]/40">
+                          {i.valor_original.toLocaleString(pais.locale)} {i.divisa_original}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

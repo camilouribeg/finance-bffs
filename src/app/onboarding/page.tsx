@@ -5,9 +5,10 @@ export const dynamic = "force-dynamic";
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import MoneyInput from "@/components/MoneyInput";
-import { Pencil, Check, X, Search, Zap, Archive, PiggyBank, Target } from "lucide-react";
+import { Pencil, Check, X, Search, Zap, Archive, PiggyBank, Target, ChevronDown } from "lucide-react";
+import { MONEDAS } from "@/lib/monedas";
 
-type ListItem = { id: string; nombre: string; valor: number };
+type ListItem = { id: string; nombre: string; valor: number; divisaOriginal?: string; valorOriginal?: number };
 type CajitaOB = { id: string; nombre: string; emoji: string; monto_total: number; meses: number; fecha_pago?: string; };
 type BolsitaOB = { id: string; nombre: string; emoji: string; tipo: "fondos" | "metas"; cuota_mensual?: number; meta?: number; fecha_meta?: string; importancia: number; };
 type DeudaItem = {
@@ -73,6 +74,17 @@ const PAISES = [
   { nombre: "Perú", emoji: "🇵🇪", divisa: "PEN", locale: "es-PE" },
   { nombre: "Ecuador", emoji: "🇪🇨", divisa: "USD", locale: "es-EC" },
   { nombre: "Venezuela", emoji: "🇻🇪", divisa: "USD", locale: "es-VE" },
+  { nombre: "Guatemala", emoji: "🇬🇹", divisa: "GTQ", locale: "es-GT" },
+  { nombre: "Costa Rica", emoji: "🇨🇷", divisa: "CRC", locale: "es-CR" },
+  { nombre: "Panamá", emoji: "🇵🇦", divisa: "USD", locale: "es-PA" },
+  { nombre: "República Dominicana", emoji: "🇩🇴", divisa: "DOP", locale: "es-DO" },
+  { nombre: "Bolivia", emoji: "🇧🇴", divisa: "BOB", locale: "es-BO" },
+  { nombre: "Paraguay", emoji: "🇵🇾", divisa: "PYG", locale: "es-PY" },
+  { nombre: "Uruguay", emoji: "🇺🇾", divisa: "UYU", locale: "es-UY" },
+  { nombre: "Honduras", emoji: "🇭🇳", divisa: "HNL", locale: "es-HN" },
+  { nombre: "El Salvador", emoji: "🇸🇻", divisa: "USD", locale: "es-SV" },
+  { nombre: "Nicaragua", emoji: "🇳🇮", divisa: "NIO", locale: "es-NI" },
+  { nombre: "Puerto Rico", emoji: "🇵🇷", divisa: "USD", locale: "es-PR" },
   { nombre: "España", emoji: "🇪🇸", divisa: "EUR", locale: "es-ES" },
   { nombre: "Estados Unidos", emoji: "🇺🇸", divisa: "USD", locale: "en-US" },
   { nombre: "Otro", emoji: "🌎", divisa: "USD", locale: "en-US" },
@@ -137,6 +149,9 @@ export default function OnboardingPage() {
   const [ingresosOtros, setIngresosOtros] = useState<ListItem[]>([]);
   const [nuevoIngNombre, setNuevoIngNombre] = useState("");
   const [nuevoIngValor, setNuevoIngValor] = useState("");
+  const [nuevoIngOtraMoneda, setNuevoIngOtraMoneda] = useState(false);
+  const [nuevoIngDivisa, setNuevoIngDivisa] = useState("USD");
+  const [nuevoIngValorOriginal, setNuevoIngValorOriginal] = useState("");
 
   // Step 2: Gastos fijos
   const [gastosFijos, setGastosFijos] = useState<ListItem[]>([]);
@@ -185,6 +200,7 @@ export default function OnboardingPage() {
 
   // Pre-onboarding profile
   const [paisSeleccionado, setPaisSeleccionado] = useState<typeof PAISES[0] | null>(null);
+  const [monedaSeleccionada, setMonedaSeleccionada] = useState("");
   const [edadRango, setEdadRango] = useState("");
 
   useEffect(() => {
@@ -217,13 +233,14 @@ export default function OnboardingPage() {
 
   function fmt(n: number) {
     const loc = paisSeleccionado?.locale ?? "es-CO";
-    const cur = paisSeleccionado?.divisa ?? "COP";
+    const cur = monedaSeleccionada || paisSeleccionado?.divisa || "COP";
     return new Intl.NumberFormat(loc, { style: "currency", currency: cur, maximumFractionDigits: 0 }).format(n);
   }
 
   // El país se guarda en localStorage al final del primer paso, pero el hook de
-  // MoneyInput lo lee una sola vez al montar; le pasamos el país en vivo.
-  const monedaProps = { locale: paisSeleccionado?.locale, currency: paisSeleccionado?.divisa };
+  // MoneyInput lo lee una sola vez al montar; le pasamos el país en vivo. La moneda es
+  // independiente del país (alguien puede vivir en Colombia y cobrar en USD).
+  const monedaProps = { locale: paisSeleccionado?.locale, currency: monedaSeleccionada || paisSeleccionado?.divisa };
 
   function showReinforcement(_msg: string, onContinue: () => void) {
     onContinue();
@@ -232,8 +249,13 @@ export default function OnboardingPage() {
   // List helpers
   function addIngreso() {
     if (!nuevoIngNombre || !nuevoIngValor) return;
-    setIngresosOtros([...ingresosOtros, { id: Date.now().toString(), nombre: nuevoIngNombre, valor: parseFloat(nuevoIngValor) }]);
-    setNuevoIngNombre(""); setNuevoIngValor("");
+    const item: ListItem = { id: Date.now().toString(), nombre: nuevoIngNombre, valor: parseFloat(nuevoIngValor) };
+    if (nuevoIngOtraMoneda && nuevoIngValorOriginal) {
+      item.divisaOriginal = nuevoIngDivisa;
+      item.valorOriginal = parseFloat(nuevoIngValorOriginal);
+    }
+    setIngresosOtros([...ingresosOtros, item]);
+    setNuevoIngNombre(""); setNuevoIngValor(""); setNuevoIngValorOriginal(""); setNuevoIngOtraMoneda(false);
   }
 
   function addGasto() {
@@ -309,8 +331,17 @@ export default function OnboardingPage() {
     setStep("ahorro_puede");
   }
 
+  function quizBack() {
+    if (quizStep > 0) {
+      setQuizStep(quizStep - 1);
+    } else {
+      setStep("deuda_intro");
+    }
+  }
+
   function answerQuiz(answer: string) {
-    const newAnswers = [...quizAnswers, answer];
+    // slice hasta quizStep: si volvió atrás y responde de nuevo, reemplaza en vez de acumular
+    const newAnswers = [...quizAnswers.slice(0, quizStep), answer];
     setQuizAnswers(newAnswers);
     if (quizStep < QUIZ.length - 1) {
       setQuizStep(quizStep + 1);
@@ -339,7 +370,10 @@ export default function OnboardingPage() {
         month: now.getMonth() + 1,
         year: now.getFullYear(),
         ingreso_fijo: parseFloat(ingresoFijo) || 0,
-        ingresos_otros: ingresosOtros.map(i => ({ id: i.id, descripcion: i.nombre, valor: i.valor })),
+        ingresos_otros: ingresosOtros.map(i => ({
+          id: i.id, descripcion: i.nombre, valor: i.valor,
+          ...(i.divisaOriginal ? { divisa_original: i.divisaOriginal, valor_original: i.valorOriginal } : {}),
+        })),
         gastos_fijos: gastosFijos.reduce((s, g) => s + g.valor, 0),
         gastos_fijos_items: gastosFijos.map(g => ({ id: g.id, nombre: g.nombre, valor: g.valor })),
         gastos_variables_items: [],
@@ -527,12 +561,12 @@ export default function OnboardingPage() {
               <div className="space-y-5">
                 <div>
                   <label className="block text-sm font-semibold text-[#1a1a2e]/70 mb-2">¿De qué país eres?</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {PAISES.map((p) => (
                       <button
                         key={p.nombre}
                         type="button"
-                        onClick={() => setPaisSeleccionado(p)}
+                        onClick={() => { setPaisSeleccionado(p); setMonedaSeleccionada(p.divisa); }}
                         className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
                           paisSeleccionado?.nombre === p.nombre
                             ? "bg-[#ec7fa9] text-white border-[#ec7fa9]"
@@ -544,7 +578,33 @@ export default function OnboardingPage() {
                       </button>
                     ))}
                   </div>
+                  {paisSeleccionado?.nombre === "Otro" && (
+                    <p className="text-xs text-[#1a1a2e]/40 mt-2">
+                      No pasa nada — elige abajo en qué moneda manejas tu dinero.
+                    </p>
+                  )}
                 </div>
+
+                {paisSeleccionado && (
+                  <div>
+                    <label className="block text-sm font-semibold text-[#1a1a2e]/70 mb-2">¿En qué moneda manejas tu dinero?</label>
+                    <div className="relative">
+                      <select
+                        value={monedaSeleccionada}
+                        onChange={(e) => setMonedaSeleccionada(e.target.value)}
+                        className="w-full appearance-none border border-[#ffb8e0] rounded-xl pl-4 pr-10 py-3 text-sm font-medium text-[#1a1a2e] bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all cursor-pointer"
+                      >
+                        {MONEDAS.map((m) => (
+                          <option key={m.code} value={m.code}>{m.code} · {m.nombre}</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={18} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#ec7fa9]" />
+                    </div>
+                    <p className="text-xs text-[#1a1a2e]/40 mt-1.5">
+                      Por defecto usamos la de tu país, pero si cobras en otra —por ejemplo dólares— la puedes cambiar aquí.
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-semibold text-[#1a1a2e]/70 mb-2">¿En qué rango de edad estás?</label>
@@ -571,7 +631,9 @@ export default function OnboardingPage() {
                 type="button"
                 disabled={!paisSeleccionado}
                 onClick={() => {
-                  if (paisSeleccionado) localStorage.setItem("amy_pais", JSON.stringify(paisSeleccionado));
+                  if (paisSeleccionado) {
+                    localStorage.setItem("amy_pais", JSON.stringify({ ...paisSeleccionado, divisa: monedaSeleccionada || paisSeleccionado.divisa }));
+                  }
                   if (edadRango) localStorage.setItem("amy_edad", edadRango);
                   setStep("welcome");
                 }}
@@ -598,12 +660,18 @@ export default function OnboardingPage() {
                 <p>Yo te voy a ir guiando <strong>paso a paso</strong>.</p>
                 <p>Confía en el proceso. 🌸</p>
               </div>
-              <button
-                onClick={() => setStep("ingresos")}
-                className={`${btnPink} w-full text-base`}
-              >
-                Empecemos juntas →
-              </button>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setStep("perfil_inicial")}
+                  className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
+                  ← Atrás
+                </button>
+                <button
+                  onClick={() => setStep("ingresos")}
+                  className={`${btnPink} flex-[2] text-base`}
+                >
+                  Empecemos juntas →
+                </button>
+              </div>
             </div>
           )}
 
@@ -621,7 +689,12 @@ export default function OnboardingPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Ingreso principal del mes</label>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <label className="block text-sm font-medium text-[#1a1a2e]/70">Ingreso principal del mes</label>
+                    <span className="text-[10px] font-semibold text-[#ec7fa9] bg-[#ffedfa] border border-[#ffb8e0] rounded-full px-2 py-0.5">
+                      {paisSeleccionado?.emoji} {monedaSeleccionada || paisSeleccionado?.divisa}
+                    </span>
+                  </div>
                   <MoneyInput
                     {...monedaProps}
                     value={ingresoFijo}
@@ -637,8 +710,19 @@ export default function OnboardingPage() {
                       <div key={item.id} className="flex items-center justify-between bg-[#ffedfa] rounded-xl px-4 py-2.5">
                         <span className="text-sm text-[#1a1a2e]">{item.nombre}</span>
                         <div className="flex items-center gap-3">
-                          <span className="text-sm font-semibold text-[#ec7fa9]">{fmt(item.valor)}</span>
-                          <button onClick={() => { setNuevoIngNombre(item.nombre); setNuevoIngValor(String(item.valor)); setIngresosOtros(ingresosOtros.filter(i => i.id !== item.id)); }}
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-[#ec7fa9]">{fmt(item.valor)}</p>
+                            {item.divisaOriginal && item.valorOriginal != null && (
+                              <p className="text-[10px] text-[#1a1a2e]/40">
+                                {item.valorOriginal.toLocaleString(paisSeleccionado?.locale ?? "es-CO")} {item.divisaOriginal}
+                              </p>
+                            )}
+                          </div>
+                          <button onClick={() => {
+                            setNuevoIngNombre(item.nombre); setNuevoIngValor(String(item.valor));
+                            if (item.divisaOriginal) { setNuevoIngOtraMoneda(true); setNuevoIngDivisa(item.divisaOriginal); setNuevoIngValorOriginal(String(item.valorOriginal ?? "")); }
+                            setIngresosOtros(ingresosOtros.filter(i => i.id !== item.id));
+                          }}
                             className="text-[#1a1a2e]/30 hover:text-[#ec7fa9] flex items-center"><Pencil size={12} /></button>
                           <button onClick={() => setIngresosOtros(ingresosOtros.filter(i => i.id !== item.id))}
                             className="text-[#1a1a2e]/20 hover:text-red-400 flex items-center"><X size={12} /></button>
@@ -649,18 +733,63 @@ export default function OnboardingPage() {
                 )}
 
                 <div>
-                  <p className="text-xs text-[#1a1a2e]/50 mb-2">¿Tienes otros ingresos? (freelance, arriendos, etc.)</p>
+                  <p className="text-xs text-[#1a1a2e]/50 mb-2 flex items-center gap-2">
+                    ¿Tienes otros ingresos? (freelance, arriendos, etc.)
+                    <span className="text-[10px] font-semibold text-[#ec7fa9] bg-[#ffedfa] border border-[#ffb8e0] rounded-full px-2 py-0.5 flex-shrink-0">
+                      {paisSeleccionado?.emoji} {monedaSeleccionada || paisSeleccionado?.divisa}
+                    </span>
+                  </p>
                   <div className="flex flex-col gap-2">
                     <div className="flex gap-2">
                       <input type="text" value={nuevoIngNombre} onChange={(e) => setNuevoIngNombre(e.target.value)}
                         placeholder="¿De dónde?"
                         onKeyDown={(e) => e.key === "Enter" && addIngreso()}
                         className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
-                      <MoneyInput {...monedaProps} value={nuevoIngValor} onChange={setNuevoIngValor}
-                        placeholder="Valor"
-                        onKeyDown={(e) => e.key === "Enter" && addIngreso()}
-                        className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                      {!nuevoIngOtraMoneda && (
+                        <MoneyInput {...monedaProps} value={nuevoIngValor} onChange={setNuevoIngValor}
+                          placeholder="Valor"
+                          onKeyDown={(e) => e.key === "Enter" && addIngreso()}
+                          className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                      )}
                     </div>
+
+                    {!nuevoIngOtraMoneda ? (
+                      <button type="button" onClick={() => setNuevoIngOtraMoneda(true)}
+                        className="text-left text-xs text-[#ec7fa9] font-medium hover:underline w-fit">
+                        ¿Es en otra moneda?
+                      </button>
+                    ) : (
+                      <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl p-3 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-[#1a1a2e]/60">Ingreso en otra moneda</p>
+                          <button type="button" onClick={() => { setNuevoIngOtraMoneda(false); setNuevoIngValorOriginal(""); }}
+                            className="text-[#1a1a2e]/30 hover:text-[#ec7fa9] text-xs flex items-center gap-1"><X size={11} />quitar</button>
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <select value={nuevoIngDivisa} onChange={(e) => setNuevoIngDivisa(e.target.value)}
+                              className="w-full appearance-none border border-[#ffb8e0] rounded-xl pl-3 pr-8 py-2.5 text-sm font-medium bg-white outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 cursor-pointer">
+                              {MONEDAS.map((m) => <option key={m.code} value={m.code}>{m.code}</option>)}
+                            </select>
+                            <ChevronDown size={15} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#ec7fa9]" />
+                          </div>
+                          <input type="text" inputMode="decimal" value={nuevoIngValorOriginal}
+                            onChange={(e) => setNuevoIngValorOriginal(e.target.value.replace(/[^0-9.]/g, ""))}
+                            placeholder={`¿Cuánto ganas en ${nuevoIngDivisa}?`}
+                            className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                        </div>
+                        <div>
+                          <label className="text-[11px] text-[#1a1a2e]/50 block mb-1">
+                            ¿Cuánto es eso en {MONEDAS.find(m => m.code === (monedaSeleccionada || paisSeleccionado?.divisa))?.nombre.toLowerCase() ?? "tu moneda"}?
+                          </label>
+                          <MoneyInput {...monedaProps} value={nuevoIngValor} onChange={setNuevoIngValor}
+                            placeholder="Valor convertido"
+                            onKeyDown={(e) => e.key === "Enter" && addIngreso()}
+                            className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                        </div>
+                      </div>
+                    )}
+
                     <button type="button" onClick={addIngreso}
                       className="w-full bg-[#ec7fa9] text-white font-semibold px-4 py-2.5 rounded-xl hover:bg-[#d96d97] transition-colors text-sm">+ Agregar</button>
                   </div>
@@ -675,13 +804,19 @@ export default function OnboardingPage() {
                 )}
               </div>
 
-              <button
-                onClick={goToGastos}
-                disabled={!ingresoFijo && ingresosOtros.length === 0}
-                className={`${btnPink} w-full mt-6`}
-              >
-                Siguiente →
-              </button>
+              <div className="flex gap-3 mt-6">
+                <button type="button" onClick={() => setStep("welcome")}
+                  className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
+                  ← Atrás
+                </button>
+                <button
+                  onClick={goToGastos}
+                  disabled={!ingresoFijo && ingresosOtros.length === 0}
+                  className={`${btnPink} flex-[2]`}
+                >
+                  Siguiente →
+                </button>
+              </div>
             </div>
           )}
 
@@ -1042,6 +1177,10 @@ export default function OnboardingPage() {
               >
                 {saving ? "Guardando..." : deudas.length > 1 ? "Vamos a encontrar la mejor forma para ti →" : "Entendido, empecemos →"}
               </button>
+              <button type="button" onClick={() => setStep("deudas")} disabled={saving}
+                className="w-full text-center text-sm text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-2 mt-1 transition-colors disabled:opacity-40">
+                ← Atrás
+              </button>
             </div>
           )}
 
@@ -1085,6 +1224,10 @@ export default function OnboardingPage() {
               >
                 Omitir por ahora, hacer el test después
               </button>
+              <button type="button" onClick={() => setStep("deudas")}
+                className="w-full text-center text-sm text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-2 transition-colors">
+                ← Atrás
+              </button>
             </div>
           )}
 
@@ -1103,7 +1246,7 @@ export default function OnboardingPage() {
                 {QUIZ[quizStep].pregunta}
               </h2>
 
-              <div className="space-y-3">
+              <div className="space-y-3 mb-4">
                 {QUIZ[quizStep].opciones.map((opt) => (
                   <button
                     key={opt.id}
@@ -1115,6 +1258,10 @@ export default function OnboardingPage() {
                   </button>
                 ))}
               </div>
+              <button type="button" onClick={quizBack}
+                className="w-full text-center text-sm text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-2 transition-colors">
+                ← Atrás
+              </button>
             </div>
           )}
 
@@ -1220,6 +1367,11 @@ export default function OnboardingPage() {
                   Ahora veamos cuánto puedes ahorrar →
                 </button>
               )}
+              <button type="button" disabled={saving}
+                onClick={() => { setQuizStep(QUIZ.length - 1); setStep("deuda_quiz"); }}
+                className="w-full text-center text-sm text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-2 mt-1 transition-colors disabled:opacity-40">
+                ← Atrás
+              </button>
             </div>
           )}
 
@@ -1253,6 +1405,10 @@ export default function OnboardingPage() {
               </div>
               <button onClick={() => setStep("cajitas_onboarding")} className={`${btnPink} w-full`}>
                 Empecemos con las cajitas →
+              </button>
+              <button type="button" onClick={() => setStep("deudas")}
+                className="w-full text-center text-sm text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-2 mt-1 transition-colors">
+                ← Atrás
               </button>
             </div>
           )}
