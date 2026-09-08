@@ -1644,14 +1644,44 @@ export default function OnboardingPage() {
                 <PiggyBank size={20} className="text-[#ec7fa9]" />Crea tus bolsitas
               </h2>
               <p className="text-sm text-[#1a1a2e]/60 mb-3 leading-relaxed">
-                Ahorro mensual: <strong className="text-[#ec7fa9]">{fmt(selectedAhorro ?? 0)}/mes</strong>. Distribúyelo como quieras.
+                Tienes <strong className="text-[#ec7fa9]">{fmt(selectedAhorro ?? 0)}/mes</strong> de ahorro. Repártelo en bolsitas según para qué es.
               </p>
-              <div className={`rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between text-sm ${bolsitasDisponible < 0 ? "bg-red-50 border border-red-200" : bolsitasDisponible === 0 ? "bg-orange-50 border border-orange-200" : "bg-[#ec7fa9]/10 border border-[#ec7fa9]/30"}`}>
-                <span className={bolsitasDisponible < 0 ? "text-red-500 font-medium" : bolsitasDisponible === 0 ? "text-orange-500 font-medium" : "text-[#1a1a2e]/60"}>
-                  {bolsitasDisponible <= 0 ? "¡Dinero completamente repartido!" : "Dinero disponible para repartir"}
-                </span>
-                <span className={`font-bold ${bolsitasDisponible < 0 ? "text-red-500" : bolsitasDisponible === 0 ? "text-orange-500" : "text-[#ec7fa9]"}`}>{fmt(bolsitasDisponible)}/mes</span>
-              </div>
+
+              {(() => {
+                const totalAhorro = selectedAhorro ?? 0;
+                const queda = bolsitasDisponible;
+                const listo = queda === 0 && bolsitasOB.length > 0;
+                const excedido = queda < 0;
+                return (
+                  <div className={`rounded-2xl px-5 py-4 mb-4 border-2 ${
+                    excedido ? "bg-red-50 border-red-200"
+                    : listo ? "bg-[#ec7fa9]/10 border-[#ec7fa9]"
+                    : "bg-[#ffedfa] border-[#ffb8e0]"
+                  }`}>
+                    {listo ? (
+                      <div className="text-center">
+                        <p className="text-2xl mb-1">🎉</p>
+                        <p className="text-base font-bold text-[#ec7fa9]">¡Listo! Repartiste todo tu ahorro mensual</p>
+                        <p className="text-xs text-[#1a1a2e]/50 mt-1">
+                          {fmt(totalAhorro)}/mes en {bolsitasOB.length} {bolsitasOB.length === 1 ? "bolsita" : "bolsitas"}. Ya puedes continuar.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-sm text-[#1a1a2e]/60">{excedido ? "Te pasaste por" : "Te queda por repartir"}</span>
+                          <span className={`text-2xl font-bold ${excedido ? "text-red-500" : "text-[#ec7fa9]"}`}>
+                            {fmt(Math.abs(queda))}<span className="text-sm font-normal text-[#1a1a2e]/40">/mes</span>
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#1a1a2e]/40 mt-1">
+                          {fmt(bolsitasUsadoMensual)} repartidos de {fmt(totalAhorro)} al mes
+                        </p>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
 
               {bolsitasOB.length > 0 && (
                 <div className="space-y-2 mb-4">
@@ -1672,11 +1702,10 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {bolsitasDisponible <= 0 && (
-                <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 mb-4 text-center">
-                  <p className="text-sm text-orange-600 font-medium">Ya repartiste todo tu dinero de ahorro</p>
-                  <p className="text-xs text-orange-500 mt-0.5">Elimina una bolsita para agregar otra, o continúa así.</p>
-                </div>
+              {bolsitasDisponible <= 0 && bolsitasOB.length > 0 && (
+                <p className="text-xs text-[#1a1a2e]/40 text-center mb-4">
+                  Si quieres agregar otra bolsita, primero elimina una para hacer espacio.
+                </p>
               )}
 
               <div className={`bg-[#ffedfa] rounded-2xl p-4 mb-4 ${bolsitasDisponible <= 0 ? "opacity-50 pointer-events-none" : ""}`}>
