@@ -983,10 +983,13 @@ export default function OnboardingPage() {
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
                 Ahora, lo que pagas cada mes
               </h2>
-              <div className="text-sm text-[#1a1a2e]/60 leading-relaxed mb-6 space-y-2">
+              <div className="text-sm text-[#1a1a2e]/60 leading-relaxed mb-4 space-y-2">
                 <p>Estos son los gastos que pagas todos los meses, casi siempre por el mismo valor.</p>
                 <p className="text-[#1a1a2e]/50">Por ejemplo: arriendo, servicios, suscripciones o internet.</p>
               </div>
+              <p className="text-xs text-[#ec7fa9] bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-3 py-2 mb-4">
+                No hace falta que los recuerdes todos ahora. Puedes agregar o corregir gastos fijos más adelante desde Mis finanzas, sin perder lo que ya escribiste.
+              </p>
 
               {gastosFijos.length > 0 && (
                 <div className="space-y-2 mb-4">
