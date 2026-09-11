@@ -37,6 +37,11 @@ const METAS_EJEMPLOS = [
   { nombre: "Keratina / tratamiento", emoji: "💅" },
 ];
 
+function mesActual() {
+  const now = new Date();
+  return { mes: now.getMonth() + 1, anio: now.getFullYear() };
+}
+
 function Stars({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
   return (
     <div className="flex gap-0.5">
@@ -89,6 +94,9 @@ export default function AhorroPage() {
   const [reasignarId, setReasignarId] = useState("");
   const [reasignarMonto, setReasignarMonto] = useState("");
 
+  // Check mensual por bolsita (4.2): item_id -> id de la fila en confirmaciones_mensuales
+  const [confirmadas, setConfirmadas] = useState<Record<string, string>>({});
+
   useEffect(() => { load(); }, []);
 
   async function load() {
@@ -96,10 +104,13 @@ export default function AhorroPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const now = new Date();
-    const [bolRes, dashRes, deudasRes] = await Promise.all([
+    const { mes, anio } = mesActual();
+    const [bolRes, dashRes, deudasRes, confsRes] = await Promise.all([
       supabase.from("bolsillos").select("*").eq("user_id", user.id).order("importancia", { ascending: false }),
       supabase.from("dashboard_mensual").select("ingreso_fijo,ingresos_otros,gastos_fijos").eq("user_id", user.id).eq("month", now.getMonth() + 1).eq("year", now.getFullYear()).single(),
       supabase.from("deudas").select("cuota_mensual").eq("user_id", user.id),
+      supabase.from("confirmaciones_mensuales").select("id, item_id")
+        .eq("user_id", user.id).eq("tipo", "bolsillo").eq("mes", mes).eq("anio", anio),
     ]);
     if (bolRes.data) {
       setBolsillos(bolRes.data);
@@ -115,7 +126,27 @@ export default function AhorroPage() {
       const cuotas = (deudasRes.data || []).reduce((s: number, d: { cuota_mensual: number }) => s + d.cuota_mensual, 0);
       setCapacidadBase(Math.max(0, ingreso - gastos - cuotas));
     }
+    if (confsRes.data) setConfirmadas(Object.fromEntries(confsRes.data.map(c => [c.item_id, c.id])));
     setLoading(false);
+  }
+
+  async function toggleConfirmada(bolsilloId: string, aporteMensual: number) {
+    const existingId = confirmadas[bolsilloId];
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    if (existingId) {
+      await supabase.from("confirmaciones_mensuales").delete().eq("id", existingId).eq("user_id", user.id);
+      setConfirmadas(prev => { const next = { ...prev }; delete next[bolsilloId]; return next; });
+    } else {
+      const { mes, anio } = mesActual();
+      const { data } = await supabase.from("confirmaciones_mensuales")
+        .upsert(
+          { user_id: user.id, tipo: "bolsillo", item_id: bolsilloId, mes, anio, monto: aporteMensual, confirmado_at: new Date().toISOString() },
+          { onConflict: "user_id,tipo,item_id,mes,anio" }
+        ).select().single();
+      if (data) setConfirmadas(prev => ({ ...prev, [bolsilloId]: data.id }));
+    }
   }
 
   function monthsUntil(fechaStr: string): number {
@@ -238,7 +269,9 @@ export default function AhorroPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     await supabase.from("bolsillos").delete().eq("id", id).eq("user_id", user.id);
+    await supabase.from("confirmaciones_mensuales").delete().eq("item_id", id).eq("user_id", user.id).eq("tipo", "bolsillo");
     setBolsillos(bolsillos.filter(b => b.id !== id));
+    setConfirmadas(prev => { const next = { ...prev }; delete next[id]; return next; });
   }
 
   const fondos = bolsillos.filter(b => !b.tipo || b.tipo === "fondos");
@@ -246,6 +279,13 @@ export default function AhorroPage() {
   const totalAhorrado = bolsillos.reduce((s, b) => s + b.actual, 0);
   const totalMensual = fondos.reduce((s, b) => s + (b.cuota_mensual || 0), 0)
     + metas.reduce((s, b) => s + cuotaMeta(b), 0);
+
+  // Bolsitas con un aporte mensual activo (4.2): fondos con cuota, o metas no logradas con cuota
+  const conAporteMensual = [
+    ...fondos.filter(b => (b.cuota_mensual || 0) > 0),
+    ...metas.filter(b => !(b.actual >= b.meta && b.meta > 0) && cuotaMeta(b) > 0),
+  ];
+  const aportesTransferidos = conAporteMensual.filter(b => confirmadas[b.id]).length;
 
   const disponibleParaAhorro = Math.max(0, capacidadBase - totalMensual);
   const recomendacionFCuota = disponibleParaAhorro > 0
@@ -316,7 +356,7 @@ export default function AhorroPage() {
       </div>
 
       {/* Summary */}
-      <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5 mb-8">
+      <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5 mb-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-xs text-[#1a1a2e]/50 mb-1">Total ahorrado</p>
@@ -328,6 +368,18 @@ export default function AhorroPage() {
           </div>
         </div>
       </div>
+
+      {conAporteMensual.length > 0 && (
+        <div className={`rounded-2xl border px-5 py-3 mb-8 flex items-center gap-2 ${aportesTransferidos === conAporteMensual.length ? "bg-green-50 border-green-200" : "bg-white border-[#ffb8e0]"}`}>
+          {aportesTransferidos === conAporteMensual.length
+            ? <Check size={15} className="text-green-600 flex-shrink-0" strokeWidth={3} />
+            : <PiggyBank size={15} className="text-[#ec7fa9] flex-shrink-0" />
+          }
+          <p className={`text-sm font-medium ${aportesTransferidos === conAporteMensual.length ? "text-green-700" : "text-[#1a1a2e]/70"}`}>
+            {aportesTransferidos} de {conAporteMensual.length} aporte{conAporteMensual.length !== 1 ? "s" : ""} del mes transferido{aportesTransferidos === conAporteMensual.length ? "s" : ""}
+          </p>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex flex-col gap-6 animate-pulse">
@@ -358,6 +410,10 @@ export default function AhorroPage() {
             <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl px-5 py-4 mb-4">
               <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
                 <span className="font-semibold text-[#ec7fa9]">Son fondos que nunca se acaban.</span> Apartas una cantidad fija cada mes para gastos que van y vienen: skincare, regalos, salud, emergencias... Cuando usas el dinero, el bolsillo se recarga el mes siguiente.
+              </p>
+              <p className="text-sm font-semibold text-[#1a1a2e] mt-3 mb-1">¿Qué debes hacer en tu banco?</p>
+              <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
+                Crea un bolsillo, sobre o cuenta de ahorro separada por cada bolsita y transfiere ahí su aporte mensual. Amy organiza el plan; tú mueves el dinero en tu banco.
               </p>
             </div>
 
@@ -509,6 +565,23 @@ export default function AhorroPage() {
                           </div>
                         </div>
                       )}
+                      {b.cuota_mensual > 0 && (
+                        <button
+                          onClick={() => toggleConfirmada(b.id, b.cuota_mensual)}
+                          className={`mb-3 w-full flex items-center gap-3 px-3 py-2 rounded-xl border text-xs font-medium transition-colors ${
+                            confirmadas[b.id]
+                              ? "bg-green-50 border-green-200 text-green-700"
+                              : "bg-white border-[#ffb8e0] text-[#1a1a2e]/60 hover:bg-[#ffedfa]"
+                          }`}
+                        >
+                          <span className={`w-4 h-4 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                            confirmadas[b.id] ? "bg-green-500 border-green-500" : "border-[#ffb8e0]"
+                          }`}>
+                            {confirmadas[b.id] && <Check size={10} className="text-white" strokeWidth={3} />}
+                          </span>
+                          {confirmadas[b.id] ? "¡Aporte de este mes transferido!" : `Transferir ${fmt(b.cuota_mensual)} este mes`}
+                        </button>
+                      )}
                       {abonarId === b.id ? (
                         <div className="flex gap-2">
                           <input type="number" value={abonarMonto} onChange={(e) => setAbonarMonto(e.target.value)}
@@ -563,6 +636,10 @@ export default function AhorroPage() {
             <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl px-5 py-4 mb-4">
               <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
                 <span className="font-semibold text-[#ec7fa9]">Son sueños con fecha de llegada.</span> Defines cuánto cuesta y cuándo lo quieres lograr. Amy calcula cuánto apartar cada mes para que llegues a tiempo. Cuando lo logres, ¡celebramos juntas!
+              </p>
+              <p className="text-sm font-semibold text-[#1a1a2e] mt-3 mb-1">¿Qué debes hacer en tu banco?</p>
+              <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
+                Crea un bolsillo, sobre o cuenta de ahorro separada por cada meta y transfiere ahí el aporte del mes. Amy organiza el plan; tú mueves el dinero en tu banco.
               </p>
             </div>
 
@@ -683,6 +760,23 @@ export default function AhorroPage() {
                         <p className="text-xs text-[#1a1a2e]/40 mb-2">
                           Para: {fechaStr} · Faltan {fmt(falta)} · {meses} mes{meses !== 1 ? "es" : ""}
                         </p>
+                      )}
+                      {!done && cuota > 0 && (
+                        <button
+                          onClick={() => toggleConfirmada(b.id, cuota)}
+                          className={`mb-3 w-full flex items-center gap-3 px-3 py-2 rounded-xl border text-xs font-medium transition-colors ${
+                            confirmadas[b.id]
+                              ? "bg-green-50 border-green-200 text-green-700"
+                              : "bg-white border-[#ffb8e0] text-[#1a1a2e]/60 hover:bg-[#ffedfa]"
+                          }`}
+                        >
+                          <span className={`w-4 h-4 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                            confirmadas[b.id] ? "bg-green-500 border-green-500" : "border-[#ffb8e0]"
+                          }`}>
+                            {confirmadas[b.id] && <Check size={10} className="text-white" strokeWidth={3} />}
+                          </span>
+                          {confirmadas[b.id] ? "¡Aporte de este mes transferido!" : `Transferir ${fmt(cuota)} este mes`}
+                        </button>
                       )}
                       {done ? (
                         <p className="text-sm font-semibold text-green-600 flex items-center gap-1.5"><PartyPopper size={14} />¡Lo lograste!</p>
