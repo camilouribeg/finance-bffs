@@ -312,7 +312,10 @@ export default function DashboardPage() {
                     </div>
 
                     {!nuevoIngOtraMoneda ? (
-                      <button type="button" onClick={() => setNuevoIngOtraMoneda(true)}
+                      <button type="button" onClick={() => {
+                        if (pais.secundarias && pais.secundarias.length > 0) setNuevoIngDivisa(pais.secundarias[0]);
+                        setNuevoIngOtraMoneda(true);
+                      }}
                         className="text-left text-xs text-[#ec7fa9] font-medium hover:underline w-fit">
                         ¿Es en otra moneda?
                       </button>
@@ -327,7 +330,20 @@ export default function DashboardPage() {
                           <div className="relative flex-1">
                             <select value={nuevoIngDivisa} onChange={(e) => setNuevoIngDivisa(e.target.value)}
                               className="w-full appearance-none border border-[#ffb8e0] rounded-xl pl-3 pr-8 py-2 text-sm font-medium bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 cursor-pointer">
-                              {MONEDAS.map((m) => <option key={m.code} value={m.code}>{m.code}</option>)}
+                              {pais.secundarias && pais.secundarias.length > 0 ? (
+                                <>
+                                  <optgroup label="Tus monedas">
+                                    {pais.secundarias.map((c) => <option key={c} value={c}>{c}</option>)}
+                                  </optgroup>
+                                  <optgroup label="Otras">
+                                    {MONEDAS.filter((m) => !pais.secundarias!.includes(m.code)).map((m) => (
+                                      <option key={m.code} value={m.code}>{m.code}</option>
+                                    ))}
+                                  </optgroup>
+                                </>
+                              ) : (
+                                MONEDAS.map((m) => <option key={m.code} value={m.code}>{m.code}</option>)
+                              )}
                             </select>
                             <ChevronDown size={15} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#ec7fa9]" />
                           </div>

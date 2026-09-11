@@ -2,7 +2,9 @@
 
 import { useSyncExternalStore } from "react";
 
-export type Pais = { nombre: string; emoji: string; divisa: string; locale: string };
+// `secundarias`: otras monedas que la usuaria dijo manejar además de la principal
+// (roadmap 3.11) — opcional, para priorizarlas al registrar un ingreso en otra moneda.
+export type Pais = { nombre: string; emoji: string; divisa: string; locale: string; secundarias?: string[] };
 
 const DEFAULT: Pais = { nombre: "Colombia", emoji: "🇨🇴", divisa: "COP", locale: "es-CO" };
 

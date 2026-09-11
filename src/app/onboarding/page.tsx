@@ -201,6 +201,7 @@ export default function OnboardingPage() {
   // Pre-onboarding profile
   const [paisSeleccionado, setPaisSeleccionado] = useState<typeof PAISES[0] | null>(null);
   const [monedaSeleccionada, setMonedaSeleccionada] = useState("");
+  const [monedasSecundarias, setMonedasSecundarias] = useState<string[]>([]);
   const [edadRango, setEdadRango] = useState("");
   const [paisAbierto, setPaisAbierto] = useState(false);
   const [paisQuery, setPaisQuery] = useState("");
@@ -255,10 +256,12 @@ export default function OnboardingPage() {
           localStorage.setItem("amy_pais", JSON.stringify({
             ...d.paisSeleccionado,
             divisa: d.monedaSeleccionada || d.paisSeleccionado.divisa,
+            secundarias: Array.isArray(d.monedasSecundarias) ? d.monedasSecundarias : [],
           }));
         } catch {}
       }
       if (d.monedaSeleccionada) setMonedaSeleccionada(d.monedaSeleccionada);
+      if (Array.isArray(d.monedasSecundarias)) setMonedasSecundarias(d.monedasSecundarias);
       if (d.edadRango) setEdadRango(d.edadRango);
     } catch {
       // borrador corrupto: empezar de cero
@@ -272,14 +275,14 @@ export default function OnboardingPage() {
         step, ingresoFijo, ingresosOtros, gastosFijos, deudas,
         quizStep, quizAnswers, debtMethod,
         cajitasOB, selectedAhorro, bolsitasOB,
-        paisSeleccionado, monedaSeleccionada, edadRango,
+        paisSeleccionado, monedaSeleccionada, monedasSecundarias, edadRango,
       }));
     } catch {
       // cuota de localStorage llena u otro error: no bloquear el onboarding
     }
   }, [draftKey, step, ingresoFijo, ingresosOtros, gastosFijos, deudas, quizStep,
       quizAnswers, debtMethod, cajitasOB, selectedAhorro, bolsitasOB,
-      paisSeleccionado, monedaSeleccionada, edadRango]);
+      paisSeleccionado, monedaSeleccionada, monedasSecundarias, edadRango]);
 
   // Búsqueda de país (roadmap 3.10): sin tildes ni mayúsculas, así "peru" encuentra "Perú".
   const normalizar = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -707,6 +710,39 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
+                {paisSeleccionado && (
+                  <div>
+                    <label className="block text-sm font-semibold text-[#1a1a2e]/70 mb-2">
+                      ¿Manejas dinero en otras monedas también? <span className="text-[#1a1a2e]/30 font-normal">(opcional)</span>
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {MONEDAS.filter((m) => m.code !== monedaSeleccionada).map((m) => {
+                        const activa = monedasSecundarias.includes(m.code);
+                        return (
+                          <button
+                            key={m.code}
+                            type="button"
+                            onClick={() => setMonedasSecundarias((prev) =>
+                              activa ? prev.filter((c) => c !== m.code) : [...prev, m.code]
+                            )}
+                            className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
+                              activa
+                                ? "bg-[#ec7fa9] text-white border-[#ec7fa9]"
+                                : "bg-white border-[#ffb8e0] text-[#1a1a2e]/60 hover:border-[#ec7fa9]"
+                            }`}
+                          >
+                            {m.code}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-[#1a1a2e]/40 mt-1.5">
+                      {monedaSeleccionada || paisSeleccionado?.divisa} sigue siendo tu moneda principal — esta selección solo
+                      hace que, al registrar un ingreso o gasto en otra moneda, la tengas más a la mano en la lista.
+                    </p>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-semibold text-[#1a1a2e]/70 mb-2">¿En qué rango de edad estás?</label>
                   <div className="flex flex-wrap gap-2">
@@ -733,7 +769,11 @@ export default function OnboardingPage() {
                 disabled={!paisSeleccionado}
                 onClick={() => {
                   if (paisSeleccionado) {
-                    localStorage.setItem("amy_pais", JSON.stringify({ ...paisSeleccionado, divisa: monedaSeleccionada || paisSeleccionado.divisa }));
+                    localStorage.setItem("amy_pais", JSON.stringify({
+                      ...paisSeleccionado,
+                      divisa: monedaSeleccionada || paisSeleccionado.divisa,
+                      secundarias: monedasSecundarias,
+                    }));
                   }
                   if (edadRango) localStorage.setItem("amy_edad", edadRango);
                   setStep("welcome");
@@ -855,7 +895,10 @@ export default function OnboardingPage() {
                     </div>
 
                     {!nuevoIngOtraMoneda ? (
-                      <button type="button" onClick={() => setNuevoIngOtraMoneda(true)}
+                      <button type="button" onClick={() => {
+                        if (monedasSecundarias.length > 0) setNuevoIngDivisa(monedasSecundarias[0]);
+                        setNuevoIngOtraMoneda(true);
+                      }}
                         className="text-left text-xs text-[#ec7fa9] font-medium hover:underline w-fit">
                         ¿Es en otra moneda?
                       </button>
@@ -870,7 +913,20 @@ export default function OnboardingPage() {
                           <div className="relative flex-1">
                             <select value={nuevoIngDivisa} onChange={(e) => setNuevoIngDivisa(e.target.value)}
                               className="w-full appearance-none border border-[#ffb8e0] rounded-xl pl-3 pr-8 py-2.5 text-sm font-medium bg-white outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 cursor-pointer">
-                              {MONEDAS.map((m) => <option key={m.code} value={m.code}>{m.code}</option>)}
+                              {monedasSecundarias.length > 0 ? (
+                                <>
+                                  <optgroup label="Tus monedas">
+                                    {monedasSecundarias.map((c) => <option key={c} value={c}>{c}</option>)}
+                                  </optgroup>
+                                  <optgroup label="Otras">
+                                    {MONEDAS.filter((m) => !monedasSecundarias.includes(m.code)).map((m) => (
+                                      <option key={m.code} value={m.code}>{m.code}</option>
+                                    ))}
+                                  </optgroup>
+                                </>
+                              ) : (
+                                MONEDAS.map((m) => <option key={m.code} value={m.code}>{m.code}</option>)
+                              )}
                             </select>
                             <ChevronDown size={15} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#ec7fa9]" />
                           </div>
