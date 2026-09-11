@@ -130,3 +130,46 @@ todas verificadas end-to-end con Playwright contra staging.
 - **3.3 / 3.5** — ¿el copy exacto de Amy lo escribe el socio o lo propongo yo?
 - **3.5** — ¿cómo se ve la microcelebración al llegar a $0? ¿Reusamos el patrón de
   `bolsillos.celebrado`?
+
+## Ronda de feedback del socio (3.10–3.17)
+
+Después de que el socio revisó el Preview de Epic A, bajó un Excel actualizado con
+correcciones puntuales sobre lo ya construido (3.10–3.17, resaltadas en morado) y un
+epic nuevo (Dashboard + Mis deudas, 4.1–4.9), que se está trabajando aparte en el
+worktree `.claude/worktrees/epic-dashboard-deudas` (rama `feat/epic-dashboard-mis-deudas`)
+para no repetir el choque de sesiones concurrentes que ya tuvimos una vez en este repo.
+Esta ronda (3.10–3.17) se hizo en esta misma conversación/rama, una story a la vez,
+cada una verificada con Playwright contra staging antes de commitear:
+
+- [x] **3.10 · Simplificar la selección de país** (`986d51f`) — buscador con texto en vez
+      de la grilla de 21 botones; búsqueda sin tildes.
+- [x] **3.11 · Permitir configurar varias monedas** (`bfe680d`) — chips opcionales de
+      "otras monedas" en el perfil inicial; se priorizan como `<optgroup>` al registrar un
+      ingreso en otra divisa (onboarding y `app/page.tsx`).
+- [x] **3.12 · Eliminar guiones largos innecesarios** (`7a86ce4`) — barrido de los 5 em-dash
+      que se me habían colado como puntuación esta sesión; se dejaron intactos los `—` que
+      son placeholders de datos faltantes y los de comentarios de código.
+- [x] **3.13 · Aclarar que los gastos fijos se completan después** (`5b83d4c`) — nota en el
+      paso de gastos fijos explicando que se pueden agregar/corregir luego desde Mis finanzas.
+- [x] **3.14 · Proponer la próxima fecha válida para cajitas** (`9524a7d`) — si la fecha de
+      pago elegida ya pasó, se recalcula la próxima ocurrencia futura según la periodicidad
+      (bimestral, semestral, anual...).
+- [x] **3.15 · Importancia antes de la recomendación** (`30886bd`) — la estrella de
+      importancia empieza en 0 (ninguna elegida) y el monto recomendado por Amy solo
+      aparece después de que la usuaria elige qué tan importante es la bolsita.
+- [x] **3.16 · Botón evidente para agregar bolsita** (`30886bd`, mismo commit que 3.15 por
+      tocar el mismo mini-formulario) — rosa sólido cuando los datos están completos,
+      contorno tenue mientras falten.
+- [x] **3.17 · Mantener visible el resumen del reparto de ahorro** (`32412f6`) — la tarjeta
+      "te queda por repartir" ahora es `sticky`. Hubo que quitar el `overflow-hidden` de la
+      tarjeta blanca que envuelve todos los pasos del onboarding porque bloqueaba el
+      `position: sticky` de sus hijos (confirmado con una prueba de scroll en Playwright:
+      con el `overflow-hidden` la tarjeta se scrolleaba normal, sin él se quedó fija en
+      `y≈8px` antes y después de hacer scroll). No hay contenido que toque los bordes de esa
+      tarjeta, así que las esquinas redondeadas se ven igual.
+- [x] `npm run lint` y `npm run build` en verde después de cada story (mismos preexistentes,
+      0 nuevos).
+- [x] Excel actualizado (`Finance BFF Experience Roadmap septiembre 8.xlsx`, 33 stories) copiado
+      sobre `Finance-BFF-Experience-Roadmap.xlsx`, 3.10–3.17 marcadas `Completo`, `roadmap.md`
+      regenerado con `sync.py`.
+- [ ] Push de estos 3 commits (`986d51f`…`30886bd`) para que el socio revise de nuevo.
