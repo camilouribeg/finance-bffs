@@ -633,7 +633,10 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-3xl shadow-xl border border-[#ffb8e0] overflow-hidden">
+        {/* roadmap 3.17: sin overflow-hidden aquí, para que el resumen sticky del paso
+            de bolsitas pueda pegarse al hacer scroll (todo el contenido interno ya va
+            con padding, así que ningún hijo llega a tocar las esquinas redondeadas). */}
+        <div className="bg-white rounded-3xl shadow-xl border border-[#ffb8e0]">
 
           {/* ─── PERFIL INICIAL ─── */}
           {step === "perfil_inicial" && (
@@ -1770,7 +1773,9 @@ export default function OnboardingPage() {
                 const listo = queda === 0 && bolsitasOB.length > 0;
                 const excedido = queda < 0;
                 return (
-                  <div className={`rounded-2xl px-5 py-4 mb-4 border-2 ${
+                  // roadmap 3.17: sticky para que el resumen del reparto se mantenga
+                  // visible mientras se hace scroll por la lista de bolsitas y el formulario.
+                  <div className={`sticky top-2 z-10 rounded-2xl px-5 py-4 mb-4 border-2 shadow-sm ${
                     excedido ? "bg-red-50 border-red-200"
                     : listo ? "bg-[#ec7fa9]/10 border-[#ec7fa9]"
                     : "bg-[#ffedfa] border-[#ffb8e0]"
