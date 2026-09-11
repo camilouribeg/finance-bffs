@@ -28,9 +28,9 @@ const EJEMPLOS = [
   { nombre: "Mantenimiento del hogar", emoji: "🏠" },
 ];
 
-function mesKey() {
+function mesActual() {
   const now = new Date();
-  return `cajitas_transferido_${now.getFullYear()}_${now.getMonth() + 1}`;
+  return { mes: now.getMonth() + 1, anio: now.getFullYear() };
 }
 
 export default function CajitasPage() {
@@ -38,7 +38,6 @@ export default function CajitasPage() {
   const [cajitas, setCajitas] = useState<Cajita[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [transferido, setTransferido] = useState(false);
 
   const [nombre, setNombre] = useState("");
   const [montoTotal, setMontoTotal] = useState("");
@@ -48,18 +47,45 @@ export default function CajitasPage() {
   const [abonarId, setAbonarId] = useState<string | null>(null);
   const [abonarMonto, setAbonarMonto] = useState("");
 
-  useEffect(() => {
-    load();
-    setTransferido(localStorage.getItem(mesKey()) === "1");
-  }, []);
+  // Check mensual por cajita (4.1): item_id -> id de la fila en confirmaciones_mensuales
+  const [confirmadas, setConfirmadas] = useState<Record<string, string>>({});
+
+  useEffect(() => { load(); }, []);
 
   async function load() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from("cajitas").select("*").eq("user_id", user.id).order("fecha_pago");
+    const { mes, anio } = mesActual();
+    const [{ data }, { data: confs }] = await Promise.all([
+      supabase.from("cajitas").select("*").eq("user_id", user.id).order("fecha_pago"),
+      supabase.from("confirmaciones_mensuales").select("id, item_id")
+        .eq("user_id", user.id).eq("tipo", "cajita").eq("mes", mes).eq("anio", anio),
+    ]);
     if (data) setCajitas(data);
+    if (confs) setConfirmadas(Object.fromEntries(confs.map(c => [c.item_id, c.id])));
     setLoading(false);
+  }
+
+  async function toggleConfirmada(cajitaId: string) {
+    const existingId = confirmadas[cajitaId];
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    if (existingId) {
+      await supabase.from("confirmaciones_mensuales").delete().eq("id", existingId).eq("user_id", user.id);
+      setConfirmadas(prev => { const next = { ...prev }; delete next[cajitaId]; return next; });
+    } else {
+      const cajita = cajitas.find(c => c.id === cajitaId);
+      if (!cajita) return;
+      const { mes, anio } = mesActual();
+      const { data } = await supabase.from("confirmaciones_mensuales")
+        .upsert(
+          { user_id: user.id, tipo: "cajita", item_id: cajitaId, mes, anio, monto: cuotaMensual(cajita), confirmado_at: new Date().toISOString() },
+          { onConflict: "user_id,tipo,item_id,mes,anio" }
+        ).select().single();
+      if (data) setConfirmadas(prev => ({ ...prev, [cajitaId]: data.id }));
+    }
   }
 
   function monthsUntil(fechaStr: string): number {
@@ -121,17 +147,14 @@ export default function CajitasPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     await supabase.from("cajitas").delete().eq("id", id).eq("user_id", user.id);
+    await supabase.from("confirmaciones_mensuales").delete().eq("item_id", id).eq("user_id", user.id).eq("tipo", "cajita");
     setCajitas(cajitas.filter(c => c.id !== id));
-  }
-
-  function toggleTransferido() {
-    const next = !transferido;
-    setTransferido(next);
-    if (next) localStorage.setItem(mesKey(), "1");
-    else localStorage.removeItem(mesKey());
+    setConfirmadas(prev => { const next = { ...prev }; delete next[id]; return next; });
   }
 
   const totalMensual = cajitas.reduce((s, c) => s + cuotaMensual(c), 0);
+  const pendientesDeTransferir = cajitas.filter(c => Math.max(0, c.monto_total - c.actual) > 0);
+  const transferidasEsteMes = pendientesDeTransferir.filter(c => confirmadas[c.id]).length;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -183,21 +206,19 @@ export default function CajitasPage() {
               <span className="text-xs text-[#1a1a2e]/50">Transferencia mensual recomendada:</span>
               <span className="text-sm font-bold text-[#ec7fa9]">{fmt(totalMensual)}</span>
             </div>
-            <button
-              onClick={toggleTransferido}
-              className={`mt-3 w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-colors ${
-                transferido
-                  ? "bg-green-50 border-green-200 text-green-700"
-                  : "bg-white border-[#ffb8e0] text-[#1a1a2e]/60 hover:bg-white/80"
-              }`}
-            >
-              <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                transferido ? "bg-green-500 border-green-500" : "border-[#ffb8e0]"
+            {pendientesDeTransferir.length > 0 && (
+              <div className={`mt-3 flex items-center gap-2 px-4 py-2.5 rounded-xl border ${
+                transferidasEsteMes === pendientesDeTransferir.length ? "bg-green-50 border-green-200" : "bg-white border-[#ffb8e0]"
               }`}>
-                {transferido && <Check size={12} className="text-white" strokeWidth={3} />}
-              </span>
-              {transferido ? "¡Transferencia de este mes registrada!" : "Marcar transferencia de este mes como hecha"}
-            </button>
+                {transferidasEsteMes === pendientesDeTransferir.length
+                  ? <Check size={14} className="text-green-600 flex-shrink-0" strokeWidth={3} />
+                  : <Lightbulb size={14} className="text-[#ec7fa9] flex-shrink-0" />
+                }
+                <p className={`text-sm font-medium ${transferidasEsteMes === pendientesDeTransferir.length ? "text-green-700" : "text-[#1a1a2e]/70"}`}>
+                  {transferidasEsteMes} de {pendientesDeTransferir.length} cajita{pendientesDeTransferir.length !== 1 ? "s" : ""} transferida{transferidasEsteMes === pendientesDeTransferir.length ? "s" : ""} este mes
+                </p>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -344,6 +365,21 @@ export default function CajitasPage() {
                     </div>
                   ) : (
                     <div>
+                      <button
+                        onClick={() => toggleConfirmada(cajita.id)}
+                        className={`mb-3 w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                          confirmadas[cajita.id]
+                            ? "bg-green-50 border-green-200 text-green-700"
+                            : "bg-white border-[#ffb8e0] text-[#1a1a2e]/60 hover:bg-[#ffedfa]"
+                        }`}
+                      >
+                        <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          confirmadas[cajita.id] ? "bg-green-500 border-green-500" : "border-[#ffb8e0]"
+                        }`}>
+                          {confirmadas[cajita.id] && <Check size={12} className="text-white" strokeWidth={3} />}
+                        </span>
+                        {confirmadas[cajita.id] ? "¡Transferencia de este mes registrada!" : `Transferir ${fmt(cuota)} este mes`}
+                      </button>
                       {abonarId === cajita.id ? (
                         <div className="flex gap-2">
                           <input type="number" value={abonarMonto} onChange={(e) => setAbonarMonto(e.target.value)}
