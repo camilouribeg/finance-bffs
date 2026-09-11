@@ -202,6 +202,8 @@ export default function OnboardingPage() {
   const [paisSeleccionado, setPaisSeleccionado] = useState<typeof PAISES[0] | null>(null);
   const [monedaSeleccionada, setMonedaSeleccionada] = useState("");
   const [edadRango, setEdadRango] = useState("");
+  const [paisAbierto, setPaisAbierto] = useState(false);
+  const [paisQuery, setPaisQuery] = useState("");
 
   useEffect(() => {
     async function init() {
@@ -278,6 +280,12 @@ export default function OnboardingPage() {
   }, [draftKey, step, ingresoFijo, ingresosOtros, gastosFijos, deudas, quizStep,
       quizAnswers, debtMethod, cajitasOB, selectedAhorro, bolsitasOB,
       paisSeleccionado, monedaSeleccionada, edadRango]);
+
+  // Búsqueda de país (roadmap 3.10): sin tildes ni mayúsculas, así "peru" encuentra "Perú".
+  const normalizar = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const paisesFiltrados = paisQuery.trim()
+    ? PAISES.filter((p) => normalizar(p.nombre).includes(normalizar(paisQuery.trim())))
+    : PAISES;
 
   // Calculations
   const totalIngresos = (parseFloat(ingresoFijo) || 0) + ingresosOtros.reduce((s, i) => s + i.valor, 0);
@@ -622,22 +630,54 @@ export default function OnboardingPage() {
               <div className="space-y-5">
                 <div>
                   <label className="block text-sm font-semibold text-[#1a1a2e]/70 mb-2">¿De qué país eres?</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {PAISES.map((p) => (
-                      <button
-                        key={p.nombre}
-                        type="button"
-                        onClick={() => { setPaisSeleccionado(p); setMonedaSeleccionada(p.divisa); }}
-                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
-                          paisSeleccionado?.nombre === p.nombre
-                            ? "bg-[#ec7fa9] text-white border-[#ec7fa9]"
-                            : "bg-white border-[#ffb8e0] text-[#1a1a2e]/70 hover:border-[#ec7fa9] hover:bg-[#ffedfa]"
-                        }`}
-                      >
-                        <span>{p.emoji}</span>
-                        <span className="truncate">{p.nombre}</span>
-                      </button>
-                    ))}
+                  <div className="relative">
+                    <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1a1a2e]/30" />
+                    <input
+                      type="text"
+                      value={paisAbierto ? paisQuery : paisSeleccionado ? `${paisSeleccionado.emoji} ${paisSeleccionado.nombre}` : ""}
+                      onFocus={() => { setPaisAbierto(true); setPaisQuery(""); }}
+                      onChange={(e) => setPaisQuery(e.target.value)}
+                      onBlur={() => setTimeout(() => setPaisAbierto(false), 150)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && paisesFiltrados.length > 0) {
+                          e.preventDefault();
+                          const p = paisesFiltrados[0];
+                          setPaisSeleccionado(p); setMonedaSeleccionada(p.divisa);
+                          setPaisAbierto(false); setPaisQuery("");
+                        } else if (e.key === "Escape") {
+                          setPaisAbierto(false);
+                        }
+                      }}
+                      placeholder="Escribe para buscar tu país…"
+                      className="w-full border border-[#ffb8e0] rounded-xl pl-10 pr-4 py-3 text-sm font-medium text-[#1a1a2e] bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all"
+                    />
+                    {paisAbierto && (
+                      <div className="absolute z-10 mt-1.5 w-full max-h-56 overflow-y-auto bg-white border border-[#ffb8e0] rounded-xl shadow-lg py-1">
+                        {paisesFiltrados.length === 0 ? (
+                          <p className="px-4 py-2.5 text-sm text-[#1a1a2e]/40">Ningún país coincide — prueba con otro nombre.</p>
+                        ) : (
+                          paisesFiltrados.map((p) => (
+                            <button
+                              key={p.nombre}
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setPaisSeleccionado(p); setMonedaSeleccionada(p.divisa);
+                                setPaisAbierto(false); setPaisQuery("");
+                              }}
+                              className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left transition-colors ${
+                                paisSeleccionado?.nombre === p.nombre
+                                  ? "bg-[#ec7fa9]/10 text-[#ec7fa9] font-semibold"
+                                  : "text-[#1a1a2e]/70 hover:bg-[#ffedfa]"
+                              }`}
+                            >
+                              <span>{p.emoji}</span>
+                              <span>{p.nombre}</span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
                   {paisSeleccionado?.nombre === "Otro" && (
                     <p className="text-xs text-[#1a1a2e]/40 mt-2">
