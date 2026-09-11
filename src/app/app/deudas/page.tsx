@@ -10,6 +10,11 @@ type Deuda = { id: string; nombre: string; tipo: string; cuota_mensual: number; 
 
 const TIPOS = ["Tarjeta de crédito", "Préstamo personal", "Crédito hipotecario", "Crédito de vehículo", "Deuda familiar", "Otro"];
 
+function mesActual() {
+  const now = new Date();
+  return { mes: now.getMonth() + 1, anio: now.getFullYear() };
+}
+
 function TipoIcon({ tipo }: { tipo: string }) {
   const props = { size: 16, className: "text-[#ec7fa9] flex-shrink-0", strokeWidth: 1.75 };
   if (tipo === "Tarjeta de crédito") return <CreditCard {...props} />;
@@ -45,20 +50,55 @@ export default function DeudasPage() {
   const [editSaldoId, setEditSaldoId] = useState<string | null>(null);
   const [editSaldoValor, setEditSaldoValor] = useState("");
 
+  // Check mensual por deuda (4.7): item_id -> id de la fila en confirmaciones_mensuales
+  const [confirmadas, setConfirmadas] = useState<Record<string, string>>({});
+
   useEffect(() => { load(); }, []);
 
   async function load() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const [{ data }, { data: perfil }] = await Promise.all([
+    const { mes, anio } = mesActual();
+    const [{ data }, { data: perfil }, { data: confs }] = await Promise.all([
       supabase.from("deudas").select("*").eq("user_id", user.id),
       supabase.from("profiles").select("debt_method").eq("id", user.id).single(),
+      supabase.from("confirmaciones_mensuales").select("id, item_id")
+        .eq("user_id", user.id).eq("tipo", "deuda").eq("mes", mes).eq("anio", anio),
     ]);
     const m = (perfil?.debt_method as DebtMethod) || "snowball";
     setMetodo(m);
     if (data) setDeudas(ordenarDeudas(data as Deuda[], m));
+    if (confs) setConfirmadas(Object.fromEntries(confs.map(c => [c.item_id, c.id])));
     setLoading(false);
+  }
+
+  async function confirmarMes(deudaId: string, tipoPago: "cuota" | "abono_capital", monto: number, saldoResultante: number) {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { mes, anio } = mesActual();
+    const { data } = await supabase.from("confirmaciones_mensuales")
+      .upsert(
+        { user_id: user.id, tipo: "deuda", item_id: deudaId, mes, anio, tipo_pago: tipoPago, monto, saldo_resultante: saldoResultante, confirmado_at: new Date().toISOString() },
+        { onConflict: "user_id,tipo,item_id,mes,anio" }
+      ).select().single();
+    if (data) setConfirmadas(prev => ({ ...prev, [deudaId]: data.id }));
+  }
+
+  async function toggleConfirmado(deudaId: string) {
+    const existingId = confirmadas[deudaId];
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    if (existingId) {
+      await supabase.from("confirmaciones_mensuales").delete().eq("id", existingId).eq("user_id", user.id);
+      setConfirmadas(prev => { const next = { ...prev }; delete next[deudaId]; return next; });
+    } else {
+      const deuda = deudas.find(d => d.id === deudaId);
+      if (!deuda) return;
+      await confirmarMes(deudaId, "cuota", deuda.cuota_mensual, deuda.total_pendiente);
+    }
   }
 
 
@@ -90,6 +130,7 @@ export default function DeudasPage() {
     // debes. No restamos nada del saldo para no mostrar un progreso que no es
     // real (ver 4.8: el saldo se actualiza a mano con lo que diga el banco).
     if (abonarUsar === "cuota") {
+      await confirmarMes(id, "cuota", deuda.cuota_mensual, deuda.total_pendiente);
       setAbonarId(null); setAbonarMonto(""); setAbonarUsar("cuota");
       return;
     }
@@ -102,6 +143,7 @@ export default function DeudasPage() {
     if (!user) return;
     await supabase.from("deudas").update({ total_pendiente: nuevo }).eq("id", id).eq("user_id", user.id);
     setDeudas(deudas.map(d => d.id === id ? { ...d, total_pendiente: nuevo } : d));
+    await confirmarMes(id, "abono_capital", monto, nuevo);
     setAbonarId(null); setAbonarMonto(""); setAbonarUsar("cuota");
   }
 
@@ -121,12 +163,15 @@ export default function DeudasPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     await supabase.from("deudas").delete().eq("id", id).eq("user_id", user.id);
+    await supabase.from("confirmaciones_mensuales").delete().eq("item_id", id).eq("user_id", user.id).eq("tipo", "deuda");
     setDeudas(deudas.filter(d => d.id !== id));
+    setConfirmadas(prev => { const next = { ...prev }; delete next[id]; return next; });
   }
 
   const totalPend = deudas.reduce((s, d) => s + d.total_pendiente, 0);
   const totalCuotas = deudas.reduce((s, d) => s + d.cuota_mensual, 0);
   const activas = deudas.filter(d => d.total_pendiente > 0);
+  const pagosListos = activas.filter(d => confirmadas[d.id]).length;
   const meta = METHOD_META[metodo];
   // En el método equilibrado no hay una sola deuda prioritaria: todas avanzan juntas.
   const primeraDeuda = meta.unaPrioridad && activas.length > 0 ? activas[0] : null;
@@ -236,6 +281,18 @@ export default function DeudasPage() {
             </div>
           </div>
 
+          {activas.length > 0 && (
+            <div className={`rounded-2xl border px-5 py-3 flex items-center gap-2 ${pagosListos === activas.length ? "bg-green-50 border-green-200" : "bg-white border-[#ffb8e0]"}`}>
+              {pagosListos === activas.length
+                ? <Check size={15} className="text-green-600 flex-shrink-0" strokeWidth={2.5} />
+                : <Lightbulb size={15} className="text-[#ec7fa9] flex-shrink-0" />
+              }
+              <p className={`text-sm font-medium ${pagosListos === activas.length ? "text-green-700" : "text-[#1a1a2e]/70"}`}>
+                {pagosListos} de {activas.length} pago{activas.length !== 1 ? "s" : ""} del mes listo{pagosListos === activas.length ? "s" : ""}
+              </p>
+            </div>
+          )}
+
           {/* Where to start */}
           {activas.length > 0 && (
             <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl px-5 py-4 flex items-start gap-3">
@@ -309,6 +366,22 @@ export default function DeudasPage() {
                           <p className="text-sm font-bold text-[#1a1a2e]">{meses ?? "—"}</p>
                         </div>
                       </div>
+
+                      <button
+                        onClick={() => toggleConfirmado(d.id)}
+                        className={`mb-4 w-full flex items-center gap-3 px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                          confirmadas[d.id]
+                            ? "bg-green-50 border-green-200 text-green-700"
+                            : "bg-white border-[#ffb8e0] text-[#1a1a2e]/60 hover:bg-[#ffedfa]"
+                        }`}
+                      >
+                        <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          confirmadas[d.id] ? "bg-green-500 border-green-500" : "border-[#ffb8e0]"
+                        }`}>
+                          {confirmadas[d.id] && <Check size={12} className="text-white" strokeWidth={3} />}
+                        </span>
+                        {confirmadas[d.id] ? "Pago de este mes registrado" : "Pendiente este mes"}
+                      </button>
 
                       {abonarId === d.id ? (
                         <div className="space-y-2">
