@@ -4,9 +4,9 @@ import React, { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
 import { ordenarDeudas, METHOD_META, type DebtMethod } from "@/lib/debtMethods";
-import { CreditCard, Landmark, Home, Car, Users, FileText, Check, X, Plus, Lightbulb } from "lucide-react";
+import { CreditCard, Landmark, Home, Car, Users, FileText, Check, X, Plus, Lightbulb, PartyPopper, TrendingDown } from "lucide-react";
 
-type Deuda = { id: string; nombre: string; tipo: string; cuota_mensual: number; total_pendiente: number; tasa: number | null };
+type Deuda = { id: string; nombre: string; tipo: string; cuota_mensual: number; total_pendiente: number; tasa: number | null; saldo_inicial: number | null };
 
 const TIPOS = ["Tarjeta de crédito", "Préstamo personal", "Crédito hipotecario", "Crédito de vehículo", "Deuda familiar", "Otro"];
 
@@ -123,6 +123,7 @@ export default function DeudasPage() {
       nombre,
       tipo,
       total_pendiente: parseFloat(totalPendiente),
+      saldo_inicial: parseFloat(totalPendiente),
       cuota_mensual: parseFloat(cuotaMensual),
       tasa: tasa ? parseFloat(tasa) : null,
     }).select().single();
@@ -185,6 +186,21 @@ export default function DeudasPage() {
   const meta = METHOD_META[metodo];
   // En el método equilibrado no hay una sola deuda prioritaria: todas avanzan juntas.
   const primeraDeuda = meta.unaPrioridad && activas.length > 0 ? activas[0] : null;
+
+  // Progreso (4.9): basado en saldo_inicial (fijo al crear la deuda) vs. el saldo real de hoy.
+  const totalSaldoInicial = deudas.reduce((s, d) => s + (d.saldo_inicial ?? d.total_pendiente), 0);
+  const reduccionAcumulada = Math.max(0, totalSaldoInicial - totalPend);
+  const pctReduccion = totalSaldoInicial > 0 ? (reduccionAcumulada / totalSaldoInicial) * 100 : 0;
+  const todasLiquidadas = deudas.length > 0 && activas.length === 0;
+
+  let siguienteObjetivo = "";
+  if (primeraDeuda) {
+    siguienteObjetivo = confirmadas[primeraDeuda.id]
+      ? `Te faltan ${fmt(primeraDeuda.total_pendiente)} para liquidar ${primeraDeuda.nombre}. Cualquier abono extra te acerca.`
+      : `Completa el pago de este mes de ${primeraDeuda.nombre} para seguir avanzando.`;
+  } else if (activas.length > 0) {
+    siguienteObjetivo = "Sigue pagando todas tus cuotas al día este mes.";
+  }
 
   const inputCls = "w-full border border-[#ffb8e0] rounded-xl px-4 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30";
 
@@ -291,6 +307,38 @@ export default function DeudasPage() {
             </div>
           </div>
 
+          {/* Tu progreso (4.9) */}
+          {todasLiquidadas ? (
+            <div className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
+              <PartyPopper className="mx-auto mb-2 text-green-600" size={26} />
+              <p className="font-semibold text-green-700 text-lg">¡Quedaste libre de deudas!</p>
+              <p className="text-sm text-green-700/80 mt-1">
+                Empezaste debiendo {fmt(totalSaldoInicial)} y hoy no debes nada. Ese esfuerzo constante fue tuyo.
+              </p>
+            </div>
+          ) : activas.length > 0 && (
+            <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
+              <p className="text-xs font-bold text-[#ec7fa9] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <TrendingDown size={12} /> Tu progreso
+              </p>
+              {reduccionAcumulada > 0 ? (
+                <p className="text-sm text-[#1a1a2e]/70 leading-relaxed mb-3">
+                  Empezaste debiendo <span className="font-semibold text-[#1a1a2e]">{fmt(totalSaldoInicial)}</span> y ya bajaste{" "}
+                  <span className="font-semibold text-green-600">{fmt(reduccionAcumulada)}</span> ({pctReduccion.toFixed(0)}%). Vas muy bien.
+                </p>
+              ) : (
+                <p className="text-sm text-[#1a1a2e]/70 leading-relaxed mb-3">
+                  Estás empezando con <span className="font-semibold text-[#1a1a2e]">{fmt(totalPend)}</span> por pagar. Cada abono que confirmes se va a reflejar aquí.
+                </p>
+              )}
+              {siguienteObjetivo && (
+                <p className="text-sm bg-[#ffedfa] rounded-xl px-4 py-2.5 text-[#1a1a2e]">
+                  <span className="font-semibold text-[#ec7fa9]">Siguiente objetivo:</span> {siguienteObjetivo}
+                </p>
+              )}
+            </div>
+          )}
+
           {activas.length > 0 && (
             <div className={`rounded-2xl border px-5 py-3 flex items-center gap-2 ${pagosListos === activas.length ? "bg-green-50 border-green-200" : "bg-white border-[#ffb8e0]"}`}>
               {pagosListos === activas.length
@@ -379,7 +427,7 @@ export default function DeudasPage() {
 
                   {done ? (
                     <div className="flex items-center gap-2 text-sm font-semibold text-green-600">
-                      <Check size={15} strokeWidth={2.5} />¡Deuda liquidada!
+                      <PartyPopper size={15} strokeWidth={2.5} />¡Deuda liquidada! Bajaste {fmt(d.saldo_inicial ?? d.total_pendiente)} en total.
                     </div>
                   ) : (
                     <>
