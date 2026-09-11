@@ -33,15 +33,15 @@
 | 3.15 | Calcular la recomendación después de definir importancia en la creación de bolsitas de ahorro | Onboarding Happy Path | Alta | Pendiente |
 | 3.16 | Hacer evidente la acción Agregar bolsita | Onboarding Happy Path | Alta | Pendiente |
 | 3.17 | Mantener visible el resumen del reparto de ahorro | Onboarding Happy Path | Alta | Pendiente |
-| 4.1 | Confirmar transferencias de cada cajita por separado | Dashboard | Alta | Pendiente |
-| 4.2 | Guiar y confirmar los abonos de cada bolsita | Dashboard | Alta | Pendiente |
-| 4.3 | Actualizar el saldo disponible al confirmar movimientos | Dashboard | Alta | Pendiente |
-| 4.4 | Registrar el pago de gastos fijos y reflejarlo en el saldo | Dashboard | Alta | Pendiente |
-| 4.5 | Convertir la metodología de deuda en un plan de acción mensual | Dashboard | Mis deudas | Alta | Pendiente |
-| 4.6 | Diferenciar cuota normal y abono adicional a capital | Dashboard | Mis deudas | Alta | Pendiente |
-| 4.7 | Confirmar individualmente los pagos realizados en el banco | Dashboard | Mis deudas | Alta | Pendiente |
-| 4.8 | Actualizar el saldo real de la deuda después de registrar pagos | Dashboard | Mis deudas | Alta | Pendiente |
-| 4.9 | Mostrar progreso y siguiente objetivo de salida de deudas | Dashboard | Mis deudas | Alta | Pendiente |
+| 4.1 | Confirmar transferencias de cada cajita por separado | Dashboard | Alta | Completo |
+| 4.2 | Guiar y confirmar los abonos de cada bolsita | Dashboard | Alta | Completo |
+| 4.3 | Actualizar el saldo disponible al confirmar movimientos | Dashboard | Alta | Completo |
+| 4.4 | Registrar el pago de gastos fijos y reflejarlo en el saldo | Dashboard | Alta | Completo |
+| 4.5 | Convertir la metodología de deuda en un plan de acción mensual | Dashboard | Mis deudas | Alta | Completo |
+| 4.6 | Diferenciar cuota normal y abono adicional a capital | Dashboard | Mis deudas | Alta | Completo |
+| 4.7 | Confirmar individualmente los pagos realizados en el banco | Dashboard | Mis deudas | Alta | Completo |
+| 4.8 | Actualizar el saldo real de la deuda después de registrar pagos | Dashboard | Mis deudas | Alta | Completo |
+| 4.9 | Mostrar progreso y siguiente objetivo de salida de deudas | Dashboard | Mis deudas | Alta | Completo |
 
 ## Detalle por User Story
 
@@ -334,7 +334,7 @@
 - **Criterio de éxito:** El resumen permanece visible durante el desplazamiento y sus tres valores se actualizan correctamente.
 
 ### 4.1 · Confirmar transferencias de cada cajita por separado
-**Epic:** Dashboard  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** El dashboard permite marcar como realizada la transferencia mensual del total de cajitas, pero no distinguir cuáles se han financiado realmente.
 - **Experiencia deseada:** Permitir registrar el cumplimiento de cada cajita individualmente y mostrar el avance del mes.
@@ -346,7 +346,7 @@
 - **Criterio de éxito:** Cada cajita puede confirmarse independientemente y el resumen refleja únicamente las confirmaciones correspondientes.
 
 ### 4.2 · Guiar y confirmar los abonos de cada bolsita
-**Epic:** Dashboard  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** El módulo de bolsitas muestra el plan de ahorro, pero no explica suficientemente que el dinero debe separarse en el banco ni permite registrar claramente el cumplimiento de cada aporte mensual.
 - **Experiencia deseada:** Conectar cada bolsita con una acción bancaria concreta y permitir confirmar sus aportes.
@@ -358,7 +358,7 @@
 - **Criterio de éxito:** Cada bolsita permite confirmar su aporte mensual y muestra correctamente su estado pendiente o completado.
 
 ### 4.3 · Actualizar el saldo disponible al confirmar movimientos
-**Epic:** Dashboard  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Al marcar como realizados los aportes de cajitas o bolsitas, el dinero disponible del dashboard en la página principal no se actualiza de forma coherente.
 - **Experiencia deseada:** El saldo debe reflejar los movimientos reales confirmados sin descontar dos veces el dinero que ya estaba reservado en el presupuesto.
@@ -370,7 +370,7 @@
 - **Criterio de éxito:** Confirmar o revertir un aporte actualiza los estados y saldos correspondientes sin duplicar descuentos ni alterar indebidamente el disponible.
 
 ### 4.4 · Registrar el pago de gastos fijos y reflejarlo en el saldo
-**Epic:** Dashboard  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Mis gastos muestra los gastos fijos registrados, pero no permite identificar fácilmente cuáles ya fueron pagados durante el mes ni refleja ese seguimiento en el dashboard principal.
 - **Experiencia deseada:** Permitir marcar cada gasto fijo como pagado y mantener un saldo disponible coherente con los pagos y compromisos del mes.
@@ -382,7 +382,7 @@
 - **Criterio de éxito:** Cada gasto fijo puede marcarse individualmente y el dashboard refleja el estado y los saldos correctos sin doble descuento.
 
 ### 4.5 · Convertir la metodología de deuda en un plan de acción mensual
-**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** El módulo Mis deudas muestra la metodología recomendada, el orden sugerido y los saldos de las deudas, pero la usuaria todavía tiene que interpretar por sí sola qué debería hacer durante el mes. La información explica el enfoque, pero no termina de traducirlo en acciones concretas y priorizadas.
 - **Experiencia deseada:** Al entrar a Mis deudas, la usuaria debe recibir un plan simple y accionable para ese mes. Amy debe indicarle qué pagos mínimos o cuotas debe cubrir en todas sus deudas, cuál es la deuda prioritaria según la metodología elegida y qué hacer si tiene dinero adicional disponible para acelerar su progreso.
@@ -394,7 +394,7 @@
 - **Criterio de éxito:** Al entrar a Mis deudas existe un plan mensual claro, alineado con la metodología guardada, y las acciones cambian correctamente cuando cambian los datos de deuda.
 
 ### 4.6 · Diferenciar cuota normal y abono adicional a capital
-**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Actualmente la acción 'Registrar pago' no explica claramente si la usuaria está registrando la cuota mensual requerida, un pago adicional para reducir la deuda o ambos. Esto puede generar confusión sobre el efecto real del pago en el saldo.
 - **Experiencia deseada:** Al registrar un movimiento, Amy debe ayudar a la usuaria a distinguir entre cumplir con su cuota habitual y realizar un abono adicional dirigido a capital. La explicación debe ser breve y educativa, dejando claro que una cuota normal puede incluir intereses, capital y otros cargos, mientras que un abono adicional a capital busca reducir directamente el saldo sujeto a las condiciones de la entidad financiera.
@@ -406,7 +406,7 @@
 - **Criterio de éxito:** El flujo obliga a identificar el tipo de pago, muestra la explicación correspondiente y no descuenta automáticamente toda cuota del saldo de capital.
 
 ### 4.7 · Confirmar individualmente los pagos realizados en el banco
-**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** El módulo permite registrar pagos, pero no existe una rutina visual suficientemente clara para confirmar qué obligaciones del mes ya fueron pagadas en el banco y cuáles siguen pendientes.
 - **Experiencia deseada:** Cada deuda debe funcionar como una tarea mensual. La usuaria debe poder marcar cuando realizó el pago correspondiente en su banco y ver de inmediato qué deudas ya están al día y cuáles todavía requieren atención.
@@ -418,7 +418,7 @@
 - **Criterio de éxito:** Cada deuda puede marcarse de manera independiente, el estado se conserva por mes y el resumen mensual coincide con los pagos registrados.
 
 ### 4.8 · Actualizar el saldo real de la deuda después de registrar pagos
-**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** El dashboard muestra saldos y meses estimados, pero registrar una cuota no permite saber con certeza cuánto disminuyó realmente el capital. Si Amy asume que todo el pago reduce el saldo, puede mostrar un progreso incorrecto.
 - **Experiencia deseada:** Después de registrar pagos, Amy debe mantener un saldo de deuda confiable. Cuando no sea posible conocer automáticamente cuánto del pago se aplicó a capital, la usuaria debe poder actualizar el saldo real tomando como referencia la información de su banco o extracto.
@@ -430,7 +430,7 @@
 - **Criterio de éxito:** El saldo no disminuye indebidamente por registrar una cuota; puede actualizarse con el saldo real y el historial conserva los cambios.
 
 ### 4.9 · Mostrar progreso y siguiente objetivo de salida de deudas
-**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Mis deudas muestra cuánto se debe actualmente, pero la experiencia se siente principalmente como una lista de obligaciones. La usuaria tiene poca visibilidad sobre cuánto ha avanzado desde que empezó y cuál es el siguiente hito dentro de su estrategia.
 - **Experiencia deseada:** El módulo debe hacer visible el progreso para que pagar deudas se sienta como un proceso con avances concretos. Amy debe mostrar cuánto ha disminuido la deuda, cuál es la deuda prioritaria actual y qué hito viene después.
