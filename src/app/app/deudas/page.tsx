@@ -86,6 +86,16 @@ export default function DeudasPage() {
     if (data) setConfirmadas(prev => ({ ...prev, [deudaId]: data.id }));
   }
 
+  function irARegistrarPago(id: string, modo: "cuota" | "abono_capital") {
+    setEditSaldoId(null);
+    setAbonarId(id);
+    setAbonarUsar(modo);
+    setAbonarMonto("");
+    requestAnimationFrame(() => {
+      document.getElementById(`deuda-card-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }
+
   async function toggleConfirmado(deudaId: string) {
     const existingId = confirmadas[deudaId];
     const supabase = createClient();
@@ -293,25 +303,46 @@ export default function DeudasPage() {
             </div>
           )}
 
-          {/* Where to start */}
+          {/* Tu plan de este mes (4.5) */}
           {activas.length > 0 && (
-            <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl px-5 py-4 flex items-start gap-3">
-              <Lightbulb size={16} className="text-[#ec7fa9] flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
-                {activas.length === 1 ? (
-                  <>
-                    Paga tu cuota de <span className="font-semibold text-[#1a1a2e]">{primeraDeuda!.nombre}</span> cada mes sin falta, y cuando tengas dinero extra, ponlo ahí. Cada peso de más que abones te acorta el tiempo para quedar libre.
-                  </>
-                ) : primeraDeuda ? (
-                  <>
-                    Te recomendamos enfocarte primero en <span className="font-semibold text-[#1a1a2e]">{primeraDeuda.nombre}</span>: {meta.enfoque}. Cuando la termines, usa esa cuota para atacar la siguiente. Así vas agarrando impulso.
-                  </>
-                ) : (
-                  <>
-                    Con tu método <span className="font-semibold text-[#1a1a2e]">{meta.nombre.toLowerCase()}</span> no te enfocas en una sola: la idea es que todas avancen juntas. Paga cada cuota sin falta y, si te queda dinero extra, repártelo entre todas.
-                  </>
-                )}
+            <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl p-5">
+              <p className="text-xs font-bold text-[#ec7fa9] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <Lightbulb size={12} /> Tu plan de este mes
               </p>
+
+              <p className="text-xs font-semibold text-[#1a1a2e]/50 uppercase tracking-wide mb-2">Mantén al día</p>
+              <div className="flex flex-col gap-2 mb-4">
+                {activas.map(d => (
+                  <button
+                    key={d.id}
+                    onClick={() => irARegistrarPago(d.id, "cuota")}
+                    className="flex items-center justify-between bg-white border border-[#ffb8e0] rounded-xl px-4 py-2.5 text-left hover:bg-white/70 transition-colors"
+                  >
+                    <span className="text-sm text-[#1a1a2e]">{d.nombre}</span>
+                    <span className="text-xs font-semibold text-[#1a1a2e]/60">{fmt(d.cuota_mensual)}/mes →</span>
+                  </button>
+                ))}
+              </div>
+
+              {primeraDeuda ? (
+                <>
+                  <p className="text-xs font-semibold text-[#ec7fa9] uppercase tracking-wide mb-2">Acelera esta deuda</p>
+                  <button
+                    onClick={() => irARegistrarPago(primeraDeuda.id, "abono_capital")}
+                    className="w-full flex items-center justify-between bg-[#ec7fa9] rounded-xl px-4 py-3 text-left hover:bg-[#d96d97] transition-colors"
+                  >
+                    <span className="text-sm text-white">
+                      Si te queda dinero extra este mes, ponlo en <span className="font-semibold">{primeraDeuda.nombre}</span>
+                      {activas.length > 1 ? <>: {meta.enfoque}</> : null}. Cada peso de más te acorta el tiempo para quedar libre.
+                    </span>
+                    <span className="text-xs font-semibold text-white flex-shrink-0 ml-3">Abonar →</span>
+                  </button>
+                </>
+              ) : (
+                <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
+                  Con tu método <span className="font-semibold text-[#1a1a2e]">{meta.nombre.toLowerCase()}</span> no te enfocas en una sola: si te queda dinero extra, repártelo entre todas tus deudas activas.
+                </p>
+              )}
             </div>
           )}
 
@@ -322,7 +353,7 @@ export default function DeudasPage() {
               const done = d.total_pendiente === 0;
               const esPrimera = !done && meta.unaPrioridad && activas.length > 1 && activas[0]?.id === d.id;
               return (
-                <div key={d.id} className={`bg-white rounded-2xl border p-5 ${done ? "border-green-200" : esPrimera ? "border-[#ec7fa9]" : "border-[#ffb8e0]"}`}>
+                <div key={d.id} id={`deuda-card-${d.id}`} className={`bg-white rounded-2xl border p-5 ${done ? "border-green-200" : esPrimera ? "border-[#ec7fa9]" : "border-[#ffb8e0]"}`}>
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${done ? "bg-green-100" : esPrimera ? "bg-[#ec7fa9]" : "bg-[#ffedfa]"}`}>
