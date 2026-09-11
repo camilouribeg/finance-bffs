@@ -533,6 +533,24 @@ export default function OnboardingPage() {
     ? Math.round((bolImportancia / 15) * bolsitasDisponible)
     : 0;
 
+  // roadmap 3.14: si la fecha elegida ya pasó, proponer la próxima ocurrencia futura
+  // según cada cuántos meses llega el gasto (bimestral, anual, etc.).
+  function proximaFechaValida(fechaMes: string, periodoMeses: number) {
+    if (!fechaMes) return fechaMes;
+    const [y, m] = fechaMes.split("-").map(Number);
+    if (!y || !m) return fechaMes;
+    const ahora = new Date();
+    const actualY = ahora.getFullYear();
+    const actualM = ahora.getMonth() + 1;
+    const periodo = Math.max(1, periodoMeses || 12);
+    let ny = y, nm = m;
+    while (ny < actualY || (ny === actualY && nm < actualM)) {
+      nm += periodo;
+      while (nm > 12) { nm -= 12; ny += 1; }
+    }
+    return `${ny}-${String(nm).padStart(2, "0")}`;
+  }
+
   function addCajitaOB() {
     if (!cajNombre || !cajMonto) return;
     setCajitasOB([...cajitasOB, { id: Date.now().toString(), nombre: cajNombre, emoji: cajEmoji, monto_total: parseFloat(cajMonto), meses: parseInt(cajMeses) || 12, fecha_pago: cajFecha || undefined }]);
@@ -1670,7 +1688,7 @@ export default function OnboardingPage() {
                   <input
                     type="month"
                     value={cajFecha}
-                    onChange={e => setCajFecha(e.target.value)}
+                    onChange={e => setCajFecha(proximaFechaValida(e.target.value, parseInt(cajMeses) || 12))}
                     className={`${inputCls} mt-1 w-full`}
                   />
                   <p className="text-[10px] text-[#1a1a2e]/40 mt-1">Así Amy sabe cuándo tienes que tener el dinero listo.</p>
