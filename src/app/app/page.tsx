@@ -15,13 +15,14 @@ import {
   X,
   Info,
   Box,
+  Check,
 } from "lucide-react";
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const currentMonth = new Date().getMonth();
 const currentYear = new Date().getFullYear();
 
-type LineItem = { id: string; descripcion: string; valor: number };
+type LineItem = { id: string; descripcion: string; valor: number; pagado?: boolean };
 type Bolsillo = { id: string; nombre: string; meta: number; actual: number; emoji: string; tipo?: string; cuota_mensual?: number; fecha_meta?: string };
 type Deuda = { id: string; nombre: string; tipo: string; cuota_mensual: number; total_pendiente: number };
 type Cajita = { id: string; nombre: string; monto_total: number; fecha_pago: string; emoji: string; actual: number };
@@ -82,6 +83,7 @@ export default function DashboardPage() {
         id: (i.id as string) ?? crypto.randomUUID(),
         descripcion: ((i.descripcion ?? i.nombre ?? "") as string),
         valor: i.valor as number,
+        pagado: (i.pagado as boolean) ?? false,
       })));
     } else {
       setIngresoFijo(""); setIngresosOtros([]); setGastosFijosItems([]);
@@ -338,7 +340,7 @@ export default function DashboardPage() {
                     className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
                   <input type="number" value={nuevoGastValor} onChange={e => setNuevoGastValor(e.target.value)} placeholder="0"
                     className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none text-right" />
-                  <button onClick={() => { if (!nuevoGastNombre || !nuevoGastValor) return; setGastosFijosItems([...gastosFijosItems, { id: crypto.randomUUID(), descripcion: nuevoGastNombre, valor: parseFloat(nuevoGastValor) }]); setNuevoGastNombre(""); setNuevoGastValor(""); }}
+                  <button onClick={() => { if (!nuevoGastNombre || !nuevoGastValor) return; setGastosFijosItems([...gastosFijosItems, { id: crypto.randomUUID(), descripcion: nuevoGastNombre, valor: parseFloat(nuevoGastValor), pagado: false }]); setNuevoGastNombre(""); setNuevoGastValor(""); }}
                     className="bg-[#ec7fa9] text-white px-3 py-2 rounded-xl font-semibold hover:bg-[#d96d97]">+</button>
                 </div>
               </div>
@@ -348,16 +350,25 @@ export default function DashboardPage() {
                   <p className="text-sm text-[#1a1a2e]/30 py-4 text-center">Sin gastos fijos registrados</p>
                 ) : gastosFijosItems.map(i => (
                   <div key={i.id} className="flex justify-between items-center py-2 border-b border-[#ffb8e0]/40 last:border-0">
-                    <span className="text-sm text-[#1a1a2e]/60">{i.descripcion}</span>
+                    <span className="text-sm text-[#1a1a2e]/60 flex items-center gap-1.5">
+                      {i.pagado && <Check size={12} className="text-green-500 flex-shrink-0" strokeWidth={3} />}
+                      {i.descripcion}
+                    </span>
                     <span className="text-sm font-semibold text-[#1a1a2e]">{fmt(i.valor)}</span>
                   </div>
                 ))}
               </div>
             )}
-            <div className="mt-4 pt-4 border-t border-[#ffb8e0] flex justify-between">
+            <div className="mt-4 pt-4 border-t border-[#ffb8e0] flex justify-between items-center">
               <span className="text-sm font-semibold text-[#1a1a2e]/60">Total gastos fijos</span>
               <span className="text-lg font-bold text-red-400">{fmt(totalGastosFijos)}</span>
             </div>
+            {!editingGastos && gastosFijosItems.length > 0 && (
+              <p className="text-xs text-[#1a1a2e]/40 mt-2">
+                {gastosFijosItems.filter(i => i.pagado).length} de {gastosFijosItems.length} pagados este mes ·{" "}
+                <Link href="/app/gastos" className="text-[#ec7fa9] hover:underline">marcar en Mis gastos</Link>
+              </p>
+            )}
           </div>
 
           {/* Gastos del mes — read-only, link to section */}

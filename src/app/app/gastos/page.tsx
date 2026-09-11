@@ -18,7 +18,7 @@ const CATEGORIES = Object.keys(CATEGORY_EMOJIS);
 const PIE_COLORS = ["#ec7fa9","#ffb8e0","#f472b6","#fb7185","#f9a8d4","#e879f9","#c084fc","#a78bfa","#818cf8","#60a5fa","#34d399","#fbbf24","#f87171"];
 
 type Gasto = { id: string; fecha: string; categoria: string; descripcion: string; valor: number };
-type GastoFijo = { id: string; nombre: string; valor: number };
+type GastoFijo = { id: string; descripcion: string; valor: number; pagado?: boolean };
 type AmySuggestion = { categoria: string; descripcion: string; valor: number };
 type VoiceState = "idle" | "recording" | "parsing" | "confirmed";
 
@@ -149,8 +149,8 @@ export default function GastosPage() {
 
     if (plan) {
       setDashboardId(plan.id);
-      const items: GastoFijo[] = ((plan.gastos_fijos_items ?? []) as Array<{ nombre?: string; descripcion?: string; valor: number }>).map((i, idx) => ({
-        id: `fijo-${idx}`, nombre: i.nombre ?? i.descripcion ?? "", valor: i.valor,
+      const items: GastoFijo[] = ((plan.gastos_fijos_items ?? []) as Array<{ id?: string; nombre?: string; descripcion?: string; valor: number; pagado?: boolean }>).map((i, idx) => ({
+        id: i.id ?? `fijo-${idx}`, descripcion: i.descripcion ?? i.nombre ?? "", valor: i.valor, pagado: i.pagado ?? false,
       }));
       setGastosFijos(items);
 
@@ -232,7 +232,7 @@ export default function GastosPage() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const payload = items.map(({ nombre, valor }) => ({ nombre, valor }));
+    const payload = items.map(({ id, descripcion, valor, pagado }) => ({ id, descripcion, valor, pagado }));
     await supabase.from("dashboard_mensual").update({
       gastos_fijos_items: payload,
       gastos_fijos: items.reduce((s, i) => s + i.valor, 0),
@@ -242,7 +242,7 @@ export default function GastosPage() {
   async function addFijo(e: React.FormEvent) {
     e.preventDefault();
     if (!newFijoNombre || !newFijoValor) return;
-    const nuevo: GastoFijo = { id: `fijo-${Date.now()}`, nombre: newFijoNombre, valor: parseFloat(newFijoValor) };
+    const nuevo: GastoFijo = { id: crypto.randomUUID(), descripcion: newFijoNombre, valor: parseFloat(newFijoValor), pagado: false };
     const next = [...gastosFijos, nuevo];
     setGastosFijos(next);
     await saveFijos(next);
@@ -251,16 +251,22 @@ export default function GastosPage() {
 
   function openEditFijo(f: GastoFijo) {
     setEditingFijoId(f.id);
-    setEditFijoNombre(f.nombre);
+    setEditFijoNombre(f.descripcion);
     setEditFijoValor(String(f.valor));
   }
 
   async function updateFijo(id: string) {
     const next = gastosFijos.map(f => f.id === id
-      ? { ...f, nombre: editFijoNombre, valor: parseFloat(editFijoValor) }
+      ? { ...f, descripcion: editFijoNombre, valor: parseFloat(editFijoValor) }
       : f);
     setGastosFijos(next);
     setEditingFijoId(null);
+    await saveFijos(next);
+  }
+
+  async function togglePagadoFijo(id: string) {
+    const next = gastosFijos.map(f => f.id === id ? { ...f, pagado: !f.pagado } : f);
+    setGastosFijos(next);
     await saveFijos(next);
   }
 
@@ -606,14 +612,23 @@ export default function GastosPage() {
                       </div>
                     </div>
                   ) : (
-                    <button type="button" onClick={() => openEditFijo(f)}
-                      className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-[#ffedfa]/50 transition-colors text-left">
-                      <p className="text-sm font-medium text-[#1a1a2e]">{f.nombre}</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-[#ec7fa9]">{fmt(f.valor)}<span className="text-xs font-normal text-[#1a1a2e]/40">/mes</span></span>
-                        <Pencil size={12} className="text-[#1a1a2e]/20" />
-                      </div>
-                    </button>
+                    <div className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#ffedfa]/50 transition-colors">
+                      <button type="button" onClick={() => togglePagadoFijo(f.id)}
+                        title={f.pagado ? "Marcar como pendiente" : "Marcar como pagado"}
+                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          f.pagado ? "bg-green-500 border-green-500" : "border-[#ffb8e0]"
+                        }`}>
+                        {f.pagado && <Check size={12} className="text-white" strokeWidth={3} />}
+                      </button>
+                      <button type="button" onClick={() => openEditFijo(f)}
+                        className="flex-1 flex items-center justify-between text-left">
+                        <p className={`text-sm font-medium ${f.pagado ? "text-[#1a1a2e]/40 line-through" : "text-[#1a1a2e]"}`}>{f.descripcion}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-[#ec7fa9]">{fmt(f.valor)}<span className="text-xs font-normal text-[#1a1a2e]/40">/mes</span></span>
+                          <Pencil size={12} className="text-[#1a1a2e]/20" />
+                        </div>
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}
@@ -638,7 +653,14 @@ export default function GastosPage() {
 
               {/* Total row */}
               <div className="flex items-center justify-between px-4 py-3 bg-[#ffedfa] border-t border-[#ffb8e0]">
-                <p className="text-xs font-semibold text-[#1a1a2e]/50 uppercase tracking-wide">Total fijos</p>
+                <div>
+                  <p className="text-xs font-semibold text-[#1a1a2e]/50 uppercase tracking-wide">Total fijos</p>
+                  {gastosFijos.length > 0 && (
+                    <p className="text-[11px] text-[#1a1a2e]/40 mt-0.5">
+                      {gastosFijos.filter(f => f.pagado).length} de {gastosFijos.length} pagados este mes
+                    </p>
+                  )}
+                </div>
                 <p className="text-sm font-bold text-[#1a1a2e]">{fmt(totalFijos)}/mes</p>
               </div>
             </div>
