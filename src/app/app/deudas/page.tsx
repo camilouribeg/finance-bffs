@@ -41,6 +41,10 @@ export default function DeudasPage() {
   const [abonarMonto, setAbonarMonto] = useState("");
   const [abonarUsar, setAbonarUsar] = useState<"cuota" | "abono_capital">("cuota");
 
+  // Actualizar saldo real (4.8)
+  const [editSaldoId, setEditSaldoId] = useState<string | null>(null);
+  const [editSaldoValor, setEditSaldoValor] = useState("");
+
   useEffect(() => { load(); }, []);
 
   async function load() {
@@ -99,6 +103,17 @@ export default function DeudasPage() {
     await supabase.from("deudas").update({ total_pendiente: nuevo }).eq("id", id).eq("user_id", user.id);
     setDeudas(deudas.map(d => d.id === id ? { ...d, total_pendiente: nuevo } : d));
     setAbonarId(null); setAbonarMonto(""); setAbonarUsar("cuota");
+  }
+
+  async function actualizarSaldoReal(id: string) {
+    const nuevo = parseFloat(editSaldoValor);
+    if (isNaN(nuevo) || nuevo < 0) return;
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("deudas").update({ total_pendiente: nuevo }).eq("id", id).eq("user_id", user.id);
+    setDeudas(deudas.map(d => d.id === id ? { ...d, total_pendiente: nuevo } : d));
+    setEditSaldoId(null); setEditSaldoValor("");
   }
 
   async function removeDeuda(id: string) {
@@ -344,10 +359,45 @@ export default function DeudasPage() {
                           </div>
                         </div>
                       ) : (
-                        <button onClick={() => setAbonarId(d.id)}
-                          className="text-xs text-[#ec7fa9] font-semibold hover:underline">
-                          + Registrar pago
-                        </button>
+                        <div className="flex items-center gap-4">
+                          <button onClick={() => { setEditSaldoId(null); setAbonarId(d.id); }}
+                            className="text-xs text-[#ec7fa9] font-semibold hover:underline">
+                            + Registrar pago
+                          </button>
+                          {editSaldoId !== d.id && (
+                            <button onClick={() => { setAbonarId(null); setEditSaldoId(d.id); setEditSaldoValor(String(d.total_pendiente)); }}
+                              className="text-xs text-[#1a1a2e]/40 font-medium hover:text-[#1a1a2e]/70 hover:underline">
+                              Actualizar saldo real
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {editSaldoId === d.id && (
+                        <div className="mt-3 space-y-2 border-t border-[#ffb8e0] pt-3">
+                          <p className="text-xs text-[#1a1a2e]/50 leading-relaxed">
+                            Amy no puede saber con certeza cuánto de cada pago reduce tu capital.
+                            De vez en cuando, revisa tu banco y cuéntanos: <span className="font-semibold text-[#1a1a2e]">¿cuánto debes hoy?</span>
+                          </p>
+                          <input
+                            type="number"
+                            value={editSaldoValor}
+                            onChange={e => setEditSaldoValor(e.target.value)}
+                            placeholder="Saldo real según tu banco"
+                            autoFocus
+                            className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none"
+                          />
+                          <div className="flex gap-2">
+                            <button onClick={() => actualizarSaldoReal(d.id)}
+                              className="flex-1 bg-[#ec7fa9] text-white text-sm font-medium py-2 rounded-xl hover:bg-[#d96d97] flex items-center justify-center gap-1">
+                              <Check size={14} /> Actualizar saldo
+                            </button>
+                            <button onClick={() => { setEditSaldoId(null); setEditSaldoValor(""); }}
+                              className="border border-[#ffb8e0] text-[#1a1a2e]/50 text-sm px-4 py-2 rounded-xl flex items-center">
+                              <X size={14} />
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </>
                   )}
