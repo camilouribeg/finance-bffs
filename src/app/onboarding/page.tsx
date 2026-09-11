@@ -193,7 +193,9 @@ export default function OnboardingPage() {
   const [bolCuota, setBolCuota] = useState("");
   const [bolMeta, setBolMeta] = useState("");
   const [bolFecha, setBolFecha] = useState("");
-  const [bolImportancia, setBolImportancia] = useState(3);
+  // roadmap 3.15: sin elegir importancia todavía (0 = ninguna estrella marcada),
+  // para que la recomendación de Amy no aparezca con un valor por defecto oculto.
+  const [bolImportancia, setBolImportancia] = useState(0);
   const [editingBolCuota, setEditingBolCuota] = useState(false);
 
   const [saving, setSaving] = useState(false);
@@ -529,7 +531,7 @@ export default function OnboardingPage() {
     return fondos + metas;
   })();
   const bolsitasDisponible = (selectedAhorro ?? 0) - bolsitasUsadoMensual;
-  const bolCuotaRecomendada = bolsitasDisponible > 0 && bolTipo === "fondos"
+  const bolCuotaRecomendada = bolsitasDisponible > 0 && bolTipo === "fondos" && bolImportancia > 0
     ? Math.round((bolImportancia / 15) * bolsitasDisponible)
     : 0;
 
@@ -577,9 +579,9 @@ export default function OnboardingPage() {
       cuota_mensual: bolTipo === "fondos" ? parseFloat(bolCuota) : undefined,
       meta: bolTipo === "metas" ? parseFloat(bolMeta) : undefined,
       fecha_meta: bolTipo === "metas" ? bolFecha : undefined,
-      importancia: bolImportancia,
+      importancia: bolImportancia || 3,
     }]);
-    setBolNombre(""); setBolEmoji("👜"); setBolCuota(""); setBolMeta(""); setBolFecha(""); setBolImportancia(3); setEditingBolCuota(false);
+    setBolNombre(""); setBolEmoji("👜"); setBolCuota(""); setBolMeta(""); setBolFecha(""); setBolImportancia(0); setEditingBolCuota(false);
   }
 
   const stepNum = step === "perfil_inicial" ? 0
@@ -1864,9 +1866,25 @@ export default function OnboardingPage() {
                     className={`${inputCls} flex-1`} />
                 </div>
 
+                <div className="mb-3">
+                  <p className="text-xs text-[#1a1a2e]/50 mb-1.5">¿Qué tan importante es esta bolsita?</p>
+                  <div className="flex items-center gap-1.5">
+                    {[1,2,3,4,5].map(n => (
+                      <button key={n} type="button" onClick={() => { setBolImportancia(n); if (bolTipo === "fondos") { setBolCuota(""); setEditingBolCuota(false); } }}
+                        className={`transition-all ${n <= bolImportancia ? "text-[#ec7fa9]" : "text-[#ffb8e0]"}`}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill={n <= bolImportancia ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {bolTipo === "fondos" && (
                   <div className="mb-2">
-                    {bolCuota && !editingBolCuota ? (
+                    {bolImportancia === 0 ? (
+                      <div className="border border-dashed border-[#ffb8e0] rounded-xl px-3 py-3 text-center">
+                        <p className="text-xs text-[#1a1a2e]/40">Elige arriba qué tan importante es esta bolsita y te recomendamos un monto.</p>
+                      </div>
+                    ) : bolCuota && !editingBolCuota ? (
                       <div className="flex items-center justify-between bg-[#ec7fa9]/10 border border-[#ec7fa9]/40 rounded-xl px-3 py-2.5">
                         <div>
                           <p className="text-xs text-[#1a1a2e]/50">Apartando</p>
@@ -1922,27 +1940,21 @@ export default function OnboardingPage() {
                   </div>
                 )}
 
-                <div className="mb-3">
-                  <p className="text-xs text-[#1a1a2e]/50 mb-1.5">¿Qué tan importante es esta bolsita?</p>
-                  <div className="flex items-center gap-1.5">
-                    {[1,2,3,4,5].map(n => (
-                      <button key={n} type="button" onClick={() => { setBolImportancia(n); if (bolTipo === "fondos") { setBolCuota(""); setEditingBolCuota(false); } }}
-                        className={`transition-all ${n <= bolImportancia ? "text-[#ec7fa9]" : "text-[#ffb8e0]"}`}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill={n <= bolImportancia ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <button type="button" onClick={addBolsitaOB}
-                  disabled={
-                    !bolNombre ||
-                    (bolTipo === "fondos" && (!bolCuota || parseFloat(bolCuota) > bolsitasDisponible)) ||
-                    (bolTipo === "metas" && (!bolMeta || !bolFecha))
-                  }
-                  className="w-full border border-[#ec7fa9] text-[#ec7fa9] font-semibold py-2 rounded-xl text-sm hover:bg-white disabled:opacity-40 transition-colors">
-                  + Agregar bolsita
-                </button>
+                {(() => {
+                  const bolsitaLista = !!bolNombre &&
+                    (bolTipo === "fondos" ? !!bolCuota && parseFloat(bolCuota) <= bolsitasDisponible : true) &&
+                    (bolTipo === "metas" ? !!bolMeta && !!bolFecha : true);
+                  return (
+                    <button type="button" onClick={addBolsitaOB} disabled={!bolsitaLista}
+                      className={`w-full font-semibold py-2.5 rounded-xl text-sm transition-all ${
+                        bolsitaLista
+                          ? "bg-[#ec7fa9] text-white hover:bg-[#d96d97] shadow-sm"
+                          : "border border-[#ffb8e0] text-[#1a1a2e]/30"
+                      }`}>
+                      + Agregar bolsita
+                    </button>
+                  );
+                })()}
               </div>
 
               <button
