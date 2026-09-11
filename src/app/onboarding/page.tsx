@@ -657,7 +657,7 @@ export default function OnboardingPage() {
                     {paisAbierto && (
                       <div className="absolute z-10 mt-1.5 w-full max-h-56 overflow-y-auto bg-white border border-[#ffb8e0] rounded-xl shadow-lg py-1">
                         {paisesFiltrados.length === 0 ? (
-                          <p className="px-4 py-2.5 text-sm text-[#1a1a2e]/40">Ningún país coincide — prueba con otro nombre.</p>
+                          <p className="px-4 py-2.5 text-sm text-[#1a1a2e]/40">Ningún país coincide. Prueba con otro nombre.</p>
                         ) : (
                           paisesFiltrados.map((p) => (
                             <button
@@ -684,7 +684,7 @@ export default function OnboardingPage() {
                   </div>
                   {paisSeleccionado?.nombre === "Otro" && (
                     <p className="text-xs text-[#1a1a2e]/40 mt-2">
-                      No pasa nada — elige abajo en qué moneda manejas tu dinero.
+                      No pasa nada, elige abajo en qué moneda manejas tu dinero.
                     </p>
                   )}
                 </div>
@@ -705,7 +705,7 @@ export default function OnboardingPage() {
                       <ChevronDown size={18} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#ec7fa9]" />
                     </div>
                     <p className="text-xs text-[#1a1a2e]/40 mt-1.5">
-                      Por defecto usamos la de tu país, pero si cobras en otra —por ejemplo dólares— la puedes cambiar aquí.
+                      Por defecto usamos la de tu país, pero si cobras en otra, por ejemplo dólares, la puedes cambiar aquí.
                     </p>
                   </div>
                 )}
@@ -737,7 +737,7 @@ export default function OnboardingPage() {
                       })}
                     </div>
                     <p className="text-xs text-[#1a1a2e]/40 mt-1.5">
-                      {monedaSeleccionada || paisSeleccionado?.divisa} sigue siendo tu moneda principal — esta selección solo
+                      {monedaSeleccionada || paisSeleccionado?.divisa} sigue siendo tu moneda principal. Esta selección solo
                       hace que, al registrar un ingreso o gasto en otra moneda, la tengas más a la mano en la lista.
                     </p>
                   </div>
@@ -1272,7 +1272,7 @@ export default function OnboardingPage() {
 
               <p className="text-sm font-semibold text-[#1a1a2e] mb-1">¿Cuánto de eso quieres ahorrar?</p>
               <p className="text-xs text-[#1a1a2e]/50 mb-4">
-                Entre más ahorres, más rápido avanzas — pero menos te queda libre cada mes. Elige el equilibrio que te sirva.
+                Entre más ahorres, más rápido avanzas, pero menos te queda libre cada mes. Elige el equilibrio que te sirva.
               </p>
 
               <div className="space-y-3 mb-6">
