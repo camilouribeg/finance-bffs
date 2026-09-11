@@ -52,6 +52,11 @@ export default function DashboardPage() {
   const [cajitas, setCajitas] = useState<Cajita[]>([]);
   const [bolsillos, setBolsillos] = useState<Bolsillo[]>([]);
 
+  // Confirmaciones del mes visible (4.3): item_id confirmado, por tipo
+  const [confirmadasCajitas, setConfirmadasCajitas] = useState<Set<string>>(new Set());
+  const [confirmadasDeudas, setConfirmadasDeudas] = useState<Set<string>>(new Set());
+  const [confirmadasBolsillos, setConfirmadasBolsillos] = useState<Set<string>>(new Set());
+
   // First-week tip banner
   useEffect(() => {
     const key = "amy_dashboard_first_visit";
@@ -94,6 +99,13 @@ export default function DashboardPage() {
     const { data: gastosData } = await supabase.from("gastos")
       .select("valor").eq("user_id", user.id).gte("fecha", startDate).lte("fecha", endDate);
     setTotalGastosReales(gastosData?.reduce((s, g) => s + g.valor, 0) ?? 0);
+
+    const { data: confs } = await supabase.from("confirmaciones_mensuales")
+      .select("tipo, item_id").eq("user_id", user.id).eq("mes", m + 1).eq("anio", y);
+    setConfirmadasCajitas(new Set((confs ?? []).filter(c => c.tipo === "cajita").map(c => c.item_id)));
+    setConfirmadasDeudas(new Set((confs ?? []).filter(c => c.tipo === "deuda").map(c => c.item_id)));
+    setConfirmadasBolsillos(new Set((confs ?? []).filter(c => c.tipo === "bolsillo").map(c => c.item_id)));
+
     setLoading(false);
   }, []);
 
@@ -160,6 +172,19 @@ export default function DashboardPage() {
   const disponible = totalIngresos - totalGastosFijos - totalCajitasMensual - totalBolsitasMensual - totalCuotas;
   const pctDisponible = totalIngresos > 0 ? (disponible / totalIngresos) * 100 : 0;
 
+  // Confirmados este mes por tipo (4.3) -- puramente informativo, ninguno de estos
+  // conteos entra en el calculo de `disponible`: las reservas/cuotas de arriba ya
+  // son presupuestales y una confirmacion no debe volver a descontarlas.
+  const cajitasActivas = cajitas.filter(c => c.monto_total - c.actual > 0);
+  const deudasActivas = deudas.filter(d => d.total_pendiente > 0);
+  const bolsillosActivos = bolsillos.filter(b =>
+    b.tipo === "metas" ? !!(b.fecha_meta && b.meta > 0 && b.actual < b.meta) : (b.cuota_mensual || 0) > 0
+  );
+  const cajitasConfirmadasCount = cajitasActivas.filter(c => confirmadasCajitas.has(c.id)).length;
+  const deudasConfirmadasCount = deudasActivas.filter(d => confirmadasDeudas.has(d.id)).length;
+  const bolsillosConfirmadosCount = bolsillosActivos.filter(b => confirmadasBolsillos.has(b.id)).length;
+  const gastosFijosPagadosCount = gastosFijosItems.filter(i => i.pagado).length;
+
   return (
     <div className="max-w-5xl mx-auto">
 
@@ -199,7 +224,7 @@ export default function DashboardPage() {
           ) : (
             <p className={`text-3xl font-bold mt-1 ${disponible >= 0 ? "text-[#1a1a2e]" : "text-red-500"}`}>{fmt(disponible)}</p>
           )}
-          <p className="text-xs text-[#1a1a2e]/40 mt-2">Ingresos − GF − Cajitas − Bolsitas − Deudas</p>
+          <p className="text-xs text-[#1a1a2e]/40 mt-2">Ingresos − GF − Cajitas − Bolsitas − Deudas. Es tu presupuesto: confirmar un pago no lo cambia.</p>
           {!loading && totalIngresos > 0 && (
             <div className="mt-3 h-1.5 bg-[#ffb8e0] rounded-full overflow-hidden">
               <div className={`h-full rounded-full transition-all ${disponible >= 0 ? "bg-[#ec7fa9]" : "bg-red-400"}`}
@@ -365,7 +390,7 @@ export default function DashboardPage() {
             </div>
             {!editingGastos && gastosFijosItems.length > 0 && (
               <p className="text-xs text-[#1a1a2e]/40 mt-2">
-                {gastosFijosItems.filter(i => i.pagado).length} de {gastosFijosItems.length} pagados este mes ·{" "}
+                {gastosFijosPagadosCount} de {gastosFijosItems.length} pagados este mes ·{" "}
                 <Link href="/app/gastos" className="text-[#ec7fa9] hover:underline">marcar en Mis gastos</Link>
               </p>
             )}
@@ -399,6 +424,9 @@ export default function DashboardPage() {
               <div>
                 <h2 className="font-semibold text-[#1a1a2e] text-lg flex items-center gap-2"><Box size={18} className="text-[#ec7fa9]" />Cajitas</h2>
                 <p className="text-xs text-[#1a1a2e]/40 mt-0.5">Reserva mensual: <span className="font-semibold text-[#ec7fa9]">{fmt(totalCajitasMensual)}/mes</span></p>
+                {cajitasActivas.length > 0 && (
+                  <p className="text-[11px] text-[#1a1a2e]/40 mt-0.5">{cajitasConfirmadasCount} de {cajitasActivas.length} transferidas este mes</p>
+                )}
               </div>
               <Link href="/app/cajitas" className="text-xs text-[#ec7fa9] border border-[#ffb8e0] rounded-full px-3 py-1.5 hover:bg-[#ffedfa] transition-colors font-medium">
                 Gestionar →
@@ -447,6 +475,9 @@ export default function DashboardPage() {
               <div>
                 <h2 className="font-semibold text-[#1a1a2e] text-lg flex items-center gap-2"><CreditCard size={18} className="text-[#ec7fa9]" />Mis deudas</h2>
                 <p className="text-xs text-[#1a1a2e]/40 mt-0.5">Cuotas totales: <span className="font-semibold text-[#ec7fa9]">{fmt(totalCuotas)}/mes</span></p>
+                {deudasActivas.length > 0 && (
+                  <p className="text-[11px] text-[#1a1a2e]/40 mt-0.5">{deudasConfirmadasCount} de {deudasActivas.length} pagos del mes listos</p>
+                )}
               </div>
               <Link href="/app/deudas" className="text-xs text-[#ec7fa9] border border-[#ffb8e0] rounded-full px-3 py-1.5 hover:bg-[#ffedfa] transition-colors font-medium">
                 Gestionar →
@@ -482,6 +513,9 @@ export default function DashboardPage() {
               <div>
                 <h2 className="font-semibold text-[#1a1a2e] text-lg flex items-center gap-2"><PiggyBank size={18} className="text-[#ec7fa9]" />Bolsillos de ahorro</h2>
                 <p className="text-xs text-[#1a1a2e]/40 mt-0.5">Total ahorrado: <span className="font-semibold text-green-600">{fmt(totalAhorro)}</span></p>
+                {bolsillosActivos.length > 0 && (
+                  <p className="text-[11px] text-[#1a1a2e]/40 mt-0.5">{bolsillosConfirmadosCount} de {bolsillosActivos.length} aportes transferidos este mes</p>
+                )}
               </div>
               <Link href="/app/ahorro" className="text-xs text-[#ec7fa9] border border-[#ffb8e0] rounded-full px-3 py-1.5 hover:bg-[#ffedfa] transition-colors font-medium">
                 Gestionar →
