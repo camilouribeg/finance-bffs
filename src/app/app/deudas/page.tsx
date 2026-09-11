@@ -39,7 +39,7 @@ export default function DeudasPage() {
   // Abono state
   const [abonarId, setAbonarId] = useState<string | null>(null);
   const [abonarMonto, setAbonarMonto] = useState("");
-  const [abonarUsar, setAbonarUsar] = useState<"cuota" | "custom">("cuota");
+  const [abonarUsar, setAbonarUsar] = useState<"cuota" | "abono_capital">("cuota");
 
   useEffect(() => { load(); }, []);
 
@@ -80,7 +80,17 @@ export default function DeudasPage() {
   async function registrarAbono(id: string) {
     const deuda = deudas.find(d => d.id === id);
     if (!deuda) return;
-    const monto = abonarUsar === "cuota" ? deuda.cuota_mensual : parseFloat(abonarMonto);
+
+    // La cuota habitual suele incluir intereses y otros cargos además del abono
+    // a capital, así que no sabemos cuánto de ese pago realmente reduce lo que
+    // debes. No restamos nada del saldo para no mostrar un progreso que no es
+    // real (ver 4.8: el saldo se actualiza a mano con lo que diga el banco).
+    if (abonarUsar === "cuota") {
+      setAbonarId(null); setAbonarMonto(""); setAbonarUsar("cuota");
+      return;
+    }
+
+    const monto = parseFloat(abonarMonto);
     if (!monto || monto <= 0) return;
     const nuevo = Math.max(0, deuda.total_pendiente - monto);
     const supabase = createClient();
@@ -292,24 +302,35 @@ export default function DeudasPage() {
                               onClick={() => setAbonarUsar("cuota")}
                               className={`flex-1 text-xs py-2 rounded-xl border font-medium transition-colors ${abonarUsar === "cuota" ? "bg-[#ec7fa9] border-[#ec7fa9] text-white" : "border-[#ffb8e0] text-[#1a1a2e]/60 hover:bg-[#ffedfa]"}`}
                             >
-                              Cuota normal ({fmt(d.cuota_mensual)})
+                              Pago de mi cuota ({fmt(d.cuota_mensual)})
                             </button>
                             <button
-                              onClick={() => setAbonarUsar("custom")}
-                              className={`flex-1 text-xs py-2 rounded-xl border font-medium transition-colors ${abonarUsar === "custom" ? "bg-[#ec7fa9] border-[#ec7fa9] text-white" : "border-[#ffb8e0] text-[#1a1a2e]/60 hover:bg-[#ffedfa]"}`}
+                              onClick={() => setAbonarUsar("abono_capital")}
+                              className={`flex-1 text-xs py-2 rounded-xl border font-medium transition-colors ${abonarUsar === "abono_capital" ? "bg-[#ec7fa9] border-[#ec7fa9] text-white" : "border-[#ffb8e0] text-[#1a1a2e]/60 hover:bg-[#ffedfa]"}`}
                             >
-                              Otro monto
+                              Abono adicional a capital
                             </button>
                           </div>
-                          {abonarUsar === "custom" && (
-                            <input
-                              type="number"
-                              value={abonarMonto}
-                              onChange={e => setAbonarMonto(e.target.value)}
-                              placeholder="Monto pagado"
-                              autoFocus
-                              className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none"
-                            />
+                          {abonarUsar === "cuota" ? (
+                            <p className="text-xs text-[#1a1a2e]/50 leading-relaxed bg-[#ffedfa] rounded-lg px-3 py-2">
+                              Tu cuota suele incluir intereses y otros cargos, además de lo que reduce el capital.
+                              Por eso no vamos a descontar este monto de tu saldo.
+                            </p>
+                          ) : (
+                            <>
+                              <p className="text-xs text-[#1a1a2e]/50 leading-relaxed bg-[#ffedfa] rounded-lg px-3 py-2">
+                                Este dinero se suma a tu cuota y va directo a reducir lo que debes.
+                                Confirma en tu banco que quedó aplicado a capital, para que este saldo sea confiable.
+                              </p>
+                              <input
+                                type="number"
+                                value={abonarMonto}
+                                onChange={e => setAbonarMonto(e.target.value)}
+                                placeholder="Monto del abono"
+                                autoFocus
+                                className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none"
+                              />
+                            </>
                           )}
                           <div className="flex gap-2">
                             <button onClick={() => registrarAbono(d.id)}
