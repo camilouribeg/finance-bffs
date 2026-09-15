@@ -94,8 +94,8 @@ export default function AhorroPage() {
   const [reasignarId, setReasignarId] = useState("");
   const [reasignarMonto, setReasignarMonto] = useState("");
 
-  // Check mensual por bolsita (4.2): item_id -> id de la fila en confirmaciones_mensuales
-  const [confirmadas, setConfirmadas] = useState<Record<string, string>>({});
+  // Check mensual por bolsita (4.2): item_id -> { id de la confirmacion, monto acreditado }
+  const [confirmadas, setConfirmadas] = useState<Record<string, { id: string; monto: number }>>({});
 
   useEffect(() => { load(); }, []);
 
@@ -109,7 +109,7 @@ export default function AhorroPage() {
       supabase.from("bolsillos").select("*").eq("user_id", user.id).order("importancia", { ascending: false }),
       supabase.from("dashboard_mensual").select("ingreso_fijo,ingresos_otros,gastos_fijos").eq("user_id", user.id).eq("month", now.getMonth() + 1).eq("year", now.getFullYear()).single(),
       supabase.from("deudas").select("cuota_mensual").eq("user_id", user.id),
-      supabase.from("confirmaciones_mensuales").select("id, item_id")
+      supabase.from("confirmaciones_mensuales").select("id, item_id, monto")
         .eq("user_id", user.id).eq("tipo", "bolsillo").eq("mes", mes).eq("anio", anio),
     ]);
     if (bolRes.data) {
@@ -126,26 +126,45 @@ export default function AhorroPage() {
       const cuotas = (deudasRes.data || []).reduce((s: number, d: { cuota_mensual: number }) => s + d.cuota_mensual, 0);
       setCapacidadBase(Math.max(0, ingreso - gastos - cuotas));
     }
-    if (confsRes.data) setConfirmadas(Object.fromEntries(confsRes.data.map(c => [c.item_id, c.id])));
+    if (confsRes.data) setConfirmadas(Object.fromEntries(confsRes.data.map(c => [c.item_id, { id: c.id, monto: c.monto ?? 0 }])));
     setLoading(false);
   }
 
+  // Transferir este mes = abonar el aporte recomendado + dejar constancia de la
+  // confirmacion. Autocorregir revierte ambas cosas exactamente por el mismo monto.
   async function toggleConfirmada(bolsilloId: string, aporteMensual: number) {
-    const existingId = confirmadas[bolsilloId];
+    const b = bolsillos.find(x => x.id === bolsilloId);
+    if (!b) return;
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    if (existingId) {
-      await supabase.from("confirmaciones_mensuales").delete().eq("id", existingId).eq("user_id", user.id);
+    const existing = confirmadas[bolsilloId];
+    if (existing) {
+      const nuevoActual = Math.max(0, b.actual - existing.monto);
+      setBolsillos(bolsillos.map(x => x.id === bolsilloId ? { ...x, actual: nuevoActual } : x));
       setConfirmadas(prev => { const next = { ...prev }; delete next[bolsilloId]; return next; });
+      await Promise.all([
+        supabase.from("confirmaciones_mensuales").delete().eq("id", existing.id).eq("user_id", user.id),
+        supabase.from("bolsillos").update({ actual: nuevoActual }).eq("id", bolsilloId).eq("user_id", user.id),
+      ]);
     } else {
+      const nuevoActual = b.actual + aporteMensual;
       const { mes, anio } = mesActual();
-      const { data } = await supabase.from("confirmaciones_mensuales")
-        .upsert(
-          { user_id: user.id, tipo: "bolsillo", item_id: bolsilloId, mes, anio, monto: aporteMensual, confirmado_at: new Date().toISOString() },
-          { onConflict: "user_id,tipo,item_id,mes,anio" }
-        ).select().single();
-      if (data) setConfirmadas(prev => ({ ...prev, [bolsilloId]: data.id }));
+      const updated = bolsillos.map(x => x.id === bolsilloId ? { ...x, actual: nuevoActual } : x);
+      setBolsillos(updated);
+      const [{ data }] = await Promise.all([
+        supabase.from("confirmaciones_mensuales")
+          .upsert(
+            { user_id: user.id, tipo: "bolsillo", item_id: bolsilloId, mes, anio, monto: aporteMensual, confirmado_at: new Date().toISOString() },
+            { onConflict: "user_id,tipo,item_id,mes,anio" }
+          ).select().single(),
+        supabase.from("bolsillos").update({ actual: nuevoActual }).eq("id", bolsilloId).eq("user_id", user.id),
+      ]);
+      if (data) setConfirmadas(prev => ({ ...prev, [bolsilloId]: { id: data.id, monto: aporteMensual } }));
+      const updatedB = updated.find(x => x.id === bolsilloId);
+      if (updatedB && updatedB.tipo === "metas" && updatedB.meta > 0 && nuevoActual >= updatedB.meta && !updatedB.celebrado) {
+        setCelebrando(updatedB);
+      }
     }
   }
 
@@ -602,7 +621,7 @@ export default function AhorroPage() {
                         </div>
                       ) : (
                         <div className="flex items-center gap-3">
-                          <button onClick={() => { setAbonarId(b.id); setRetirarId(null); }} className="text-xs text-[#ec7fa9] font-medium hover:underline">+ Abonar</button>
+                          <button onClick={() => { setAbonarId(b.id); setRetirarId(null); }} className="text-xs text-[#ec7fa9] font-medium hover:underline">+ Abonar extra</button>
                           {b.actual > 0 && (
                             <button onClick={() => { setRetirarId(b.id); setAbonarId(null); }} className="text-xs text-slate-400 font-medium hover:underline">− Retirar</button>
                           )}
@@ -800,7 +819,7 @@ export default function AhorroPage() {
                         </div>
                       ) : (
                         <div className="flex items-center gap-3">
-                          <button onClick={() => { setAbonarId(b.id); setRetirarId(null); }} className="text-xs text-[#ec7fa9] font-medium hover:underline">+ Abonar</button>
+                          <button onClick={() => { setAbonarId(b.id); setRetirarId(null); }} className="text-xs text-[#ec7fa9] font-medium hover:underline">+ Abonar extra</button>
                           {b.actual > 0 && (
                             <button onClick={() => { setRetirarId(b.id); setAbonarId(null); }} className="text-xs text-slate-400 font-medium hover:underline">− Retirar</button>
                           )}

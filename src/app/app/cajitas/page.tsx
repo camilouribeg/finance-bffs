@@ -47,8 +47,9 @@ export default function CajitasPage() {
   const [abonarId, setAbonarId] = useState<string | null>(null);
   const [abonarMonto, setAbonarMonto] = useState("");
 
-  // Check mensual por cajita (4.1): item_id -> id de la fila en confirmaciones_mensuales
-  const [confirmadas, setConfirmadas] = useState<Record<string, string>>({});
+  // Check mensual por cajita (4.1): item_id -> { id de la confirmacion, monto acreditado }
+  // El monto se guarda aparte para poder revertir exactamente lo mismo si se autocorrige.
+  const [confirmadas, setConfirmadas] = useState<Record<string, { id: string; monto: number }>>({});
 
   useEffect(() => { load(); }, []);
 
@@ -59,32 +60,45 @@ export default function CajitasPage() {
     const { mes, anio } = mesActual();
     const [{ data }, { data: confs }] = await Promise.all([
       supabase.from("cajitas").select("*").eq("user_id", user.id).order("fecha_pago"),
-      supabase.from("confirmaciones_mensuales").select("id, item_id")
+      supabase.from("confirmaciones_mensuales").select("id, item_id, monto")
         .eq("user_id", user.id).eq("tipo", "cajita").eq("mes", mes).eq("anio", anio),
     ]);
     if (data) setCajitas(data);
-    if (confs) setConfirmadas(Object.fromEntries(confs.map(c => [c.item_id, c.id])));
+    if (confs) setConfirmadas(Object.fromEntries(confs.map(c => [c.item_id, { id: c.id, monto: c.monto ?? 0 }])));
     setLoading(false);
   }
 
+  // Transferir este mes = abonar la cuota recomendada + dejar constancia de la
+  // confirmacion. Autocorregir revierte ambas cosas exactamente por el mismo monto.
   async function toggleConfirmada(cajitaId: string) {
-    const existingId = confirmadas[cajitaId];
+    const cajita = cajitas.find(c => c.id === cajitaId);
+    if (!cajita) return;
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    if (existingId) {
-      await supabase.from("confirmaciones_mensuales").delete().eq("id", existingId).eq("user_id", user.id);
+    const existing = confirmadas[cajitaId];
+    if (existing) {
+      const nuevoActual = Math.max(0, cajita.actual - existing.monto);
+      setCajitas(cajitas.map(c => c.id === cajitaId ? { ...c, actual: nuevoActual } : c));
       setConfirmadas(prev => { const next = { ...prev }; delete next[cajitaId]; return next; });
+      await Promise.all([
+        supabase.from("confirmaciones_mensuales").delete().eq("id", existing.id).eq("user_id", user.id),
+        supabase.from("cajitas").update({ actual: nuevoActual }).eq("id", cajitaId).eq("user_id", user.id),
+      ]);
     } else {
-      const cajita = cajitas.find(c => c.id === cajitaId);
-      if (!cajita) return;
+      const monto = cuotaMensual(cajita);
+      const nuevoActual = Math.min(cajita.actual + monto, cajita.monto_total);
       const { mes, anio } = mesActual();
-      const { data } = await supabase.from("confirmaciones_mensuales")
-        .upsert(
-          { user_id: user.id, tipo: "cajita", item_id: cajitaId, mes, anio, monto: cuotaMensual(cajita), confirmado_at: new Date().toISOString() },
-          { onConflict: "user_id,tipo,item_id,mes,anio" }
-        ).select().single();
-      if (data) setConfirmadas(prev => ({ ...prev, [cajitaId]: data.id }));
+      setCajitas(cajitas.map(c => c.id === cajitaId ? { ...c, actual: nuevoActual } : c));
+      const [{ data }] = await Promise.all([
+        supabase.from("confirmaciones_mensuales")
+          .upsert(
+            { user_id: user.id, tipo: "cajita", item_id: cajitaId, mes, anio, monto, confirmado_at: new Date().toISOString() },
+            { onConflict: "user_id,tipo,item_id,mes,anio" }
+          ).select().single(),
+        supabase.from("cajitas").update({ actual: nuevoActual }).eq("id", cajitaId).eq("user_id", user.id),
+      ]);
+      if (data) setConfirmadas(prev => ({ ...prev, [cajitaId]: { id: data.id, monto } }));
     }
   }
 
@@ -393,7 +407,7 @@ export default function CajitasPage() {
                       ) : (
                         <button onClick={() => setAbonarId(cajita.id)}
                           className="text-xs text-[#ec7fa9] font-medium hover:underline">
-                          + Abonar a esta cajita
+                          + Abonar extra a esta cajita
                         </button>
                       )}
                     </div>
