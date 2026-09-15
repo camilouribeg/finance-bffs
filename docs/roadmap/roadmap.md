@@ -35,7 +35,7 @@
 | 3.17 | Mantener visible el resumen del reparto de ahorro | Onboarding Happy Path | Alta | Pendiente |
 | 4.1 | Confirmar transferencias de cada cajita por separado | Dashboard | Alta | Completo |
 | 4.2 | Guiar y confirmar los abonos de cada bolsita | Dashboard | Alta | Completo |
-| 4.3 | Actualizar el saldo disponible al confirmar movimientos | Dashboard | Alta | Pendiente |
+| 4.3 | Actualizar el saldo disponible al confirmar movimientos | Dashboard | Alta | Completo |
 | 4.4 | Registrar el pago de gastos fijos y reflejarlo en el saldo | Dashboard | Alta | Completo |
 | 4.5 | Convertir la metodología de deuda en un plan de acción mensual | Dashboard | Mis deudas | Alta | Completo |
 | 4.6 | Diferenciar cuota normal y abono adicional a capital | Dashboard | Mis deudas | Alta | Completo |
@@ -358,7 +358,7 @@
 - **Criterio de éxito:** Cada bolsita permite confirmar su aporte mensual y muestra correctamente su estado pendiente o completado.
 
 ### 4.3 · Actualizar el saldo disponible al confirmar movimientos
-**Epic:** Dashboard  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Al marcar como realizados los aportes de cajitas o bolsitas, el dinero disponible del dashboard en la página principal no se actualiza de forma coherente.
 - **Experiencia deseada:** El saldo debe reflejar los movimientos reales confirmados sin descontar dos veces el dinero que ya estaba reservado en el presupuesto.

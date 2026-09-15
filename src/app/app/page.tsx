@@ -185,6 +185,23 @@ export default function DashboardPage() {
   const bolsillosConfirmadosCount = bolsillosActivos.filter(b => confirmadasBolsillos.has(b.id)).length;
   const gastosFijosPagadosCount = gastosFijosItems.filter(i => i.pagado).length;
 
+  // "Sin comprometer todavía" (4.3): a diferencia de `disponible` (presupuesto
+  // completo, no cambia), este SÍ baja a medida que confirmas -- solo descuenta
+  // lo que ya marcaste como pagado/transferido este mes, nada más.
+  const gastosFijosPagadosMonto = gastosFijosItems.reduce((s, i) => i.pagado ? s + i.valor : s, 0);
+  const cajitasConfirmadasMonto = cajitas.reduce((s, c) => {
+    if (!confirmadasCajitas.has(c.id)) return s;
+    const falta = Math.max(0, c.monto_total - c.actual);
+    return s + Math.ceil(falta / monthsUntilDate(c.fecha_pago));
+  }, 0);
+  const bolsitasConfirmadasMonto = bolsillos.reduce((s, b) => {
+    if (!confirmadasBolsillos.has(b.id)) return s;
+    if (b.tipo === "metas" && b.fecha_meta && b.meta > 0) return s + Math.ceil(Math.max(0, b.meta - b.actual) / monthsUntilDate(b.fecha_meta));
+    return s + (b.cuota_mensual || 0);
+  }, 0);
+  const cuotasConfirmadasMonto = deudas.reduce((s, d) => confirmadasDeudas.has(d.id) ? s + d.cuota_mensual : s, 0);
+  const sinComprometer = totalIngresos - gastosFijosPagadosMonto - cajitasConfirmadasMonto - bolsitasConfirmadasMonto - cuotasConfirmadasMonto;
+
   return (
     <div className="max-w-5xl mx-auto">
 
@@ -229,6 +246,15 @@ export default function DashboardPage() {
             <div className="mt-3 h-1.5 bg-[#ffb8e0] rounded-full overflow-hidden">
               <div className={`h-full rounded-full transition-all ${disponible >= 0 ? "bg-[#ec7fa9]" : "bg-red-400"}`}
                 style={{ width: `${Math.min(Math.max(pctDisponible, 0), 100)}%` }} />
+            </div>
+          )}
+          {!loading && (
+            <div className="mt-4 pt-3 border-t border-[#ffb8e0]/60">
+              <p className="text-[11px] font-semibold text-[#1a1a2e]/40 uppercase tracking-wide">Sin comprometer todavía</p>
+              <p className="text-lg font-bold text-[#1a1a2e] mt-0.5">{fmt(sinComprometer)}</p>
+              <p className="text-[11px] text-[#1a1a2e]/40 mt-1 leading-snug">
+                Baja según vas confirmando pagos y transferencias
+              </p>
             </div>
           )}
         </div>
