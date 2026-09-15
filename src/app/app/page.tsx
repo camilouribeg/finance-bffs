@@ -15,13 +15,14 @@ import {
   X,
   Info,
   Box,
+  Check,
 } from "lucide-react";
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const currentMonth = new Date().getMonth();
 const currentYear = new Date().getFullYear();
 
-type LineItem = { id: string; descripcion: string; valor: number };
+type LineItem = { id: string; descripcion: string; valor: number; pagado?: boolean };
 type Bolsillo = { id: string; nombre: string; meta: number; actual: number; emoji: string; tipo?: string; cuota_mensual?: number; fecha_meta?: string };
 type Deuda = { id: string; nombre: string; tipo: string; cuota_mensual: number; total_pendiente: number };
 type Cajita = { id: string; nombre: string; monto_total: number; fecha_pago: string; emoji: string; actual: number };
@@ -50,6 +51,11 @@ export default function DashboardPage() {
   const [deudas, setDeudas] = useState<Deuda[]>([]);
   const [cajitas, setCajitas] = useState<Cajita[]>([]);
   const [bolsillos, setBolsillos] = useState<Bolsillo[]>([]);
+
+  // Confirmaciones del mes visible (4.3): item_id confirmado, por tipo
+  const [confirmadasCajitas, setConfirmadasCajitas] = useState<Set<string>>(new Set());
+  const [confirmadasDeudas, setConfirmadasDeudas] = useState<Set<string>>(new Set());
+  const [confirmadasBolsillos, setConfirmadasBolsillos] = useState<Set<string>>(new Set());
 
   // First-week tip banner
   useEffect(() => {
@@ -82,6 +88,7 @@ export default function DashboardPage() {
         id: (i.id as string) ?? crypto.randomUUID(),
         descripcion: ((i.descripcion ?? i.nombre ?? "") as string),
         valor: i.valor as number,
+        pagado: (i.pagado as boolean) ?? false,
       })));
     } else {
       setIngresoFijo(""); setIngresosOtros([]); setGastosFijosItems([]);
@@ -92,6 +99,13 @@ export default function DashboardPage() {
     const { data: gastosData } = await supabase.from("gastos")
       .select("valor").eq("user_id", user.id).gte("fecha", startDate).lte("fecha", endDate);
     setTotalGastosReales(gastosData?.reduce((s, g) => s + g.valor, 0) ?? 0);
+
+    const { data: confs } = await supabase.from("confirmaciones_mensuales")
+      .select("tipo, item_id").eq("user_id", user.id).eq("mes", m + 1).eq("anio", y);
+    setConfirmadasCajitas(new Set((confs ?? []).filter(c => c.tipo === "cajita").map(c => c.item_id)));
+    setConfirmadasDeudas(new Set((confs ?? []).filter(c => c.tipo === "deuda").map(c => c.item_id)));
+    setConfirmadasBolsillos(new Set((confs ?? []).filter(c => c.tipo === "bolsillo").map(c => c.item_id)));
+
     setLoading(false);
   }, []);
 
@@ -158,6 +172,36 @@ export default function DashboardPage() {
   const disponible = totalIngresos - totalGastosFijos - totalCajitasMensual - totalBolsitasMensual - totalCuotas;
   const pctDisponible = totalIngresos > 0 ? (disponible / totalIngresos) * 100 : 0;
 
+  // Confirmados este mes por tipo (4.3) -- puramente informativo, ninguno de estos
+  // conteos entra en el calculo de `disponible`: las reservas/cuotas de arriba ya
+  // son presupuestales y una confirmacion no debe volver a descontarlas.
+  const cajitasActivas = cajitas.filter(c => c.monto_total - c.actual > 0);
+  const deudasActivas = deudas.filter(d => d.total_pendiente > 0);
+  const bolsillosActivos = bolsillos.filter(b =>
+    b.tipo === "metas" ? !!(b.fecha_meta && b.meta > 0 && b.actual < b.meta) : (b.cuota_mensual || 0) > 0
+  );
+  const cajitasConfirmadasCount = cajitasActivas.filter(c => confirmadasCajitas.has(c.id)).length;
+  const deudasConfirmadasCount = deudasActivas.filter(d => confirmadasDeudas.has(d.id)).length;
+  const bolsillosConfirmadosCount = bolsillosActivos.filter(b => confirmadasBolsillos.has(b.id)).length;
+  const gastosFijosPagadosCount = gastosFijosItems.filter(i => i.pagado).length;
+
+  // "Sin comprometer todavía" (4.3): a diferencia de `disponible` (presupuesto
+  // completo, no cambia), este SÍ baja a medida que confirmas -- solo descuenta
+  // lo que ya marcaste como pagado/transferido este mes, nada más.
+  const gastosFijosPagadosMonto = gastosFijosItems.reduce((s, i) => i.pagado ? s + i.valor : s, 0);
+  const cajitasConfirmadasMonto = cajitas.reduce((s, c) => {
+    if (!confirmadasCajitas.has(c.id)) return s;
+    const falta = Math.max(0, c.monto_total - c.actual);
+    return s + Math.ceil(falta / monthsUntilDate(c.fecha_pago));
+  }, 0);
+  const bolsitasConfirmadasMonto = bolsillos.reduce((s, b) => {
+    if (!confirmadasBolsillos.has(b.id)) return s;
+    if (b.tipo === "metas" && b.fecha_meta && b.meta > 0) return s + Math.ceil(Math.max(0, b.meta - b.actual) / monthsUntilDate(b.fecha_meta));
+    return s + (b.cuota_mensual || 0);
+  }, 0);
+  const cuotasConfirmadasMonto = deudas.reduce((s, d) => confirmadasDeudas.has(d.id) ? s + d.cuota_mensual : s, 0);
+  const sinComprometer = totalIngresos - gastosFijosPagadosMonto - cajitasConfirmadasMonto - bolsitasConfirmadasMonto - cuotasConfirmadasMonto;
+
   return (
     <div className="max-w-5xl mx-auto">
 
@@ -197,11 +241,20 @@ export default function DashboardPage() {
           ) : (
             <p className={`text-3xl font-bold mt-1 ${disponible >= 0 ? "text-[#1a1a2e]" : "text-red-500"}`}>{fmt(disponible)}</p>
           )}
-          <p className="text-xs text-[#1a1a2e]/40 mt-2">Ingresos − GF − Cajitas − Bolsitas − Deudas</p>
+          <p className="text-xs text-[#1a1a2e]/40 mt-2">Ingresos − GF − Cajitas − Bolsitas − Deudas. Es tu presupuesto: confirmar un pago no lo cambia.</p>
           {!loading && totalIngresos > 0 && (
             <div className="mt-3 h-1.5 bg-[#ffb8e0] rounded-full overflow-hidden">
               <div className={`h-full rounded-full transition-all ${disponible >= 0 ? "bg-[#ec7fa9]" : "bg-red-400"}`}
                 style={{ width: `${Math.min(Math.max(pctDisponible, 0), 100)}%` }} />
+            </div>
+          )}
+          {!loading && (
+            <div className="mt-4 pt-3 border-t border-[#ffb8e0]/60">
+              <p className="text-[11px] font-semibold text-[#1a1a2e]/40 uppercase tracking-wide">Sin comprometer todavía</p>
+              <p className="text-lg font-bold text-[#1a1a2e] mt-0.5">{fmt(sinComprometer)}</p>
+              <p className="text-[11px] text-[#1a1a2e]/40 mt-1 leading-snug">
+                Baja según vas confirmando pagos y transferencias
+              </p>
             </div>
           )}
         </div>
@@ -338,7 +391,7 @@ export default function DashboardPage() {
                     className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
                   <input type="number" value={nuevoGastValor} onChange={e => setNuevoGastValor(e.target.value)} placeholder="0"
                     className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none text-right" />
-                  <button onClick={() => { if (!nuevoGastNombre || !nuevoGastValor) return; setGastosFijosItems([...gastosFijosItems, { id: crypto.randomUUID(), descripcion: nuevoGastNombre, valor: parseFloat(nuevoGastValor) }]); setNuevoGastNombre(""); setNuevoGastValor(""); }}
+                  <button onClick={() => { if (!nuevoGastNombre || !nuevoGastValor) return; setGastosFijosItems([...gastosFijosItems, { id: crypto.randomUUID(), descripcion: nuevoGastNombre, valor: parseFloat(nuevoGastValor), pagado: false }]); setNuevoGastNombre(""); setNuevoGastValor(""); }}
                     className="bg-[#ec7fa9] text-white px-3 py-2 rounded-xl font-semibold hover:bg-[#d96d97]">+</button>
                 </div>
               </div>
@@ -348,16 +401,25 @@ export default function DashboardPage() {
                   <p className="text-sm text-[#1a1a2e]/30 py-4 text-center">Sin gastos fijos registrados</p>
                 ) : gastosFijosItems.map(i => (
                   <div key={i.id} className="flex justify-between items-center py-2 border-b border-[#ffb8e0]/40 last:border-0">
-                    <span className="text-sm text-[#1a1a2e]/60">{i.descripcion}</span>
+                    <span className="text-sm text-[#1a1a2e]/60 flex items-center gap-1.5">
+                      {i.pagado && <Check size={12} className="text-green-500 flex-shrink-0" strokeWidth={3} />}
+                      {i.descripcion}
+                    </span>
                     <span className="text-sm font-semibold text-[#1a1a2e]">{fmt(i.valor)}</span>
                   </div>
                 ))}
               </div>
             )}
-            <div className="mt-4 pt-4 border-t border-[#ffb8e0] flex justify-between">
+            <div className="mt-4 pt-4 border-t border-[#ffb8e0] flex justify-between items-center">
               <span className="text-sm font-semibold text-[#1a1a2e]/60">Total gastos fijos</span>
               <span className="text-lg font-bold text-red-400">{fmt(totalGastosFijos)}</span>
             </div>
+            {!editingGastos && gastosFijosItems.length > 0 && (
+              <p className="text-xs text-[#1a1a2e]/40 mt-2">
+                {gastosFijosPagadosCount} de {gastosFijosItems.length} pagados este mes ·{" "}
+                <Link href="/app/gastos" className="text-[#ec7fa9] hover:underline">marcar en Mis gastos</Link>
+              </p>
+            )}
           </div>
 
           {/* Gastos del mes — read-only, link to section */}
@@ -388,6 +450,9 @@ export default function DashboardPage() {
               <div>
                 <h2 className="font-semibold text-[#1a1a2e] text-lg flex items-center gap-2"><Box size={18} className="text-[#ec7fa9]" />Cajitas</h2>
                 <p className="text-xs text-[#1a1a2e]/40 mt-0.5">Reserva mensual: <span className="font-semibold text-[#ec7fa9]">{fmt(totalCajitasMensual)}/mes</span></p>
+                {cajitasActivas.length > 0 && (
+                  <p className="text-[11px] text-[#1a1a2e]/40 mt-0.5">{cajitasConfirmadasCount} de {cajitasActivas.length} transferidas este mes</p>
+                )}
               </div>
               <Link href="/app/cajitas" className="text-xs text-[#ec7fa9] border border-[#ffb8e0] rounded-full px-3 py-1.5 hover:bg-[#ffedfa] transition-colors font-medium">
                 Gestionar →
@@ -436,6 +501,9 @@ export default function DashboardPage() {
               <div>
                 <h2 className="font-semibold text-[#1a1a2e] text-lg flex items-center gap-2"><CreditCard size={18} className="text-[#ec7fa9]" />Mis deudas</h2>
                 <p className="text-xs text-[#1a1a2e]/40 mt-0.5">Cuotas totales: <span className="font-semibold text-[#ec7fa9]">{fmt(totalCuotas)}/mes</span></p>
+                {deudasActivas.length > 0 && (
+                  <p className="text-[11px] text-[#1a1a2e]/40 mt-0.5">{deudasConfirmadasCount} de {deudasActivas.length} pagos del mes listos</p>
+                )}
               </div>
               <Link href="/app/deudas" className="text-xs text-[#ec7fa9] border border-[#ffb8e0] rounded-full px-3 py-1.5 hover:bg-[#ffedfa] transition-colors font-medium">
                 Gestionar →
@@ -471,6 +539,9 @@ export default function DashboardPage() {
               <div>
                 <h2 className="font-semibold text-[#1a1a2e] text-lg flex items-center gap-2"><PiggyBank size={18} className="text-[#ec7fa9]" />Bolsillos de ahorro</h2>
                 <p className="text-xs text-[#1a1a2e]/40 mt-0.5">Total ahorrado: <span className="font-semibold text-green-600">{fmt(totalAhorro)}</span></p>
+                {bolsillosActivos.length > 0 && (
+                  <p className="text-[11px] text-[#1a1a2e]/40 mt-0.5">{bolsillosConfirmadosCount} de {bolsillosActivos.length} aportes transferidos este mes</p>
+                )}
               </div>
               <Link href="/app/ahorro" className="text-xs text-[#ec7fa9] border border-[#ffb8e0] rounded-full px-3 py-1.5 hover:bg-[#ffedfa] transition-colors font-medium">
                 Gestionar →
