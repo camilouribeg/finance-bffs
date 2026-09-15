@@ -15,6 +15,15 @@ function mesActual() {
   return { mes: now.getMonth() + 1, anio: now.getFullYear() };
 }
 
+// Estimación de amortización simple: si conocemos la tasa, podemos calcular
+// cuánto de la cuota va a intereses y cuánto reduce el capital (4.8: "salvo
+// que exista información suficiente para hacerlo correctamente").
+function abonoACapitalEstimado(deuda: Deuda): number | null {
+  if (deuda.tasa == null || deuda.tasa <= 0) return null;
+  const interesMensual = deuda.total_pendiente * (deuda.tasa / 100 / 12);
+  return Math.max(0, deuda.cuota_mensual - interesMensual);
+}
+
 function TipoIcon({ tipo }: { tipo: string }) {
   const props = { size: 16, className: "text-[#ec7fa9] flex-shrink-0", strokeWidth: 1.75 };
   if (tipo === "Tarjeta de crédito") return <CreditCard {...props} />;
@@ -50,8 +59,14 @@ export default function DeudasPage() {
   const [editSaldoId, setEditSaldoId] = useState<string | null>(null);
   const [editSaldoValor, setEditSaldoValor] = useState("");
 
-  // Check mensual por deuda (4.7): item_id -> id de la fila en confirmaciones_mensuales
-  const [confirmadas, setConfirmadas] = useState<Record<string, string>>({});
+  // Editar tasa de interés (para poder estimar el abono a capital de la cuota)
+  const [editTasaId, setEditTasaId] = useState<string | null>(null);
+  const [editTasaValor, setEditTasaValor] = useState("");
+
+  // Check mensual por deuda (4.7): item_id -> { id de la confirmacion, abono a
+  // capital que se aplico por esa confirmacion (0 si no habia tasa) }. Guardar
+  // el abono aparte permite revertir exactamente lo mismo al autocorregir.
+  const [confirmadas, setConfirmadas] = useState<Record<string, { id: string; abonoCapital: number }>>({});
 
   useEffect(() => { load(); }, []);
 
@@ -63,17 +78,25 @@ export default function DeudasPage() {
     const [{ data }, { data: perfil }, { data: confs }] = await Promise.all([
       supabase.from("deudas").select("*").eq("user_id", user.id),
       supabase.from("profiles").select("debt_method").eq("id", user.id).single(),
-      supabase.from("confirmaciones_mensuales").select("id, item_id")
+      supabase.from("confirmaciones_mensuales").select("id, item_id, tipo_pago, monto")
         .eq("user_id", user.id).eq("tipo", "deuda").eq("mes", mes).eq("anio", anio),
     ]);
     const m = (perfil?.debt_method as DebtMethod) || "snowball";
     setMetodo(m);
     if (data) setDeudas(ordenarDeudas(data as Deuda[], m));
-    if (confs) setConfirmadas(Object.fromEntries(confs.map(c => [c.item_id, c.id])));
+    if (confs) {
+      setConfirmadas(Object.fromEntries(
+        confs.map(c => [c.item_id, { id: c.id, abonoCapital: c.tipo_pago === "cuota" ? (c.monto ?? 0) : 0 }])
+      ));
+    }
     setLoading(false);
   }
 
-  async function confirmarMes(deudaId: string, tipoPago: "cuota" | "abono_capital", monto: number, saldoResultante: number) {
+  // Registrar movimiento de "abono adicional a capital" (custom, siempre reduce
+  // el saldo por el monto ingresado) y marcar el check del mes de paso. El
+  // abono ya se aplicó por su propio flujo explícito, así que si luego se
+  // desmarca el check no debe revertir esa plata (abonoCapital: 0 acá).
+  async function confirmarMes(deudaId: string, tipoPago: "abono_capital", monto: number, saldoResultante: number) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -83,7 +106,51 @@ export default function DeudasPage() {
         { user_id: user.id, tipo: "deuda", item_id: deudaId, mes, anio, tipo_pago: tipoPago, monto, saldo_resultante: saldoResultante, confirmado_at: new Date().toISOString() },
         { onConflict: "user_id,tipo,item_id,mes,anio" }
       ).select().single();
-    if (data) setConfirmadas(prev => ({ ...prev, [deudaId]: data.id }));
+    if (data) setConfirmadas(prev => ({ ...prev, [deudaId]: { id: data.id, abonoCapital: 0 } }));
+  }
+
+  // Confirmar la cuota de este mes: si hay tasa, aplica el abono a capital
+  // estimado; si no, solo deja constancia sin tocar el saldo. Usado tanto por
+  // el check individual (4.7) como por "Registrar pago" > "Pago de mi cuota".
+  async function confirmarCuotaDelMes(deudaId: string) {
+    const deuda = deudas.find(d => d.id === deudaId);
+    if (!deuda) return;
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const abonoCapital = abonoACapitalEstimado(deuda) ?? 0;
+    const nuevoSaldo = abonoCapital > 0 ? Math.max(0, deuda.total_pendiente - abonoCapital) : deuda.total_pendiente;
+    setDeudas(prev => prev.map(d => d.id === deudaId ? { ...d, total_pendiente: nuevoSaldo } : d));
+    const { mes, anio } = mesActual();
+    const [{ data }] = await Promise.all([
+      supabase.from("confirmaciones_mensuales")
+        .upsert(
+          { user_id: user.id, tipo: "deuda", item_id: deudaId, mes, anio, tipo_pago: "cuota", monto: abonoCapital, saldo_resultante: nuevoSaldo, confirmado_at: new Date().toISOString() },
+          { onConflict: "user_id,tipo,item_id,mes,anio" }
+        ).select().single(),
+      abonoCapital > 0
+        ? supabase.from("deudas").update({ total_pendiente: nuevoSaldo }).eq("id", deudaId).eq("user_id", user.id)
+        : Promise.resolve(null),
+    ]);
+    if (data) setConfirmadas(prev => ({ ...prev, [deudaId]: { id: data.id, abonoCapital } }));
+  }
+
+  async function desconfirmarCuotaDelMes(deudaId: string) {
+    const existing = confirmadas[deudaId];
+    const deuda = deudas.find(d => d.id === deudaId);
+    if (!existing || !deuda) return;
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const nuevoSaldo = deuda.total_pendiente + existing.abonoCapital;
+    setDeudas(prev => prev.map(d => d.id === deudaId ? { ...d, total_pendiente: nuevoSaldo } : d));
+    setConfirmadas(prev => { const next = { ...prev }; delete next[deudaId]; return next; });
+    await Promise.all([
+      supabase.from("confirmaciones_mensuales").delete().eq("id", existing.id).eq("user_id", user.id),
+      existing.abonoCapital > 0
+        ? supabase.from("deudas").update({ total_pendiente: nuevoSaldo }).eq("id", deudaId).eq("user_id", user.id)
+        : Promise.resolve(null),
+    ]);
   }
 
   function irARegistrarPago(id: string, modo: "cuota" | "abono_capital") {
@@ -97,17 +164,10 @@ export default function DeudasPage() {
   }
 
   async function toggleConfirmado(deudaId: string) {
-    const existingId = confirmadas[deudaId];
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    if (existingId) {
-      await supabase.from("confirmaciones_mensuales").delete().eq("id", existingId).eq("user_id", user.id);
-      setConfirmadas(prev => { const next = { ...prev }; delete next[deudaId]; return next; });
+    if (confirmadas[deudaId]) {
+      await desconfirmarCuotaDelMes(deudaId);
     } else {
-      const deuda = deudas.find(d => d.id === deudaId);
-      if (!deuda) return;
-      await confirmarMes(deudaId, "cuota", deuda.cuota_mensual, deuda.total_pendiente);
+      await confirmarCuotaDelMes(deudaId);
     }
   }
 
@@ -136,26 +196,35 @@ export default function DeudasPage() {
     const deuda = deudas.find(d => d.id === id);
     if (!deuda) return;
 
-    // La cuota habitual suele incluir intereses y otros cargos además del abono
-    // a capital, así que no sabemos cuánto de ese pago realmente reduce lo que
-    // debes. No restamos nada del saldo para no mostrar un progreso que no es
-    // real (ver 4.8: el saldo se actualiza a mano con lo que diga el banco).
     if (abonarUsar === "cuota") {
-      await confirmarMes(id, "cuota", deuda.cuota_mensual, deuda.total_pendiente);
       setAbonarId(null); setAbonarMonto(""); setAbonarUsar("cuota");
+      confirmarCuotaDelMes(id);
       return;
     }
 
     const monto = parseFloat(abonarMonto);
     if (!monto || monto <= 0) return;
     const nuevo = Math.max(0, deuda.total_pendiente - monto);
+    setDeudas(deudas.map(d => d.id === id ? { ...d, total_pendiente: nuevo } : d));
+    setAbonarId(null); setAbonarMonto(""); setAbonarUsar("cuota");
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    await supabase.from("deudas").update({ total_pendiente: nuevo }).eq("id", id).eq("user_id", user.id);
-    setDeudas(deudas.map(d => d.id === id ? { ...d, total_pendiente: nuevo } : d));
-    await confirmarMes(id, "abono_capital", monto, nuevo);
-    setAbonarId(null); setAbonarMonto(""); setAbonarUsar("cuota");
+    await Promise.all([
+      supabase.from("deudas").update({ total_pendiente: nuevo }).eq("id", id).eq("user_id", user.id),
+      confirmarMes(id, "abono_capital", monto, nuevo),
+    ]);
+  }
+
+  async function actualizarTasa(id: string) {
+    const nueva = editTasaValor.trim() === "" ? null : parseFloat(editTasaValor);
+    if (nueva !== null && (isNaN(nueva) || nueva < 0)) return;
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("deudas").update({ tasa: nueva }).eq("id", id).eq("user_id", user.id);
+    setDeudas(deudas.map(d => d.id === id ? { ...d, tasa: nueva } : d));
+    setEditTasaId(null); setEditTasaValor("");
   }
 
   async function actualizarSaldoReal(id: string) {
@@ -398,6 +467,7 @@ export default function DeudasPage() {
           <div className="flex flex-col gap-4">
             {deudas.map((d, i) => {
               const meses = d.cuota_mensual > 0 ? Math.ceil(d.total_pendiente / d.cuota_mensual) : null;
+              const abonoCapitalCuota = abonoACapitalEstimado(d);
               const done = d.total_pendiente === 0;
               const esPrimera = !done && meta.unaPrioridad && activas.length > 1 && activas[0]?.id === d.id;
               return (
@@ -418,6 +488,33 @@ export default function DeudasPage() {
                         <p className="text-xs text-[#1a1a2e]/40 flex items-center gap-1 mt-0.5">
                           <TipoIcon tipo={d.tipo} /> {d.tipo}
                         </p>
+                        {!done && (editTasaId === d.id ? (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <input
+                              type="number" step="0.01" value={editTasaValor}
+                              onChange={e => setEditTasaValor(e.target.value)}
+                              placeholder="Ej: 28.5" autoFocus
+                              className="w-16 border border-[#ffb8e0] rounded-lg px-1.5 py-0.5 text-[11px] bg-[#ffedfa] outline-none"
+                            />
+                            <span className="text-[11px] text-[#1a1a2e]/40">% anual</span>
+                            <button onClick={() => actualizarTasa(d.id)} className="text-[#ec7fa9] hover:text-[#d96d97]"><Check size={12} /></button>
+                            <button onClick={() => { setEditTasaId(null); setEditTasaValor(""); }} className="text-[#1a1a2e]/30 hover:text-[#1a1a2e]/60"><X size={12} /></button>
+                          </div>
+                        ) : d.tasa != null ? (
+                          <button
+                            onClick={() => { setAbonarId(null); setEditSaldoId(null); setEditTasaId(d.id); setEditTasaValor(String(d.tasa)); }}
+                            className="text-[10px] text-[#1a1a2e]/40 hover:text-[#ec7fa9] hover:underline mt-0.5"
+                          >
+                            {d.tasa}% anual · editar
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => { setAbonarId(null); setEditSaldoId(null); setEditTasaId(d.id); setEditTasaValor(""); }}
+                            className="text-[10px] text-[#ec7fa9] hover:underline mt-0.5"
+                          >
+                            + Agregar tasa de interés
+                          </button>
+                        ))}
                       </div>
                     </div>
                     <button onClick={() => removeDeuda(d.id)} className="text-[#1a1a2e]/20 hover:text-red-400 flex items-center">
@@ -479,10 +576,19 @@ export default function DeudasPage() {
                             </button>
                           </div>
                           {abonarUsar === "cuota" ? (
-                            <p className="text-xs text-[#1a1a2e]/50 leading-relaxed bg-[#ffedfa] rounded-lg px-3 py-2">
-                              Tu cuota suele incluir intereses y otros cargos, además de lo que reduce el capital.
-                              Por eso no vamos a descontar este monto de tu saldo.
-                            </p>
+                            abonoCapitalCuota !== null ? (
+                              <p className="text-xs text-[#1a1a2e]/50 leading-relaxed bg-[#ffedfa] rounded-lg px-3 py-2">
+                                Con tu tasa del {d.tasa}% anual, estimamos que{" "}
+                                <span className="font-semibold text-[#1a1a2e]">{fmt(abonoCapitalCuota)}</span> de esta cuota reduce tu saldo
+                                {abonoCapitalCuota === 0 && " (tu cuota apenas alcanza a cubrir los intereses este mes)"}.
+                                Es un estimado — si tu banco muestra otro número, usa &quot;Actualizar saldo real&quot;.
+                              </p>
+                            ) : (
+                              <p className="text-xs text-[#1a1a2e]/50 leading-relaxed bg-[#ffedfa] rounded-lg px-3 py-2">
+                                Tu cuota suele incluir intereses y otros cargos, además de lo que reduce el capital.
+                                Por eso no vamos a descontar este monto de tu saldo — agrégale una tasa de interés a esta deuda para que podamos estimarlo.
+                              </p>
+                            )
                           ) : (
                             <>
                               <p className="text-xs text-[#1a1a2e]/50 leading-relaxed bg-[#ffedfa] rounded-lg px-3 py-2">
