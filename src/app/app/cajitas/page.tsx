@@ -187,6 +187,16 @@ export default function CajitasPage() {
         </button>
       </div>
 
+      {/* What cajitas are */}
+      <div className="mb-6 bg-[#ffedfa] rounded-2xl border border-[#ffb8e0] p-5">
+        <p className="font-semibold text-[#1a1a2e] mb-2 flex items-center gap-2"><Lightbulb size={15} className="text-[#ec7fa9]" />¿Qué son las cajitas?</p>
+        <p className="text-sm text-[#1a1a2e]/60 leading-relaxed">
+          Hay gastos que no llegan cada mes, pero cuando llegan duelen si no estás preparada.
+          Las cajitas reservan una parte de tu dinero cada mes para que no te sorprendan.
+          Amy descuenta la cuota mensual de tu dinero disponible automáticamente.
+        </p>
+      </div>
+
       {/* How cajitas work */}
       <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl p-5 mb-6">
         <p className="text-xs font-bold text-[#ec7fa9] uppercase tracking-wider mb-2 flex items-center gap-1.5">
@@ -418,15 +428,6 @@ export default function CajitasPage() {
           </div>
         </>
       )}
-
-      <div className="mt-6 bg-[#ffedfa] rounded-2xl border border-[#ffb8e0] p-5">
-        <p className="font-semibold text-[#1a1a2e] mb-2 flex items-center gap-2"><Lightbulb size={15} className="text-[#ec7fa9]" />¿Qué son las cajitas?</p>
-        <p className="text-sm text-[#1a1a2e]/60 leading-relaxed">
-          Hay gastos que no llegan cada mes, pero cuando llegan duelen si no estás preparada.
-          Las cajitas reservan una parte de tu dinero cada mes para que no te sorprendan.
-          Amy descuenta la cuota mensual de tu dinero disponible automáticamente.
-        </p>
-      </div>
     </div>
   );
 }
