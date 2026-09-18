@@ -197,7 +197,7 @@ export default function CajitasPage() {
         </p>
         <p className="text-sm font-semibold text-[#1a1a2e] mb-1">¿Qué debes hacer en tu banco?</p>
         <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
-          Cada mes, crea un bolsillo o sobre en tu banco por cada cajita y etiquétalo{" "}
+          <span className="font-semibold">Una sola vez:</span> crea un bolsillo o sobre en tu banco por cada cajita y etiquétalo{" "}
           {cajitas.length === 0 ? (
             <span className="font-semibold">"Cajita de [nombre]"</span>
           ) : cajitas.length === 1 ? (
@@ -212,7 +212,7 @@ export default function CajitasPage() {
               ))}
             </>
           )}
-          . Así el dinero estará apartado cuando llegue ese gasto.
+          . <span className="font-semibold">Cada mes:</span> transfiere ahí el aporte mensual para que el dinero esté apartado cuando llegue ese gasto.
         </p>
         {totalMensual > 0 && (
           <>
