@@ -12,6 +12,8 @@ type Cajita = {
   fecha_pago: string;
   emoji: string;
   actual: number;
+  configurada_en_banco: boolean;
+  medio_configuracion: "banco" | "efectivo" | null;
 };
 
 const CAJITA_EMOJIS = ["📦", "🚗", "🏠", "📋", "🎓", "✈️", "🎁", "💊", "🏋️", "🌱", "⚙️", "🧴"];
@@ -100,6 +102,23 @@ export default function CajitasPage() {
       ]);
       if (data) setConfirmadas(prev => ({ ...prev, [cajitaId]: { id: data.id, monto } }));
     }
+  }
+
+  // Configuracion inicial (4.13): "ya cree el bolsillo/sobre real en mi banco para
+  // esto" — una sola vez, no se resetea nunca mientras la cajita exista. Independiente
+  // del check mensual de arriba (confirmaciones_mensuales).
+  async function toggleConfigurada(cajitaId: string, medio: "banco" | "efectivo") {
+    const cajita = cajitas.find(c => c.id === cajitaId);
+    if (!cajita) return;
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const yaConfigurada = cajita.configurada_en_banco;
+    const next = yaConfigurada
+      ? { configurada_en_banco: false, medio_configuracion: null as "banco" | "efectivo" | null }
+      : { configurada_en_banco: true, medio_configuracion: medio };
+    setCajitas(cajitas.map(c => c.id === cajitaId ? { ...c, ...next } : c));
+    await supabase.from("cajitas").update(next).eq("id", cajitaId).eq("user_id", user.id);
   }
 
   function monthsUntil(fechaStr: string): number {
@@ -379,6 +398,26 @@ export default function CajitasPage() {
                         style={{ width: `${pct}%` }} />
                     </div>
                   </div>
+                  {!cajita.configurada_en_banco ? (
+                    <div className="mb-3 flex gap-2">
+                      <button onClick={() => toggleConfigurada(cajita.id, "banco")}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-[#ffb8e0] bg-white text-[#1a1a2e]/60 text-xs font-medium hover:bg-[#ffedfa] transition-colors">
+                        🏦 Ya creé el espacio en el banco
+                      </button>
+                      <button onClick={() => toggleConfigurada(cajita.id, "efectivo")}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-[#ffb8e0] bg-white text-[#1a1a2e]/60 text-xs font-medium hover:bg-[#ffedfa] transition-colors">
+                        💵 Lo tengo en efectivo
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => toggleConfigurada(cajita.id, cajita.medio_configuracion ?? "banco")}
+                      className="mb-3 w-full flex items-center gap-3 px-4 py-2 rounded-xl border border-green-200 bg-green-50 text-green-700 text-xs font-medium transition-colors">
+                      <span className="w-4 h-4 rounded-md border-2 bg-green-500 border-green-500 flex items-center justify-center flex-shrink-0">
+                        <Check size={10} className="text-white" strokeWidth={3} />
+                      </span>
+                      {cajita.medio_configuracion === "efectivo" ? "Ya tienes el dinero apartado en efectivo" : "Ya tienes el espacio listo en el banco"}
+                    </button>
+                  )}
                   {lista ? (
                     <div className="flex items-center gap-3">
                       <p className="text-sm font-semibold text-green-600 flex-1 flex items-center gap-1.5"><PartyPopper size={14} />¡Lista para pagar!</p>
