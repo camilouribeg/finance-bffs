@@ -49,8 +49,8 @@
 | 4.14 | Confirmar una sola vez la creación de las bolsitas de ahorro en banco o efectivo | Dashboard | Mis ahorros | Alta | Completo |
 | 4.15 | Mover la explicación de qué son las cajitas al inicio | Dashboard | Mis cajitas | Media | Completo |
 | 4.16 | Unificar la estructura de Bolsitas con la de Cajitas | Dashboard | Mis ahorros | Media | Completo |
-| 4.17 | Limitar nuevas bolsitas al dinero realmente disponible para ahorrar | Dashboard | Mis bolsitas | Alta | Pendiente |
-| 4.18 | Validar nuevas cajitas contra la capacidad disponible | Dashboard | Mis cajitas | Alta | Pendiente |
+| 4.17 | Limitar nuevas bolsitas al dinero realmente disponible para ahorrar | Dashboard | Mis bolsitas | Alta | Completo |
+| 4.18 | Validar nuevas cajitas contra la capacidad disponible | Dashboard | Mis cajitas | Alta | Completo |
 | 4.19 | Explicar la metodología de salida de deudas con su autor | Dashboard | Mis deudas | Alta | Pendiente |
 | 4.20 | Hacer literal el check del pago mensual de la deuda | Dashboard | Mis deudas | Alta | Completo |
 
@@ -537,7 +537,7 @@
 - **Criterio de éxito:** Cajitas y Bolsitas comparten el mismo orden conceptual y patrones visuales equivalentes para contenidos equivalentes.
 
 ### 4.17 · Limitar nuevas bolsitas al dinero realmente disponible para ahorrar
-**Epic:** Dashboard | Mis bolsitas  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard | Mis bolsitas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Al crear una nueva bolsita, el sistema puede aceptar un aporte mensual superior a la capacidad disponible de la usuaria. En la prueba fue posible registrar una bolsita de $11.000.000 aun teniendo ingresos de $10.000.000.
 - **Experiencia deseada:** Antes de crear o modificar una bolsita, Amy debe mostrar cuánto dinero sigue disponible para ahorro y evitar comprometer un monto mensual superior a esa capacidad.
@@ -549,7 +549,7 @@
 - **Criterio de éxito:** No se puede guardar una bolsita cuyo aporte mensual exceda el disponible y el monto restante se actualiza correctamente con cada cambio.
 
 ### 4.18 · Validar nuevas cajitas contra la capacidad disponible
-**Epic:** Dashboard | Mis cajitas  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard | Mis cajitas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Al agregar nuevas cajitas después del onboarding, el sistema necesita controlar el impacto de la nueva reserva mensual sobre el dinero disponible. Sin una validación, la usuaria puede crear compromisos que superen su capacidad financiera.
 - **Experiencia deseada:** Antes de guardar una cajita nueva o modificar una existente, Amy debe mostrar el impacto de su cuota mensual y evitar que el conjunto de compromisos deje un plan financieramente inviable.
