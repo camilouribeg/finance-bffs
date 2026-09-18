@@ -613,21 +613,27 @@ export default function GastosPage() {
                     </div>
                   ) : (
                     <div className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#ffedfa]/50 transition-colors">
+                      {/* roadmap fix: antes el check de "pagado" era un cuadradito chiquito separado
+                          del resto de la fila (que abría edición) -- en móvil, sin el tooltip del
+                          `title`, tocar el nombre del gasto no hacía nada visible. Ahora toda la fila
+                          es un solo botón que marca pagado, igual que Cajitas y Bolsillos; editar
+                          queda en su propio botón explícito (el lápiz). */}
                       <button type="button" onClick={() => togglePagadoFijo(f.id)}
-                        title={f.pagado ? "Marcar como pendiente" : "Marcar como pagado"}
-                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                        className="flex-1 flex items-center gap-3 text-left">
+                        <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
                           f.pagado ? "bg-green-500 border-green-500" : "border-[#ffb8e0]"
                         }`}>
-                        {f.pagado && <Check size={12} className="text-white" strokeWidth={3} />}
-                      </button>
-                      <button type="button" onClick={() => openEditFijo(f)}
-                        className="flex-1 flex items-center justify-between text-left">
+                          {f.pagado && <Check size={12} className="text-white" strokeWidth={3} />}
+                        </span>
                         <p className={`text-sm font-medium ${f.pagado ? "text-[#1a1a2e]/40 line-through" : "text-[#1a1a2e]"}`}>{f.descripcion}</p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-[#ec7fa9]">{fmt(f.valor)}<span className="text-xs font-normal text-[#1a1a2e]/40">/mes</span></span>
-                          <Pencil size={12} className="text-[#1a1a2e]/20" />
-                        </div>
                       </button>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-sm font-bold text-[#ec7fa9]">{fmt(f.valor)}<span className="text-xs font-normal text-[#1a1a2e]/40">/mes</span></span>
+                        <button type="button" onClick={() => openEditFijo(f)} title="Editar gasto fijo"
+                          className="p-1 text-[#1a1a2e]/20 hover:text-[#ec7fa9] transition-colors">
+                          <Pencil size={12} />
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
