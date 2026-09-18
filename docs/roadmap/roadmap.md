@@ -51,7 +51,7 @@
 | 4.16 | Unificar la estructura de Bolsitas con la de Cajitas | Dashboard | Mis ahorros | Media | Completo |
 | 4.17 | Limitar nuevas bolsitas al dinero realmente disponible para ahorrar | Dashboard | Mis bolsitas | Alta | Completo |
 | 4.18 | Validar nuevas cajitas contra la capacidad disponible | Dashboard | Mis cajitas | Alta | Completo |
-| 4.19 | Explicar la metodología de salida de deudas con su autor | Dashboard | Mis deudas | Alta | Pendiente |
+| 4.19 | Explicar la metodología de salida de deudas con su autor | Dashboard | Mis deudas | Alta | Completo |
 | 4.20 | Hacer literal el check del pago mensual de la deuda | Dashboard | Mis deudas | Alta | Completo |
 
 ## Detalle por User Story
@@ -561,7 +561,7 @@
 - **Criterio de éxito:** La vista previa muestra el impacto mensual y el sistema impide guardar una cajita cuando su reserva excede la capacidad disponible.
 
 ### 4.19 · Explicar la metodología de salida de deudas con su autor
-**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Mis deudas muestra el nombre de la metodología recomendada, pero la explicación no ofrece suficiente contexto sobre qué significa, por qué Amy la eligió y de dónde viene el enfoque.
 - **Experiencia deseada:** La usuaria debe recibir una explicación breve y confiable de su metodología, incluyendo cómo funciona, por qué encaja con sus preferencias y la referencia al autor o fuente reconocida que corresponda.
