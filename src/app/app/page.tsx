@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
+import { calcularDisponible, cuotaMensualCajita, cuotaMensualBolsillo } from "@/lib/capacidad";
 import Link from "next/link";
 import {
   TrendingUp,
@@ -148,28 +149,17 @@ export default function DashboardPage() {
     }
   }
 
-  function monthsUntilDate(fechaStr: string): number {
-    const now = new Date();
-    const fecha = new Date(fechaStr + "T12:00:00");
-    const diff = (fecha.getFullYear() - now.getFullYear()) * 12 + (fecha.getMonth() - now.getMonth());
-    return Math.max(1, diff);
-  }
-
   const totalIngresos = (parseFloat(ingresoFijo) || 0) + ingresosOtros.reduce((s, i) => s + i.valor, 0);
   const totalGastosFijos = gastosFijosItems.reduce((s, i) => s + i.valor, 0);
   const totalCuotas = deudas.reduce((s, d) => s + d.cuota_mensual, 0);
   const totalDeudaPendiente = deudas.reduce((s, d) => s + d.total_pendiente, 0);
   const totalAhorro = bolsillos.reduce((s, b) => s + b.actual, 0);
   const totalMetaAhorro = bolsillos.reduce((s, b) => s + b.meta, 0);
-  const totalCajitasMensual = cajitas.reduce((s, c) => {
-    const falta = Math.max(0, c.monto_total - c.actual);
-    return s + Math.ceil(falta / monthsUntilDate(c.fecha_pago));
-  }, 0);
-  const totalBolsitasMensual = bolsillos.reduce((s, b) => {
-    if (b.tipo === "metas" && b.fecha_meta && b.meta > 0) return s + Math.ceil(Math.max(0, b.meta - b.actual) / monthsUntilDate(b.fecha_meta));
-    return s + (b.cuota_mensual || 0);
-  }, 0);
-  const disponible = totalIngresos - totalGastosFijos - totalCajitasMensual - totalBolsitasMensual - totalCuotas;
+  const totalCajitasMensual = cajitas.reduce((s, c) => s + cuotaMensualCajita(c), 0);
+  const disponible = calcularDisponible({
+    ingresoFijo: parseFloat(ingresoFijo) || 0,
+    ingresosOtros, gastosFijosItems, deudas, cajitas, bolsillos,
+  });
   const pctDisponible = totalIngresos > 0 ? (disponible / totalIngresos) * 100 : 0;
 
   // Confirmados este mes por tipo (4.3) -- puramente informativo, ninguno de estos
@@ -189,16 +179,8 @@ export default function DashboardPage() {
   // completo, no cambia), este SÍ baja a medida que confirmas -- solo descuenta
   // lo que ya marcaste como pagado/transferido este mes, nada más.
   const gastosFijosPagadosMonto = gastosFijosItems.reduce((s, i) => i.pagado ? s + i.valor : s, 0);
-  const cajitasConfirmadasMonto = cajitas.reduce((s, c) => {
-    if (!confirmadasCajitas.has(c.id)) return s;
-    const falta = Math.max(0, c.monto_total - c.actual);
-    return s + Math.ceil(falta / monthsUntilDate(c.fecha_pago));
-  }, 0);
-  const bolsitasConfirmadasMonto = bolsillos.reduce((s, b) => {
-    if (!confirmadasBolsillos.has(b.id)) return s;
-    if (b.tipo === "metas" && b.fecha_meta && b.meta > 0) return s + Math.ceil(Math.max(0, b.meta - b.actual) / monthsUntilDate(b.fecha_meta));
-    return s + (b.cuota_mensual || 0);
-  }, 0);
+  const cajitasConfirmadasMonto = cajitas.reduce((s, c) => confirmadasCajitas.has(c.id) ? s + cuotaMensualCajita(c) : s, 0);
+  const bolsitasConfirmadasMonto = bolsillos.reduce((s, b) => confirmadasBolsillos.has(b.id) ? s + cuotaMensualBolsillo(b) : s, 0);
   const cuotasConfirmadasMonto = deudas.reduce((s, d) => confirmadasDeudas.has(d.id) ? s + d.cuota_mensual : s, 0);
   const sinComprometer = totalIngresos - gastosFijosPagadosMonto - cajitasConfirmadasMonto - bolsitasConfirmadasMonto - cuotasConfirmadasMonto;
 
@@ -466,9 +448,8 @@ export default function DashboardPage() {
             ) : (
               <div className="flex flex-col gap-2">
                 {cajitas.map((c) => {
-                  const falta = Math.max(0, c.monto_total - c.actual);
                   const pct = c.monto_total > 0 ? Math.min((c.actual / c.monto_total) * 100, 100) : 0;
-                  const cuotaMes = Math.ceil(falta / monthsUntilDate(c.fecha_pago));
+                  const cuotaMes = cuotaMensualCajita(c);
                   return (
                     <div key={c.id} className="bg-[#ffedfa] rounded-2xl px-4 py-3">
                       <div className="flex items-center justify-between mb-2">
