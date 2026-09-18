@@ -16,6 +16,8 @@ type Bolsillo = {
   fecha_meta: string | null;
   cuota_mensual: number;
   celebrado: boolean;
+  configurada_en_banco: boolean;
+  medio_configuracion: "banco" | "efectivo" | null;
 };
 
 const EMOJIS_FONDOS = ["🐷", "🏠", "🚨", "💊", "💄", "🎁", "👩‍💼", "🌱", "🐾", "💅"];
@@ -56,6 +58,34 @@ function Stars({ value, onChange }: { value: number; onChange?: (v: number) => v
         </button>
       ))}
     </div>
+  );
+}
+
+// Check de configuracion inicial (4.14): "ya cree el bolsillo/sobre real en mi banco
+// para esto" — una sola vez, no se resetea nunca mientras la bolsita exista.
+function ConfiguradaCheck({ b, onToggle }: { b: Bolsillo; onToggle: (medio: "banco" | "efectivo") => void }) {
+  if (!b.configurada_en_banco) {
+    return (
+      <div className="mb-3 flex gap-2">
+        <button onClick={() => onToggle("banco")}
+          className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl border border-[#ffb8e0] bg-white text-[#1a1a2e]/60 text-xs font-medium hover:bg-[#ffedfa] transition-colors">
+          🏦 Ya lo creé en el banco
+        </button>
+        <button onClick={() => onToggle("efectivo")}
+          className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl border border-[#ffb8e0] bg-white text-[#1a1a2e]/60 text-xs font-medium hover:bg-[#ffedfa] transition-colors">
+          💵 Lo tengo en efectivo
+        </button>
+      </div>
+    );
+  }
+  return (
+    <button onClick={() => onToggle(b.medio_configuracion ?? "banco")}
+      className="mb-3 w-full flex items-center gap-3 px-3 py-2 rounded-xl border border-green-200 bg-green-50 text-green-700 text-xs font-medium transition-colors">
+      <span className="w-4 h-4 rounded-md border-2 bg-green-500 border-green-500 flex items-center justify-center flex-shrink-0">
+        <Check size={10} className="text-white" strokeWidth={3} />
+      </span>
+      {b.medio_configuracion === "efectivo" ? "Ya tienes el dinero apartado en efectivo" : "Ya tienes el espacio listo en el banco"}
+    </button>
   );
 }
 
@@ -166,6 +196,22 @@ export default function AhorroPage() {
         setCelebrando(updatedB);
       }
     }
+  }
+
+  // Configuracion inicial (4.14): "ya cree el bolsillo/sobre real en mi banco para
+  // esto" — una sola vez, no se resetea nunca mientras la bolsita exista. Independiente
+  // del check mensual de arriba (confirmaciones_mensuales).
+  async function toggleConfigurada(bolsilloId: string, medio: "banco" | "efectivo") {
+    const b = bolsillos.find(x => x.id === bolsilloId);
+    if (!b) return;
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const next = b.configurada_en_banco
+      ? { configurada_en_banco: false, medio_configuracion: null as "banco" | "efectivo" | null }
+      : { configurada_en_banco: true, medio_configuracion: medio };
+    setBolsillos(bolsillos.map(x => x.id === bolsilloId ? { ...x, ...next } : x));
+    await supabase.from("bolsillos").update(next).eq("id", bolsilloId).eq("user_id", user.id);
   }
 
   function monthsUntil(fechaStr: string): number {
@@ -589,6 +635,7 @@ export default function AhorroPage() {
                           </div>
                         </div>
                       )}
+                      <ConfiguradaCheck b={b} onToggle={(medio) => toggleConfigurada(b.id, medio)} />
                       {b.cuota_mensual > 0 && (
                         <button
                           onClick={() => toggleConfirmada(b.id, b.cuota_mensual)}
@@ -790,6 +837,7 @@ export default function AhorroPage() {
                           Para: {fechaStr} · Faltan {fmt(falta)} · {meses} mes{meses !== 1 ? "es" : ""}
                         </p>
                       )}
+                      {!done && <ConfiguradaCheck b={b} onToggle={(medio) => toggleConfigurada(b.id, medio)} />}
                       {!done && cuota > 0 && (
                         <button
                           onClick={() => toggleConfirmada(b.id, cuota)}
