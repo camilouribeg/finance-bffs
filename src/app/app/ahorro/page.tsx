@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
-import { PiggyBank, Target, Check, X, PartyPopper, Star, Plus, Pencil } from "lucide-react";
+import { calcularDisponible } from "@/lib/capacidad";
+import { PiggyBank, Target, Check, X, PartyPopper, Star, Plus, Pencil, AlertTriangle } from "lucide-react";
 
 type Bolsillo = {
   id: string;
@@ -95,8 +96,9 @@ export default function AhorroPage() {
   const [loading, setLoading] = useState(true);
   const [formType, setFormType] = useState<"fondos" | "metas" | null>(null);
 
-  // Capacidad de ahorro disponible (ingreso - gastos fijos - cuotas deudas)
-  const [capacidadBase, setCapacidadBase] = useState(0);
+  // Dinero disponible (4.17): misma fuente de calculo que el dashboard (src/lib/capacidad.ts),
+  // ya neto de gastos fijos, cuotas de deudas, cajitas y las bolsitas existentes.
+  const [disponible, setDisponible] = useState(0);
 
   // Form fondos
   const [fNombre, setFNombre] = useState("");
@@ -135,10 +137,11 @@ export default function AhorroPage() {
     if (!user) return;
     const now = new Date();
     const { mes, anio } = mesActual();
-    const [bolRes, dashRes, deudasRes, confsRes] = await Promise.all([
+    const [bolRes, dashRes, deudasRes, cajitasRes, confsRes] = await Promise.all([
       supabase.from("bolsillos").select("*").eq("user_id", user.id).order("importancia", { ascending: false }),
-      supabase.from("dashboard_mensual").select("ingreso_fijo,ingresos_otros,gastos_fijos").eq("user_id", user.id).eq("month", now.getMonth() + 1).eq("year", now.getFullYear()).single(),
+      supabase.from("dashboard_mensual").select("ingreso_fijo,ingresos_otros,gastos_fijos_items").eq("user_id", user.id).eq("month", now.getMonth() + 1).eq("year", now.getFullYear()).single(),
       supabase.from("deudas").select("cuota_mensual").eq("user_id", user.id),
+      supabase.from("cajitas").select("monto_total,actual,fecha_pago").eq("user_id", user.id),
       supabase.from("confirmaciones_mensuales").select("id, item_id, monto")
         .eq("user_id", user.id).eq("tipo", "bolsillo").eq("mes", mes).eq("anio", anio),
     ]);
@@ -149,13 +152,14 @@ export default function AhorroPage() {
       );
       if (pending) setCelebrando(pending);
     }
-    if (dashRes.data) {
-      const ingreso = (dashRes.data.ingreso_fijo || 0)
-        + ((dashRes.data.ingresos_otros || []) as { valor: number }[]).reduce((s, i) => s + i.valor, 0);
-      const gastos = dashRes.data.gastos_fijos || 0;
-      const cuotas = (deudasRes.data || []).reduce((s: number, d: { cuota_mensual: number }) => s + d.cuota_mensual, 0);
-      setCapacidadBase(Math.max(0, ingreso - gastos - cuotas));
-    }
+    setDisponible(calcularDisponible({
+      ingresoFijo: dashRes.data?.ingreso_fijo || 0,
+      ingresosOtros: dashRes.data?.ingresos_otros || [],
+      gastosFijosItems: dashRes.data?.gastos_fijos_items || [],
+      deudas: deudasRes.data || [],
+      cajitas: cajitasRes.data || [],
+      bolsillos: bolRes.data || [],
+    }));
     if (confsRes.data) setConfirmadas(Object.fromEntries(confsRes.data.map(c => [c.item_id, { id: c.id, monto: c.monto ?? 0 }])));
     setLoading(false);
   }
@@ -230,6 +234,8 @@ export default function AhorroPage() {
   async function addFondo(e: React.FormEvent) {
     e.preventDefault();
     if (!fNombre) return;
+    const cuotaNueva = fCuota ? parseFloat(fCuota) : 0;
+    if (cuotaNueva > disponible) return;
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -238,10 +244,13 @@ export default function AhorroPage() {
       nombre: fNombre, emoji: fEmoji, tipo: "fondos",
       importancia: fImportancia,
       meta: fMeta ? parseFloat(fMeta) : 0,
-      cuota_mensual: fCuota ? parseFloat(fCuota) : 0,
+      cuota_mensual: cuotaNueva,
       actual: 0, celebrado: false,
     }).select().single();
-    if (data) setBolsillos(prev => [...prev, data].sort((a, b) => b.importancia - a.importancia));
+    if (data) {
+      setBolsillos(prev => [...prev, data].sort((a, b) => b.importancia - a.importancia));
+      setDisponible(d => d - cuotaNueva);
+    }
     setFNombre(""); setFEmoji("🐷"); setFImportancia(3); setFMeta(""); setFCuota(""); setEditingCuota(false);
     setFormType(null);
   }
@@ -249,11 +258,12 @@ export default function AhorroPage() {
   async function addMeta(e: React.FormEvent) {
     e.preventDefault();
     if (!mNombre || !mMeta || !mFecha) return;
+    const metaVal = parseFloat(mMeta);
+    const cuota = Math.ceil(metaVal / Math.max(1, monthsUntil(mFecha)));
+    if (cuota > disponible) return;
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const metaVal = parseFloat(mMeta);
-    const cuota = Math.ceil(metaVal / Math.max(1, monthsUntil(mFecha)));
     const { data } = await supabase.from("bolsillos").insert({
       user_id: user.id,
       nombre: mNombre, emoji: mEmoji, tipo: "metas",
@@ -263,7 +273,10 @@ export default function AhorroPage() {
       cuota_mensual: cuota,
       actual: 0, celebrado: false,
     }).select().single();
-    if (data) setBolsillos(prev => [...prev, data]);
+    if (data) {
+      setBolsillos(prev => [...prev, data]);
+      setDisponible(d => d - cuota);
+    }
     setMNombre(""); setMEmoji("✈️"); setMImportancia(3); setMMeta(""); setMFecha("");
     setFormType(null);
   }
@@ -330,13 +343,15 @@ export default function AhorroPage() {
   }
 
   async function removeBolsillo(id: string) {
+    const b = bolsillos.find(x => x.id === id);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     await supabase.from("bolsillos").delete().eq("id", id).eq("user_id", user.id);
     await supabase.from("confirmaciones_mensuales").delete().eq("item_id", id).eq("user_id", user.id).eq("tipo", "bolsillo");
-    setBolsillos(bolsillos.filter(b => b.id !== id));
+    setBolsillos(bolsillos.filter(x => x.id !== id));
     setConfirmadas(prev => { const next = { ...prev }; delete next[id]; return next; });
+    if (b) setDisponible(d => d + (b.tipo === "metas" ? cuotaMeta(b) : (b.cuota_mensual || 0)));
   }
 
   const fondos = bolsillos.filter(b => !b.tipo || b.tipo === "fondos");
@@ -352,7 +367,7 @@ export default function AhorroPage() {
   ];
   const aportesTransferidos = conAporteMensual.filter(b => confirmadas[b.id]).length;
 
-  const disponibleParaAhorro = Math.max(0, capacidadBase - totalMensual);
+  const disponibleParaAhorro = Math.max(0, disponible);
   const recomendacionFCuota = disponibleParaAhorro > 0
     ? Math.round((fImportancia / 15) * disponibleParaAhorro)
     : 0;
@@ -571,6 +586,16 @@ export default function AhorroPage() {
                     )}
                   </div>
 
+                  {fCuota && parseFloat(fCuota) > disponible && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 text-sm flex items-start gap-2">
+                      <AlertTriangle size={15} className="text-red-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-red-600">
+                        Esta bolsita necesitaría <span className="font-bold">{fmt(parseFloat(fCuota))}</span> por mes, pero solo te quedan{" "}
+                        <span className="font-bold">{fmt(Math.max(0, disponible))}</span> disponibles. Ajusta el monto o libera espacio en otro lado.
+                      </p>
+                    </div>
+                  )}
+
                   <div>
                     <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Meta total (opcional)</label>
                     <input type="number" value={fMeta} onChange={(e) => setFMeta(e.target.value)} placeholder="Ej: 2000000" className={inputCls} />
@@ -578,7 +603,7 @@ export default function AhorroPage() {
                   <div className="flex gap-3 pt-1">
                     <button type="button" onClick={() => { setFormType(null); setFCuota(""); setEditingCuota(false); }}
                       className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-2.5 rounded-xl hover:bg-[#ffedfa] text-sm">Cancelar</button>
-                    <button type="submit" disabled={!fNombre || !fCuota}
+                    <button type="submit" disabled={!fNombre || !fCuota || parseFloat(fCuota) > disponible}
                       className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm disabled:opacity-40">Guardar bolsita</button>
                   </div>
                 </form>
@@ -763,20 +788,31 @@ export default function AhorroPage() {
                       <input type="date" value={mFecha} onChange={(e) => setMFecha(e.target.value)} className={inputCls} />
                     </div>
                   </div>
-                  {mMeta && mFecha && (
-                    <div className="bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-xl px-4 py-2.5 text-sm">
-                      <span className="text-[#1a1a2e]/60">Amy calcula que necesitas apartar </span>
-                      <span className="font-bold text-[#ec7fa9]">
-                        {fmt(Math.ceil(parseFloat(mMeta) / Math.max(1, monthsUntil(mFecha))))}
-                      </span>
-                      <span className="text-[#1a1a2e]/60"> por mes para llegar a tiempo</span>
-                    </div>
-                  )}
+                  {mMeta && mFecha && (() => {
+                    const cuotaPropuesta = Math.ceil(parseFloat(mMeta) / Math.max(1, monthsUntil(mFecha)));
+                    const excedeCapacidad = cuotaPropuesta > disponible;
+                    return excedeCapacidad ? (
+                      <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 text-sm flex items-start gap-2">
+                        <AlertTriangle size={15} className="text-red-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-red-600">
+                          Esta meta necesitaría <span className="font-bold">{fmt(cuotaPropuesta)}</span> por mes, pero solo te quedan{" "}
+                          <span className="font-bold">{fmt(Math.max(0, disponible))}</span> disponibles. Ajusta el monto, la fecha, o libera espacio en otro lado.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-xl px-4 py-2.5 text-sm">
+                        <span className="text-[#1a1a2e]/60">Amy calcula que necesitas apartar </span>
+                        <span className="font-bold text-[#ec7fa9]">{fmt(cuotaPropuesta)}</span>
+                        <span className="text-[#1a1a2e]/60"> por mes para llegar a tiempo</span>
+                      </div>
+                    );
+                  })()}
                   <div className="flex gap-3 pt-1">
                     <button type="button" onClick={() => setFormType(null)}
                       className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-2.5 rounded-xl hover:bg-[#ffedfa] text-sm">Cancelar</button>
                     <button type="submit"
-                      className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm">Guardar meta</button>
+                      disabled={!!(mNombre && mMeta && mFecha && Math.ceil(parseFloat(mMeta) / Math.max(1, monthsUntil(mFecha))) > disponible)}
+                      className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm disabled:opacity-40 disabled:cursor-not-allowed">Guardar meta</button>
                   </div>
                 </form>
               </div>
