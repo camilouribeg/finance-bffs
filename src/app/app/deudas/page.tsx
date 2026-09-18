@@ -376,6 +376,19 @@ export default function DeudasPage() {
             </div>
           </div>
 
+          {/* Tu método (4.19) */}
+          <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl p-5">
+            <p className="text-xs font-bold text-[#ec7fa9] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Lightbulb size={12} /> Tu método: {meta.emoji} {meta.nombre}
+            </p>
+            <p className="text-sm text-[#1a1a2e]/70 leading-relaxed mb-3">
+              {meta.descripcion}
+            </p>
+            <p className="text-xs text-[#1a1a2e]/50 leading-relaxed">
+              {meta.atribucion}
+            </p>
+          </div>
+
           {/* Tu progreso (4.9) */}
           {todasLiquidadas ? (
             <div className="bg-green-50 border border-green-200 rounded-2xl p-6 text-center">
