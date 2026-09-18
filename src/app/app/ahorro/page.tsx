@@ -427,8 +427,13 @@ export default function AhorroPage() {
 
             {/* Explanation card */}
             <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl px-5 py-4 mb-4">
+              <p className="text-sm font-semibold text-[#1a1a2e] mb-1">¿Qué es una bolsita de ahorro continuo?</p>
               <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
-                <span className="font-semibold text-[#ec7fa9]">Son fondos que nunca se acaban.</span> Apartas una cantidad fija cada mes para gastos que van y vienen: skincare, regalos, salud, emergencias... Cuando usas el dinero, el bolsillo se recarga el mes siguiente.
+                Son fondos que nunca se acaban: para gastos que van y vienen, como skincare, regalos, salud o emergencias.
+              </p>
+              <p className="text-sm font-semibold text-[#1a1a2e] mt-3 mb-1">¿Cómo funciona?</p>
+              <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
+                Apartas una cantidad fija cada mes. Cuando usas el dinero, el bolsillo se recarga el mes siguiente.
               </p>
               <p className="text-sm font-semibold text-[#1a1a2e] mt-3 mb-1">¿Qué debes hacer en tu banco?</p>
               <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
@@ -653,8 +658,13 @@ export default function AhorroPage() {
 
             {/* Explanation card */}
             <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl px-5 py-4 mb-4">
+              <p className="text-sm font-semibold text-[#1a1a2e] mb-1">¿Qué es una meta con fecha?</p>
               <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
-                <span className="font-semibold text-[#ec7fa9]">Son sueños con fecha de llegada.</span> Defines cuánto cuesta y cuándo lo quieres lograr. Amy calcula cuánto apartar cada mes para que llegues a tiempo. Cuando lo logres, ¡celebramos juntas!
+                Son sueños con fecha de llegada: defines cuánto cuesta y cuándo lo quieres lograr.
+              </p>
+              <p className="text-sm font-semibold text-[#1a1a2e] mt-3 mb-1">¿Cómo funciona?</p>
+              <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
+                Amy calcula cuánto apartar cada mes para que llegues a tiempo. Cuando lo logres, ¡celebramos juntas!
               </p>
               <p className="text-sm font-semibold text-[#1a1a2e] mt-3 mb-1">¿Qué debes hacer en tu banco?</p>
               <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
