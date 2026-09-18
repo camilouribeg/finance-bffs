@@ -43,7 +43,7 @@
 | 4.8 | Pedir el saldo real de la deuda después de registrar pagos | Dashboard | Mis deudas | Alta | Pendiente |
 | 4.9 | Mostrar progreso y siguiente objetivo de salida de deudas | Dashboard | Mis deudas | Alta | Completo |
 | 4.10 | Agregar Ingresos al menú lateral | Dashboard | Alta | Pendiente |
-| 4.11 | Corregir el campo nombre al agregar gastos fijos | Dashboard | Mis gastos | Alta | Pendiente |
+| 4.11 | Corregir el campo nombre al agregar gastos fijos | Dashboard | Mis gastos | Alta | Completo |
 | 4.12 | Aclarar que el bolsillo o sobre de cada cajita se crea una sola vez | Dashboard | Mis cajitas | Alta | Completo |
 | 4.13 | Confirmar una sola vez la creación de las cajitas en banco o efectivo | Dashboard | Mis cajitas | Alta | Pendiente |
 | 4.14 | Confirmar una sola vez la creación de las bolsitas de ahorro en banco o efectivo | Dashboard | Mis ahorros | Alta | Pendiente |
@@ -465,7 +465,7 @@
 - **Criterio de éxito:** Existe Ingresos en el menú lateral, permite CRUD de fuentes de ingreso y cualquier cambio actualiza correctamente los cálculos relacionados.
 
 ### 4.11 · Corregir el campo nombre al agregar gastos fijos
-**Epic:** Dashboard | Mis gastos  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard | Mis gastos  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Durante el test del 15 de septiembre, al intentar agregar un nuevo gasto fijo desde Mis gastos, el campo de nombre no permite escribir, impidiendo completar el registro.
 - **Experiencia deseada:** La usuaria debe poder agregar un gasto fijo nuevo sin bloqueos, diligenciando normalmente su nombre y los demás datos requeridos.

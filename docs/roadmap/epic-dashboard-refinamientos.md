@@ -41,6 +41,13 @@ probablemente de refresco de sesión de Supabase, no del input en sí). Antes de
 vale la pena volver a probarlo con pasos exactos; si no reproduce, considera si el criterio de éxito
 ya está cumplido.
 
+**Re-probado el 18 de sept contra este worktree (staging):** revisión estática de
+`app/page.tsx:390` y `onboarding/page.tsx:713` (ambos inputs controlados, sin debounce, sin
+remount por keystroke) + prueba en navegador real escribiendo letra por letra en el campo Nombre
+de "Gastos fijos" en `/app`, agregando el gasto y confirmando que persiste tras "Guardar" y
+recargar la página. Sin errores de consola. No reprodujo — se cierra como criterio de éxito ya
+cumplido, marcado **Completo** en el Excel sin cambios de código.
+
 **4.8 cambió de enfoque.** La versión anterior (`66e96d6`, ya en el PR #1) agregó una *estimación*
 automática del abono a capital usando la tasa de interés (ver `abonoACapitalEstimado()` en
 `deudas/page.tsx`). El Excel nuevo renombró la story a "**Pedir** el saldo real de la deuda..." en vez
