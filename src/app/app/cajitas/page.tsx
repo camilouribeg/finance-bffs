@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
-import { Archive, Lightbulb, Check, X, PartyPopper } from "lucide-react";
+import { calcularDisponible } from "@/lib/capacidad";
+import { Archive, Lightbulb, Check, X, PartyPopper, AlertTriangle } from "lucide-react";
 
 type Cajita = {
   id: string;
@@ -53,6 +54,10 @@ export default function CajitasPage() {
   // El monto se guarda aparte para poder revertir exactamente lo mismo si se autocorrige.
   const [confirmadas, setConfirmadas] = useState<Record<string, { id: string; monto: number }>>({});
 
+  // Dinero disponible (4.18): misma fuente de calculo que el dashboard (src/lib/capacidad.ts),
+  // para validar que una cajita nueva no comprometa mas de lo que realmente queda libre.
+  const [disponible, setDisponible] = useState(0);
+
   useEffect(() => { load(); }, []);
 
   async function load() {
@@ -60,13 +65,26 @@ export default function CajitasPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { mes, anio } = mesActual();
-    const [{ data }, { data: confs }] = await Promise.all([
+    const now = new Date();
+    const [{ data }, { data: confs }, { data: dash }, { data: deudasData }, { data: bolsillosData }] = await Promise.all([
       supabase.from("cajitas").select("*").eq("user_id", user.id).order("fecha_pago"),
       supabase.from("confirmaciones_mensuales").select("id, item_id, monto")
         .eq("user_id", user.id).eq("tipo", "cajita").eq("mes", mes).eq("anio", anio),
+      supabase.from("dashboard_mensual").select("ingreso_fijo,ingresos_otros,gastos_fijos_items")
+        .eq("user_id", user.id).eq("month", now.getMonth() + 1).eq("year", now.getFullYear()).single(),
+      supabase.from("deudas").select("cuota_mensual").eq("user_id", user.id),
+      supabase.from("bolsillos").select("tipo,meta,actual,fecha_meta,cuota_mensual").eq("user_id", user.id),
     ]);
     if (data) setCajitas(data);
     if (confs) setConfirmadas(Object.fromEntries(confs.map(c => [c.item_id, { id: c.id, monto: c.monto ?? 0 }])));
+    setDisponible(calcularDisponible({
+      ingresoFijo: dash?.ingreso_fijo || 0,
+      ingresosOtros: dash?.ingresos_otros || [],
+      gastosFijosItems: dash?.gastos_fijos_items || [],
+      deudas: deudasData || [],
+      cajitas: data || [],
+      bolsillos: bolsillosData || [],
+    }));
     setLoading(false);
   }
 
@@ -137,13 +155,18 @@ export default function CajitasPage() {
   async function addCajita(e: React.FormEvent) {
     e.preventDefault();
     if (!nombre || !montoTotal || !fechaPago) return;
+    const cuotaPropuesta = Math.ceil(parseFloat(montoTotal) / Math.max(1, monthsUntil(fechaPago)));
+    if (cuotaPropuesta > disponible) return;
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { data } = await supabase.from("cajitas")
       .insert({ user_id: user.id, nombre, monto_total: parseFloat(montoTotal), fecha_pago: fechaPago, emoji, actual: 0 })
       .select().single();
-    if (data) setCajitas([...cajitas, data].sort((a, b) => a.fecha_pago.localeCompare(b.fecha_pago)));
+    if (data) {
+      setCajitas([...cajitas, data].sort((a, b) => a.fecha_pago.localeCompare(b.fecha_pago)));
+      setDisponible(d => d - cuotaPropuesta);
+    }
     setNombre(""); setMontoTotal(""); setFechaPago(""); setEmoji("📦"); setShowForm(false);
   }
 
@@ -176,6 +199,7 @@ export default function CajitasPage() {
   }
 
   async function removeCajita(id: string) {
+    const cajita = cajitas.find(c => c.id === id);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -183,6 +207,7 @@ export default function CajitasPage() {
     await supabase.from("confirmaciones_mensuales").delete().eq("item_id", id).eq("user_id", user.id).eq("tipo", "cajita");
     setCajitas(cajitas.filter(c => c.id !== id));
     setConfirmadas(prev => { const next = { ...prev }; delete next[id]; return next; });
+    if (cajita) setDisponible(d => d + cuotaMensual(cajita));
   }
 
   const totalMensual = cajitas.reduce((s, c) => s + cuotaMensual(c), 0);
@@ -309,22 +334,33 @@ export default function CajitasPage() {
                   className="w-full border border-[#ffb8e0] rounded-xl px-4 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
               </div>
             </div>
-            {nombre && montoTotal && fechaPago && (
-              <div className="bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-xl px-4 py-2.5 text-sm">
-                <span className="text-[#1a1a2e]/60">Amy reservará </span>
-                <span className="font-bold text-[#ec7fa9]">
-                  {fmt(Math.ceil(parseFloat(montoTotal) / Math.max(1, monthsUntil(fechaPago))))}
-                </span>
-                <span className="text-[#1a1a2e]/60"> por mes para esta cajita</span>
-              </div>
-            )}
+            {nombre && montoTotal && fechaPago && (() => {
+              const cuotaPropuesta = Math.ceil(parseFloat(montoTotal) / Math.max(1, monthsUntil(fechaPago)));
+              const excedeCapacidad = cuotaPropuesta > disponible;
+              return excedeCapacidad ? (
+                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 text-sm flex items-start gap-2">
+                  <AlertTriangle size={15} className="text-red-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-red-600">
+                    Esta cajita necesitaría <span className="font-bold">{fmt(cuotaPropuesta)}</span> por mes, pero solo te quedan{" "}
+                    <span className="font-bold">{fmt(Math.max(0, disponible))}</span> disponibles. Ajusta el monto, la fecha, o libera espacio en otro lado.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-xl px-4 py-2.5 text-sm">
+                  <span className="text-[#1a1a2e]/60">Amy reservará </span>
+                  <span className="font-bold text-[#ec7fa9]">{fmt(cuotaPropuesta)}</span>
+                  <span className="text-[#1a1a2e]/60"> por mes para esta cajita</span>
+                </div>
+              );
+            })()}
             <div className="flex gap-3 pt-1">
               <button type="button" onClick={() => setShowForm(false)}
                 className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-2.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
                 Cancelar
               </button>
               <button type="submit"
-                className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm transition-colors">
+                disabled={!!(nombre && montoTotal && fechaPago && Math.ceil(parseFloat(montoTotal) / Math.max(1, monthsUntil(fechaPago))) > disponible)}
+                className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-2.5 rounded-xl text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                 Guardar cajita
               </button>
             </div>
