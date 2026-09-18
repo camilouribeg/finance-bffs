@@ -556,7 +556,7 @@ export default function DeudasPage() {
                         }`}>
                           {confirmadas[d.id] && <Check size={12} className="text-white" strokeWidth={3} />}
                         </span>
-                        {confirmadas[d.id] ? "Pago de este mes registrado" : "Pendiente este mes"}
+                        {confirmadas[d.id] ? "Pago de este mes registrado" : "Haz clic aquí cuando pagues la cuota de este mes en tu banco"}
                       </button>
 
                       {abonarId === d.id ? (
