@@ -42,7 +42,7 @@
 | 4.7 | Confirmar individualmente los pagos realizados en el banco | Dashboard | Mis deudas | Alta | Completo |
 | 4.8 | Pedir el saldo real de la deuda después de registrar pagos | Dashboard | Mis deudas | Alta | Pendiente |
 | 4.9 | Mostrar progreso y siguiente objetivo de salida de deudas | Dashboard | Mis deudas | Alta | Completo |
-| 4.10 | Agregar Ingresos al menú lateral | Dashboard | Alta | Pendiente |
+| 4.10 | Agregar Ingresos al menú lateral | Dashboard | Alta | Completo |
 | 4.11 | Corregir el campo nombre al agregar gastos fijos | Dashboard | Mis gastos | Alta | Completo |
 | 4.12 | Aclarar que el bolsillo o sobre de cada cajita se crea una sola vez | Dashboard | Mis cajitas | Alta | Completo |
 | 4.13 | Confirmar una sola vez la creación de las cajitas en banco o efectivo | Dashboard | Mis cajitas | Alta | Completo |
@@ -453,7 +453,7 @@
 - **Criterio de éxito:** El módulo muestra progreso basado en saldos reales, identifica la prioridad vigente y actualiza el siguiente objetivo al cambiar o liquidar una deuda.
 
 ### 4.10 · Agregar Ingresos al menú lateral
-**Epic:** Dashboard  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Mis finanzas permite visualizar y editar los ingresos, pero el menú lateral no tiene una sección propia de Ingresos. Esto rompe la lógica de navegación porque otros componentes del dashboard sí cuentan con un módulo independiente.
 - **Experiencia deseada:** La usuaria debe encontrar en el menú lateral cada componente que construye su panorama financiero, incluyendo Ingresos, y poder consultarlo y editarlo desde un lugar dedicado.
