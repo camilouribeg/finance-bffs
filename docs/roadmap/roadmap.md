@@ -44,15 +44,15 @@
 | 4.9 | Mostrar progreso y siguiente objetivo de salida de deudas | Dashboard | Mis deudas | Alta | Completo |
 | 4.10 | Agregar Ingresos al menú lateral | Dashboard | Alta | Pendiente |
 | 4.11 | Corregir el campo nombre al agregar gastos fijos | Dashboard | Mis gastos | Alta | Pendiente |
-| 4.12 | Aclarar que el bolsillo o sobre de cada cajita se crea una sola vez | Dashboard | Mis cajitas | Alta | Pendiente |
+| 4.12 | Aclarar que el bolsillo o sobre de cada cajita se crea una sola vez | Dashboard | Mis cajitas | Alta | Completo |
 | 4.13 | Confirmar una sola vez la creación de las cajitas en banco o efectivo | Dashboard | Mis cajitas | Alta | Pendiente |
 | 4.14 | Confirmar una sola vez la creación de las bolsitas de ahorro en banco o efectivo | Dashboard | Mis ahorros | Alta | Pendiente |
-| 4.15 | Mover la explicación de qué son las cajitas al inicio | Dashboard | Mis cajitas | Media | Pendiente |
-| 4.16 | Unificar la estructura de Bolsitas con la de Cajitas | Dashboard | Mis ahorros | Media | Pendiente |
+| 4.15 | Mover la explicación de qué son las cajitas al inicio | Dashboard | Mis cajitas | Media | Completo |
+| 4.16 | Unificar la estructura de Bolsitas con la de Cajitas | Dashboard | Mis ahorros | Media | Completo |
 | 4.17 | Limitar nuevas bolsitas al dinero realmente disponible para ahorrar | Dashboard | Mis bolsitas | Alta | Pendiente |
 | 4.18 | Validar nuevas cajitas contra la capacidad disponible | Dashboard | Mis cajitas | Alta | Pendiente |
 | 4.19 | Explicar la metodología de salida de deudas con su autor | Dashboard | Mis deudas | Alta | Pendiente |
-| 4.20 | Hacer literal el check del pago mensual de la deuda | Dashboard | Mis deudas | Alta | Pendiente |
+| 4.20 | Hacer literal el check del pago mensual de la deuda | Dashboard | Mis deudas | Alta | Completo |
 
 ## Detalle por User Story
 
@@ -477,7 +477,7 @@
 - **Criterio de éxito:** El campo Nombre acepta texto, el gasto puede guardarse correctamente y el flujo funciona en los dispositivos soportados.
 
 ### 4.12 · Aclarar que el bolsillo o sobre de cada cajita se crea una sola vez
-**Epic:** Dashboard | Mis cajitas  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard | Mis cajitas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** El texto actual indica 'Cada mes, crea un bolsillo o sobre en tu banco por cada cajita', lo que puede hacer pensar que la usuaria debe crear un nuevo bolsillo todos los meses.
 - **Experiencia deseada:** La experiencia debe explicar que la estructura se crea una sola vez y que, después, cada mes la usuaria únicamente agrega el monto correspondiente a ese mismo bolsillo o sobre.
@@ -513,7 +513,7 @@
 - **Criterio de éxito:** Cada bolsita conserva un estado de configuración inicial independiente de los aportes mensuales y la experiencia es consistente con Cajitas.
 
 ### 4.15 · Mover la explicación de qué son las cajitas al inicio
-**Epic:** Dashboard | Mis cajitas  ·  **Prioridad:** Media  ·  **Estado:** Pendiente
+**Epic:** Dashboard | Mis cajitas  ·  **Prioridad:** Media  ·  **Estado:** Completo
 
 - **Estado actual:** La explicación de qué son las Cajitas aparece después de otros contenidos, por lo que una usuaria puede empezar a interactuar con la sección antes de entender su propósito.
 - **Experiencia deseada:** Al entrar a Mis cajitas, la usuaria debe comprender primero qué son, para qué sirven y después qué debe hacer con ellas.
@@ -525,7 +525,7 @@
 - **Criterio de éxito:** La definición aparece antes de instrucciones y controles de gestión y la jerarquía de lectura sigue un orden lógico.
 
 ### 4.16 · Unificar la estructura de Bolsitas con la de Cajitas
-**Epic:** Dashboard | Mis ahorros  ·  **Prioridad:** Media  ·  **Estado:** Pendiente
+**Epic:** Dashboard | Mis ahorros  ·  **Prioridad:** Media  ·  **Estado:** Completo
 
 - **Estado actual:** Mis cajitas y Mis ahorros presentan información relacionada con conceptos similares, pero el orden de definiciones, títulos e instrucciones no sigue siempre el mismo patrón, obligando a la usuaria a volver a buscar dónde está cada tipo de información.
 - **Experiencia deseada:** Los módulos deben compartir una arquitectura visual predecible. Si la definición, funcionamiento e instrucciones bancarias aparecen en determinadas posiciones en Cajitas, Bolsitas debe respetar el mismo orden y jerarquía.
@@ -573,7 +573,7 @@
 - **Criterio de éxito:** Cada metodología tiene una explicación breve, aplicación práctica y atribución validada sin sobrecargar la pantalla.
 
 ### 4.20 · Hacer literal el check del pago mensual de la deuda
-**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** El estado inicial del check dice 'Pendiente este mes'. Aunque después cambia a 'Pago de este mes registrado', el texto inicial no deja claro que la usuaria debe hacer clic allí después de pagar la cuota en su banco.
 - **Experiencia deseada:** La acción debe decir exactamente qué debe hacer la usuaria y cuándo debe marcarla, sin exigir que interprete un estado como una instrucción.
