@@ -45,8 +45,8 @@
 | 4.10 | Agregar Ingresos al menú lateral | Dashboard | Alta | Pendiente |
 | 4.11 | Corregir el campo nombre al agregar gastos fijos | Dashboard | Mis gastos | Alta | Completo |
 | 4.12 | Aclarar que el bolsillo o sobre de cada cajita se crea una sola vez | Dashboard | Mis cajitas | Alta | Completo |
-| 4.13 | Confirmar una sola vez la creación de las cajitas en banco o efectivo | Dashboard | Mis cajitas | Alta | Pendiente |
-| 4.14 | Confirmar una sola vez la creación de las bolsitas de ahorro en banco o efectivo | Dashboard | Mis ahorros | Alta | Pendiente |
+| 4.13 | Confirmar una sola vez la creación de las cajitas en banco o efectivo | Dashboard | Mis cajitas | Alta | Completo |
+| 4.14 | Confirmar una sola vez la creación de las bolsitas de ahorro en banco o efectivo | Dashboard | Mis ahorros | Alta | Completo |
 | 4.15 | Mover la explicación de qué son las cajitas al inicio | Dashboard | Mis cajitas | Media | Completo |
 | 4.16 | Unificar la estructura de Bolsitas con la de Cajitas | Dashboard | Mis ahorros | Media | Completo |
 | 4.17 | Limitar nuevas bolsitas al dinero realmente disponible para ahorrar | Dashboard | Mis bolsitas | Alta | Pendiente |
@@ -489,7 +489,7 @@
 - **Criterio de éxito:** El texto ya no indica crear un bolsillo cada mes y distingue claramente configuración inicial de aporte mensual.
 
 ### 4.13 · Confirmar una sola vez la creación de las cajitas en banco o efectivo
-**Epic:** Dashboard | Mis cajitas  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard | Mis cajitas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Finance BFF guía a la usuaria para separar dinero, pero no registra si ya creó en su banco o en efectivo la estructura real donde guardará cada cajita.
 - **Experiencia deseada:** La usuaria debe poder confirmar una única vez que ya creó el bolsillo, cuenta o sobre correspondiente a cada cajita. Después de esa confirmación, la tarea de configuración no debe reaparecer mensualmente.
@@ -501,7 +501,7 @@
 - **Criterio de éxito:** Cada cajita tiene un estado persistente de configuración inicial independiente del check mensual y este no se reinicia cada mes.
 
 ### 4.14 · Confirmar una sola vez la creación de las bolsitas de ahorro en banco o efectivo
-**Epic:** Dashboard | Mis ahorros  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard | Mis ahorros  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Las bolsitas representan propósitos de ahorro dentro de Finance BFF, pero no existe un estado claro que indique si la usuaria ya creó el espacio equivalente en su banco o en efectivo.
 - **Experiencia deseada:** La usuaria debe poder confirmar una única vez que creó el bolsillo, cuenta o sobre donde guardará el dinero de cada bolsita. Luego Amy debe concentrarse en los aportes mensuales, no en repetir la configuración.
