@@ -174,14 +174,17 @@ export default function DashboardPage() {
   const bolsillosConfirmadosCount = bolsillosActivos.filter(b => confirmadasBolsillos.has(b.id)).length;
   const gastosFijosPagadosCount = gastosFijosItems.filter(i => i.pagado).length;
 
-  // "Sin comprometer todavía" (4.3): a diferencia de `disponible` (presupuesto
-  // completo, no cambia), este SÍ baja a medida que confirmas -- solo descuenta
-  // lo que ya marcaste como pagado/transferido este mes, nada más.
+  // "Sin comprometer todavía": es el numero grande de la tarjeta "Dinero disponible"
+  // (lo que de verdad queda libre hoy) -- a diferencia de `disponible` (presupuesto
+  // completo, no cambia y ahora se muestra chico como referencia), este SÍ baja a
+  // medida que confirmas -- solo descuenta lo que ya marcaste como pagado/transferido
+  // este mes, nada más.
   const gastosFijosPagadosMonto = gastosFijosItems.reduce((s, i) => i.pagado ? s + i.valor : s, 0);
   const cajitasConfirmadasMonto = cajitas.reduce((s, c) => confirmadasCajitas.has(c.id) ? s + cuotaMensualCajita(c) : s, 0);
   const bolsitasConfirmadasMonto = bolsillos.reduce((s, b) => confirmadasBolsillos.has(b.id) ? s + cuotaMensualBolsillo(b) : s, 0);
   const cuotasConfirmadasMonto = deudas.reduce((s, d) => confirmadasDeudas.has(d.id) ? s + d.cuota_mensual : s, 0);
   const sinComprometer = totalIngresos - gastosFijosPagadosMonto - cajitasConfirmadasMonto - bolsitasConfirmadasMonto - cuotasConfirmadasMonto;
+  const pctSinComprometer = totalIngresos > 0 ? (sinComprometer / totalIngresos) * 100 : 0;
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -220,21 +223,21 @@ export default function DashboardPage() {
           {loading ? (
             <div className="h-9 w-36 bg-[#ffb8e0] rounded-xl animate-pulse mt-1" />
           ) : (
-            <p className={`text-3xl font-bold mt-1 ${disponible >= 0 ? "text-[#1a1a2e]" : "text-red-500"}`}>{fmt(disponible)}</p>
+            <p className={`text-3xl font-bold mt-1 ${disponible >= 0 ? "text-[#1a1a2e]" : "text-red-500"}`}>{fmt(sinComprometer)}</p>
           )}
-          <p className="text-xs text-[#1a1a2e]/40 mt-2">Ingresos − GF − Cajitas − Bolsitas − Deudas. Es tu presupuesto: confirmar un pago no lo cambia.</p>
+          <p className="text-xs text-[#1a1a2e]/40 mt-2">Lo que de verdad tienes libre hoy. Baja según vas confirmando pagos y transferencias este mes.</p>
           {!loading && totalIngresos > 0 && (
             <div className="mt-3 h-1.5 bg-[#ffb8e0] rounded-full overflow-hidden">
               <div className={`h-full rounded-full transition-all ${disponible >= 0 ? "bg-[#ec7fa9]" : "bg-red-400"}`}
-                style={{ width: `${Math.min(Math.max(pctDisponible, 0), 100)}%` }} />
+                style={{ width: `${Math.min(Math.max(pctSinComprometer, 0), 100)}%` }} />
             </div>
           )}
           {!loading && (
             <div className="mt-4 pt-3 border-t border-[#ffb8e0]/60">
-              <p className="text-[11px] font-semibold text-[#1a1a2e]/40 uppercase tracking-wide">Sin comprometer todavía</p>
-              <p className="text-lg font-bold text-[#1a1a2e] mt-0.5">{fmt(sinComprometer)}</p>
+              <p className="text-[11px] font-semibold text-[#1a1a2e]/40 uppercase tracking-wide">Si ya pagaras todo lo comprometido</p>
+              <p className="text-lg font-bold text-[#1a1a2e] mt-0.5">{fmt(disponible)}</p>
               <p className="text-[11px] text-[#1a1a2e]/40 mt-1 leading-snug">
-                Baja según vas confirmando pagos y transferencias
+                Ingresos − GF − Cajitas − Bolsitas − Deudas. No cambia aunque confirmes pagos.
               </p>
             </div>
           )}
