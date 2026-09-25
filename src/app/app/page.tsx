@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
+import { calcularDisponible, cuotaMensualCajita, cuotaMensualBolsillo } from "@/lib/capacidad";
+import IngresosCard from "@/components/dashboard/IngresosCard";
 import Link from "next/link";
 import {
   TrendingUp,
@@ -42,8 +44,6 @@ export default function DashboardPage() {
   const [ingresoFijo, setIngresoFijo] = useState("");
   const [ingresosOtros, setIngresosOtros] = useState<LineItem[]>([]);
   const [gastosFijosItems, setGastosFijosItems] = useState<LineItem[]>([]);
-  const [nuevoIngNombre, setNuevoIngNombre] = useState("");
-  const [nuevoIngValor, setNuevoIngValor] = useState("");
   const [nuevoGastNombre, setNuevoGastNombre] = useState("");
   const [nuevoGastValor, setNuevoGastValor] = useState("");
 
@@ -148,28 +148,17 @@ export default function DashboardPage() {
     }
   }
 
-  function monthsUntilDate(fechaStr: string): number {
-    const now = new Date();
-    const fecha = new Date(fechaStr + "T12:00:00");
-    const diff = (fecha.getFullYear() - now.getFullYear()) * 12 + (fecha.getMonth() - now.getMonth());
-    return Math.max(1, diff);
-  }
-
   const totalIngresos = (parseFloat(ingresoFijo) || 0) + ingresosOtros.reduce((s, i) => s + i.valor, 0);
   const totalGastosFijos = gastosFijosItems.reduce((s, i) => s + i.valor, 0);
   const totalCuotas = deudas.reduce((s, d) => s + d.cuota_mensual, 0);
   const totalDeudaPendiente = deudas.reduce((s, d) => s + d.total_pendiente, 0);
   const totalAhorro = bolsillos.reduce((s, b) => s + b.actual, 0);
   const totalMetaAhorro = bolsillos.reduce((s, b) => s + b.meta, 0);
-  const totalCajitasMensual = cajitas.reduce((s, c) => {
-    const falta = Math.max(0, c.monto_total - c.actual);
-    return s + Math.ceil(falta / monthsUntilDate(c.fecha_pago));
-  }, 0);
-  const totalBolsitasMensual = bolsillos.reduce((s, b) => {
-    if (b.tipo === "metas" && b.fecha_meta && b.meta > 0) return s + Math.ceil(Math.max(0, b.meta - b.actual) / monthsUntilDate(b.fecha_meta));
-    return s + (b.cuota_mensual || 0);
-  }, 0);
-  const disponible = totalIngresos - totalGastosFijos - totalCajitasMensual - totalBolsitasMensual - totalCuotas;
+  const totalCajitasMensual = cajitas.reduce((s, c) => s + cuotaMensualCajita(c), 0);
+  const disponible = calcularDisponible({
+    ingresoFijo: parseFloat(ingresoFijo) || 0,
+    ingresosOtros, gastosFijosItems, deudas, cajitas, bolsillos,
+  });
   const pctDisponible = totalIngresos > 0 ? (disponible / totalIngresos) * 100 : 0;
 
   // Confirmados este mes por tipo (4.3) -- puramente informativo, ninguno de estos
@@ -185,22 +174,17 @@ export default function DashboardPage() {
   const bolsillosConfirmadosCount = bolsillosActivos.filter(b => confirmadasBolsillos.has(b.id)).length;
   const gastosFijosPagadosCount = gastosFijosItems.filter(i => i.pagado).length;
 
-  // "Sin comprometer todavía" (4.3): a diferencia de `disponible` (presupuesto
-  // completo, no cambia), este SÍ baja a medida que confirmas -- solo descuenta
-  // lo que ya marcaste como pagado/transferido este mes, nada más.
+  // "Sin comprometer todavía": es el numero grande de la tarjeta "Dinero disponible"
+  // (lo que de verdad queda libre hoy) -- a diferencia de `disponible` (presupuesto
+  // completo, no cambia y ahora se muestra chico como referencia), este SÍ baja a
+  // medida que confirmas -- solo descuenta lo que ya marcaste como pagado/transferido
+  // este mes, nada más.
   const gastosFijosPagadosMonto = gastosFijosItems.reduce((s, i) => i.pagado ? s + i.valor : s, 0);
-  const cajitasConfirmadasMonto = cajitas.reduce((s, c) => {
-    if (!confirmadasCajitas.has(c.id)) return s;
-    const falta = Math.max(0, c.monto_total - c.actual);
-    return s + Math.ceil(falta / monthsUntilDate(c.fecha_pago));
-  }, 0);
-  const bolsitasConfirmadasMonto = bolsillos.reduce((s, b) => {
-    if (!confirmadasBolsillos.has(b.id)) return s;
-    if (b.tipo === "metas" && b.fecha_meta && b.meta > 0) return s + Math.ceil(Math.max(0, b.meta - b.actual) / monthsUntilDate(b.fecha_meta));
-    return s + (b.cuota_mensual || 0);
-  }, 0);
+  const cajitasConfirmadasMonto = cajitas.reduce((s, c) => confirmadasCajitas.has(c.id) ? s + cuotaMensualCajita(c) : s, 0);
+  const bolsitasConfirmadasMonto = bolsillos.reduce((s, b) => confirmadasBolsillos.has(b.id) ? s + cuotaMensualBolsillo(b) : s, 0);
   const cuotasConfirmadasMonto = deudas.reduce((s, d) => confirmadasDeudas.has(d.id) ? s + d.cuota_mensual : s, 0);
   const sinComprometer = totalIngresos - gastosFijosPagadosMonto - cajitasConfirmadasMonto - bolsitasConfirmadasMonto - cuotasConfirmadasMonto;
+  const pctSinComprometer = totalIngresos > 0 ? (sinComprometer / totalIngresos) * 100 : 0;
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -239,21 +223,21 @@ export default function DashboardPage() {
           {loading ? (
             <div className="h-9 w-36 bg-[#ffb8e0] rounded-xl animate-pulse mt-1" />
           ) : (
-            <p className={`text-3xl font-bold mt-1 ${disponible >= 0 ? "text-[#1a1a2e]" : "text-red-500"}`}>{fmt(disponible)}</p>
+            <p className={`text-3xl font-bold mt-1 ${disponible >= 0 ? "text-[#1a1a2e]" : "text-red-500"}`}>{fmt(sinComprometer)}</p>
           )}
-          <p className="text-xs text-[#1a1a2e]/40 mt-2">Ingresos − GF − Cajitas − Bolsitas − Deudas. Es tu presupuesto: confirmar un pago no lo cambia.</p>
+          <p className="text-xs text-[#1a1a2e]/40 mt-2">Lo que de verdad tienes libre hoy. Baja según vas confirmando pagos y transferencias este mes.</p>
           {!loading && totalIngresos > 0 && (
             <div className="mt-3 h-1.5 bg-[#ffb8e0] rounded-full overflow-hidden">
               <div className={`h-full rounded-full transition-all ${disponible >= 0 ? "bg-[#ec7fa9]" : "bg-red-400"}`}
-                style={{ width: `${Math.min(Math.max(pctDisponible, 0), 100)}%` }} />
+                style={{ width: `${Math.min(Math.max(pctSinComprometer, 0), 100)}%` }} />
             </div>
           )}
           {!loading && (
             <div className="mt-4 pt-3 border-t border-[#ffb8e0]/60">
-              <p className="text-[11px] font-semibold text-[#1a1a2e]/40 uppercase tracking-wide">Sin comprometer todavía</p>
-              <p className="text-lg font-bold text-[#1a1a2e] mt-0.5">{fmt(sinComprometer)}</p>
+              <p className="text-[11px] font-semibold text-[#1a1a2e]/40 uppercase tracking-wide">Si ya pagaras todo lo comprometido</p>
+              <p className="text-lg font-bold text-[#1a1a2e] mt-0.5">{fmt(disponible)}</p>
               <p className="text-[11px] text-[#1a1a2e]/40 mt-1 leading-snug">
-                Baja según vas confirmando pagos y transferencias
+                Ingresos − GF − Cajitas − Bolsitas − Deudas. No cambia aunque confirmes pagos.
               </p>
             </div>
           )}
@@ -306,62 +290,16 @@ export default function DashboardPage() {
       ) : (
         <div className="flex flex-col gap-6">
 
-          {/* Ingresos — read-only with inline edit */}
-          <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-[#1a1a2e] text-lg flex items-center gap-2"><TrendingUp size={18} className="text-[#ec7fa9]" />Ingresos del mes</h2>
-              <button onClick={() => { if (editingIngresos) saveData(); setEditingIngresos(!editingIngresos); }}
-                className="flex items-center gap-1.5 text-xs text-[#ec7fa9] border border-[#ffb8e0] rounded-full px-3 py-1.5 hover:bg-[#ffedfa] transition-colors font-medium">
-                <Pencil size={11} />{editingIngresos ? (saving ? "Guardando..." : "Guardar") : "Editar"}
-              </button>
-            </div>
-            {editingIngresos ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-medium text-[#1a1a2e]/60 mb-1.5 block">Ingreso fijo (salario)</label>
-                  <input type="number" value={ingresoFijo} onChange={(e) => setIngresoFijo(e.target.value)}
-                    className="w-full md:w-64 border border-[#ffb8e0] rounded-xl px-4 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 text-right" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-[#1a1a2e]/60 mb-1.5 block">Otros ingresos</label>
-                  {ingresosOtros.map((i) => (
-                    <div key={i.id} className="flex items-center justify-between py-1.5 border-b border-[#ffb8e0]/50 last:border-0">
-                      <span className="text-sm text-[#1a1a2e]/70">{i.descripcion}</span>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium">{fmt(i.valor)}</span>
-                        <button onClick={() => setIngresosOtros(ingresosOtros.filter(x => x.id !== i.id))} className="text-[#1a1a2e]/20 hover:text-red-400 text-xs">✕</button>
-                      </div>
-                    </div>
-                  ))}
-                  <div className="flex gap-2 mt-2">
-                    <input value={nuevoIngNombre} onChange={e => setNuevoIngNombre(e.target.value)} placeholder="Ej: Freelance"
-                      className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
-                    <input type="number" value={nuevoIngValor} onChange={e => setNuevoIngValor(e.target.value)} placeholder="0"
-                      className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none text-right" />
-                    <button onClick={() => { if (!nuevoIngNombre || !nuevoIngValor) return; setIngresosOtros([...ingresosOtros, { id: crypto.randomUUID(), descripcion: nuevoIngNombre, valor: parseFloat(nuevoIngValor) }]); setNuevoIngNombre(""); setNuevoIngValor(""); }}
-                      className="bg-[#ec7fa9] text-white px-3 py-2 rounded-xl font-semibold hover:bg-[#d96d97]">+</button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="flex justify-between items-center py-2 border-b border-[#ffb8e0]/40">
-                  <span className="text-sm text-[#1a1a2e]/60">Ingreso fijo (salario)</span>
-                  <span className="text-sm font-semibold text-[#1a1a2e]">{fmt(parseFloat(ingresoFijo) || 0)}</span>
-                </div>
-                {ingresosOtros.map(i => (
-                  <div key={i.id} className="flex justify-between items-center py-2 border-b border-[#ffb8e0]/40 last:border-0">
-                    <span className="text-sm text-[#1a1a2e]/60">{i.descripcion}</span>
-                    <span className="text-sm font-semibold text-[#1a1a2e]">{fmt(i.valor)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="mt-4 pt-4 border-t border-[#ffb8e0] flex justify-between">
-              <span className="text-sm font-semibold text-[#1a1a2e]/60">Total ingresos</span>
-              <span className="text-lg font-bold text-green-600">{fmt(totalIngresos)}</span>
-            </div>
-          </div>
+          <IngresosCard
+            ingresoFijo={ingresoFijo}
+            setIngresoFijo={setIngresoFijo}
+            ingresosOtros={ingresosOtros}
+            setIngresosOtros={setIngresosOtros}
+            editing={editingIngresos}
+            onToggleEdit={() => { if (editingIngresos) saveData(); setEditingIngresos(!editingIngresos); }}
+            saving={saving}
+            fmt={fmt}
+          />
 
           {/* Gastos fijos — read-only with inline edit */}
           <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6">
@@ -466,9 +404,8 @@ export default function DashboardPage() {
             ) : (
               <div className="flex flex-col gap-2">
                 {cajitas.map((c) => {
-                  const falta = Math.max(0, c.monto_total - c.actual);
                   const pct = c.monto_total > 0 ? Math.min((c.actual / c.monto_total) * 100, 100) : 0;
-                  const cuotaMes = Math.ceil(falta / monthsUntilDate(c.fecha_pago));
+                  const cuotaMes = cuotaMensualCajita(c);
                   return (
                     <div key={c.id} className="bg-[#ffedfa] rounded-2xl px-4 py-3">
                       <div className="flex items-center justify-between mb-2">

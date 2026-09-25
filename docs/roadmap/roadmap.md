@@ -3,7 +3,7 @@
 > Fuente de verdad: [`Finance-BFF-Experience-Roadmap.xlsx`](./Finance-BFF-Experience-Roadmap.xlsx), generado con el socio del proyecto.
 > Este `.md` es un espejo fiel y legible/diff-eable. Regenerar con `python3 docs/roadmap/sync.py`.
 
-Última sincronización del espejo: 2026-09-15
+Última sincronización del espejo: 2026-09-18
 
 ## Tablero de estado
 
@@ -25,14 +25,14 @@
 | 3.7 | Guiar la creación de cajitas y bolsitas en el banco | Hábitos financieros y conexión con el banco | Alta | Pendiente |
 | 3.8 | Crear el ritual semanal de registro de gastos | Hábitos financieros y conexión con el banco | Alta | Pendiente |
 | 3.9 | Enseñar cómo usar el menú principal | Acompañamiento después del onboarding | Media | Pendiente |
-| 3.10 | Simplificar la selección de país | Onboarding Happy Path | Media | Pendiente |
-| 3.11 | Permitir configurar varias monedas | Onboarding Happy Path | Alta | Pendiente |
-| 3.12 | Eliminar guiones -Hyphens innecesarios de los textos | Onboarding Happy Path | Media | Pendiente |
-| 3.13 | Aclarar que los gastos fijos pueden completarse después | Onboarding Happy Path | Media | Pendiente |
-| 3.14 | Proponer la próxima fecha válida para cajitas | Onboarding Happy Path | Alta | Pendiente |
-| 3.15 | Calcular la recomendación después de definir importancia en la creación de bolsitas de ahorro | Onboarding Happy Path | Alta | Pendiente |
-| 3.16 | Hacer evidente la acción Agregar bolsita | Onboarding Happy Path | Alta | Pendiente |
-| 3.17 | Mantener visible el resumen del reparto de ahorro | Onboarding Happy Path | Alta | Pendiente |
+| 3.10 | Simplificar la selección de país | Onboarding Happy Path | Media | Completo |
+| 3.11 | Permitir configurar varias monedas | Onboarding Happy Path | Alta | Completo |
+| 3.12 | Eliminar guiones -Hyphens innecesarios de los textos | Onboarding Happy Path | Media | Completo |
+| 3.13 | Aclarar que los gastos fijos pueden completarse después | Onboarding Happy Path | Media | Completo |
+| 3.14 | Proponer la próxima fecha válida para cajitas | Onboarding Happy Path | Alta | Completo |
+| 3.15 | Calcular la recomendación después de definir importancia en la creación de bolsitas de ahorro | Onboarding Happy Path | Alta | Completo |
+| 3.16 | Hacer evidente la acción Agregar bolsita | Onboarding Happy Path | Alta | Completo |
+| 3.17 | Mantener visible el resumen del reparto de ahorro | Onboarding Happy Path | Alta | Completo |
 | 4.1 | Confirmar transferencias de cada cajita por separado | Dashboard | Alta | Completo |
 | 4.2 | Guiar y confirmar los abonos de cada bolsita | Dashboard | Alta | Completo |
 | 4.3 | Actualizar el saldo disponible al confirmar movimientos | Dashboard | Alta | Completo |
@@ -40,8 +40,19 @@
 | 4.5 | Convertir la metodología de deuda en un plan de acción mensual | Dashboard | Mis deudas | Alta | Completo |
 | 4.6 | Diferenciar cuota normal y abono adicional a capital | Dashboard | Mis deudas | Alta | Completo |
 | 4.7 | Confirmar individualmente los pagos realizados en el banco | Dashboard | Mis deudas | Alta | Completo |
-| 4.8 | Actualizar el saldo real de la deuda después de registrar pagos | Dashboard | Mis deudas | Alta | Completo |
+| 4.8 | Pedir el saldo real de la deuda después de registrar pagos | Dashboard | Mis deudas | Alta | Pendiente |
 | 4.9 | Mostrar progreso y siguiente objetivo de salida de deudas | Dashboard | Mis deudas | Alta | Completo |
+| 4.10 | Agregar Ingresos al menú lateral | Dashboard | Alta | Completo |
+| 4.11 | Corregir el campo nombre al agregar gastos fijos | Dashboard | Mis gastos | Alta | Completo |
+| 4.12 | Aclarar que el bolsillo o sobre de cada cajita se crea una sola vez | Dashboard | Mis cajitas | Alta | Completo |
+| 4.13 | Confirmar una sola vez la creación de las cajitas en banco o efectivo | Dashboard | Mis cajitas | Alta | Completo |
+| 4.14 | Confirmar una sola vez la creación de las bolsitas de ahorro en banco o efectivo | Dashboard | Mis ahorros | Alta | Completo |
+| 4.15 | Mover la explicación de qué son las cajitas al inicio | Dashboard | Mis cajitas | Media | Completo |
+| 4.16 | Unificar la estructura de Bolsitas con la de Cajitas | Dashboard | Mis ahorros | Media | Completo |
+| 4.17 | Limitar nuevas bolsitas al dinero realmente disponible para ahorrar | Dashboard | Mis bolsitas | Alta | Completo |
+| 4.18 | Validar nuevas cajitas contra la capacidad disponible | Dashboard | Mis cajitas | Alta | Completo |
+| 4.19 | Explicar la metodología de salida de deudas con su autor | Dashboard | Mis deudas | Alta | Completo |
+| 4.20 | Hacer literal el check del pago mensual de la deuda | Dashboard | Mis deudas | Alta | Completo |
 
 ## Detalle por User Story
 
@@ -238,7 +249,7 @@
 - **Criterio de éxito:** La guía aparece en la primera entrada, puede omitirse y no vuelve a mostrarse una vez completada.
 
 ### 3.10 · Simplificar la selección de país
-**Epic:** Onboarding Happy Path  ·  **Prioridad:** Media  ·  **Estado:** Pendiente
+**Epic:** Onboarding Happy Path  ·  **Prioridad:** Media  ·  **Estado:** Completo
 
 - **Estado actual:** El paso de país presenta demasiado texto y puede resultar abrumador.
 - **Experiencia deseada:** Seleccionar el país de forma rápida mediante una lista desplegable con búsqueda.
@@ -250,7 +261,7 @@
 - **Criterio de éxito:** Se puede buscar, seleccionar y conservar un país válido.
 
 ### 3.11 · Permitir configurar varias monedas
-**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** El paso de moneda permite seleccionar una sola moneda, aunque la usuaria puede manejar dinero en varias.
 - **Experiencia deseada:** Permitir registrar una moneda principal y otras monedas utilizadas.
@@ -262,7 +273,7 @@
 - **Criterio de éxito:** Se pueden guardar varias monedas y una principal; los totales no mezclan monedas sin conversión definida.
 
 ### 3.12 · Eliminar guiones -Hyphens innecesarios de los textos
-**Epic:** Onboarding Happy Path  ·  **Prioridad:** Media  ·  **Estado:** Pendiente
+**Epic:** Onboarding Happy Path  ·  **Prioridad:** Media  ·  **Estado:** Completo
 
 - **Estado actual:** Persisten guiones - hyphens utilizados como recurso de redacción en distintos textos de la experiencia.
 - **Experiencia deseada:** Mantener una redacción natural, limpia y consistente con la voz de Finance BFF.
@@ -274,7 +285,7 @@
 - **Criterio de éxito:** La revisión editorial no encuentra guiones innecesarios en los textos visibles.
 
 ### 3.13 · Aclarar que los gastos fijos pueden completarse después
-**Epic:** Onboarding Happy Path  ·  **Prioridad:** Media  ·  **Estado:** Pendiente
+**Epic:** Onboarding Happy Path  ·  **Prioridad:** Media  ·  **Estado:** Completo
 
 - **Estado actual:** Al registrar gastos fijos uno por uno, la usuaria puede sentir que debe recordar absolutamente todos antes de continuar.
 - **Experiencia deseada:** Explicar que puede agregar o corregir gastos más adelante sin perder su progreso.
@@ -286,7 +297,7 @@
 - **Criterio de éxito:** La nota es visible y existe una ruta funcional para agregar o editar gastos posteriormente.
 
 ### 3.14 · Proponer la próxima fecha válida para cajitas
-**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Al crear una cajita, el selector puede permitir una fecha de pago que ya pasó, como junio de 2026 cuando se está configurando en septiembre de 2026.
 - **Experiencia deseada:** Proponer automáticamente la próxima fecha futura correspondiente al gasto.
@@ -298,7 +309,7 @@
 - **Criterio de éxito:** Un gasto anual cuyo mes ya pasó propone el año siguiente y recalcula correctamente su reserva.
 
 ### 3.15 · Calcular la recomendación después de definir importancia en la creación de bolsitas de ahorro
-**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** La recomendación de Amy aparece antes de que la usuaria seleccione la importancia de la bolsita.
 - **Experiencia deseada:** Primero conocer la prioridad de la usuaria y después calcular una recomendación personalizada.
@@ -310,7 +321,7 @@
 - **Criterio de éxito:** La recomendación inicia en $0, se calcula después de seleccionar importancia y se actualiza al cambiarla.
 
 ### 3.16 · Hacer evidente la acción Agregar bolsita
-**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Después de seleccionar o editar el monto, no resulta suficientemente claro que debe pulsarse Agregar bolsita para incorporarla al reparto.
 - **Experiencia deseada:** La acción de agregar debe destacarse y dejar claro cuándo el monto ya forma parte del ahorro distribuido.
@@ -322,7 +333,7 @@
 - **Criterio de éxito:** El botón se distingue claramente y al pulsarlo se agrega la bolsita y se actualiza el saldo.
 
 ### 3.17 · Mantener visible el resumen del reparto de ahorro
-**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Onboarding Happy Path  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Al agregar varias bolsitas, el resumen de dinero repartido y restante se desplaza hacia arriba y deja de estar visible.
 - **Experiencia deseada:** Mantener siempre a la vista cuánto ahorro mensual se ha asignado y cuánto queda disponible.
@@ -417,17 +428,17 @@
 - **Resultado esperado:** La usuaria puede ver de un vistazo qué pagos ya realizó y qué obligaciones siguen pendientes.
 - **Criterio de éxito:** Cada deuda puede marcarse de manera independiente, el estado se conserva por mes y el resumen mensual coincide con los pagos registrados.
 
-### 4.8 · Actualizar el saldo real de la deuda después de registrar pagos
-**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+### 4.8 · Pedir el saldo real de la deuda después de registrar pagos
+**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
 
-- **Estado actual:** El dashboard muestra saldos y meses estimados, pero registrar una cuota no permite saber con certeza cuánto disminuyó realmente el capital. Si Amy asume que todo el pago reduce el saldo, puede mostrar un progreso incorrecto.
-- **Experiencia deseada:** Después de registrar pagos, Amy debe mantener un saldo de deuda confiable. Cuando no sea posible conocer automáticamente cuánto del pago se aplicó a capital, la usuaria debe poder actualizar el saldo real tomando como referencia la información de su banco o extracto.
-- **Historia de usuario:** Como una mujer que quiere seguir mi avance de forma confiable, quiero que el saldo de cada deuda refleje lo que realmente debo después de mis pagos, para no tomar decisiones basadas en un cálculo incorrecto.
-- **Lineamientos de implementación:** No restar automáticamente el valor completo de una cuota normal al saldo de capital salvo que exista información suficiente para hacerlo correctamente. Permitir que la usuaria actualice el saldo actual de la deuda después de revisar su banco o extracto. Para abonos adicionales a capital confirmados, registrar el movimiento y actualizar el saldo según el dato confirmado por la usuaria. Guardar el historial de saldos para medir progreso.
-- **Consideraciones de UX:** Explicar de forma sencilla por qué Amy puede pedir el saldo actualizado. Evitar que la usuaria sienta que debe hacer cálculos financieros. El dato principal debe ser '¿Cuánto debes hoy según tu banco?'.
+- **Estado actual:** El dashboard muestra saldos y meses estimados, pero después de registrar una cuota la experiencia no deja suficientemente claro que Amy necesita conocer el saldo real que aparece en el banco o entidad financiera. Una cuota puede incluir intereses, capital y otros cargos, por lo que no es correcto asumir que todo el valor pagado reduce el capital.
+- **Experiencia deseada:** Después de registrar un pago, Amy debe pedir de forma explícita y sencilla el saldo actual que la usuaria ve en su banco, extracto o entidad financiera. Ese dato debe convertirse en la referencia para actualizar el progreso de la deuda.
+- **Historia de usuario:** Como una mujer que acaba de pagar una cuota de mi deuda, quiero que Amy me pida el saldo actualizado que veo en mi banco o entidad financiera, para que mi progreso refleje lo que realmente debo y no un cálculo estimado incorrectamente.
+- **Lineamientos de implementación:** Después de registrar una cuota, mostrar un paso visible con una instrucción literal como 'Ahora cuéntame cuánto debes hoy según tu banco'. Permitir ingresar el saldo actualizado y explicar brevemente dónde encontrarlo. No restar automáticamente el valor completo de la cuota al capital. Si la usuaria no tiene el dato en ese momento, permitir continuar y dejar una tarea pendiente para actualizarlo después. Para abonos adicionales a capital, mantener igualmente la posibilidad de confirmar el saldo real.
+- **Consideraciones de UX:** La usuaria no debe tener que calcular capital, intereses ni amortización. Amy solo debe pedir un dato fácil de encontrar: el saldo actual que muestra la entidad financiera. Evitar lenguaje técnico y explicar por qué se solicita sin generar fricción.
 - **Objetivo de negocio:** Proteger la confiabilidad de los cálculos y del progreso mostrado en Finance BFF.
-- **Resultado esperado:** Los saldos de deuda representan la situación real de la usuaria y no una reducción estimada incorrectamente.
-- **Criterio de éxito:** El saldo no disminuye indebidamente por registrar una cuota; puede actualizarse con el saldo real y el historial conserva los cambios.
+- **Resultado esperado:** El saldo de la deuda se mantiene alineado con la información real de la entidad financiera y la usuaria entiende exactamente qué dato debe actualizar.
+- **Criterio de éxito:** Después de registrar un pago, Amy solicita explícitamente el saldo que aparece en el banco o entidad financiera; el saldo no disminuye automáticamente por el valor total de la cuota y puede quedar pendiente si la usuaria aún no tiene el dato.
 
 ### 4.9 · Mostrar progreso y siguiente objetivo de salida de deudas
 **Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
@@ -440,3 +451,135 @@
 - **Objetivo de negocio:** Aumentar motivación, retención y continuidad en el plan de deuda.
 - **Resultado esperado:** La usuaria percibe avance, entiende cuál es su siguiente meta y mantiene claridad sobre la estrategia.
 - **Criterio de éxito:** El módulo muestra progreso basado en saldos reales, identifica la prioridad vigente y actualiza el siguiente objetivo al cambiar o liquidar una deuda.
+
+### 4.10 · Agregar Ingresos al menú lateral
+**Epic:** Dashboard  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** Mis finanzas permite visualizar y editar los ingresos, pero el menú lateral no tiene una sección propia de Ingresos. Esto rompe la lógica de navegación porque otros componentes del dashboard sí cuentan con un módulo independiente.
+- **Experiencia deseada:** La usuaria debe encontrar en el menú lateral cada componente que construye su panorama financiero, incluyendo Ingresos, y poder consultarlo y editarlo desde un lugar dedicado.
+- **Historia de usuario:** Como una usuaria que quiere mantener mi información financiera actualizada, quiero tener una sección de Ingresos en el menú lateral, para revisar y editar mis fuentes de ingreso sin depender del dashboard principal.
+- **Lineamientos de implementación:** Agregar 'Ingresos' al menú lateral y crear una vista dedicada que muestre las fuentes registradas, montos y total de ingresos. Permitir agregar, editar y eliminar ingresos desde allí. Los cambios deben reflejarse inmediatamente en Mis finanzas y en todos los cálculos que dependan de ingresos.
+- **Consideraciones de UX:** Mantener la misma lógica visual y de navegación de los demás módulos. Evitar duplicar comportamientos diferentes entre editar ingresos desde Mis finanzas y desde la nueva sección.
+- **Objetivo de negocio:** Hacer la arquitectura de información más consistente y facilitar el mantenimiento de datos.
+- **Resultado esperado:** La usuaria puede administrar sus ingresos desde una sección claramente identificable y los cambios se reflejan en todo Finance BFF.
+- **Criterio de éxito:** Existe Ingresos en el menú lateral, permite CRUD de fuentes de ingreso y cualquier cambio actualiza correctamente los cálculos relacionados.
+
+### 4.11 · Corregir el campo nombre al agregar gastos fijos
+**Epic:** Dashboard | Mis gastos  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** Durante el test del 15 de septiembre, al intentar agregar un nuevo gasto fijo desde Mis gastos, el campo de nombre no permite escribir, impidiendo completar el registro.
+- **Experiencia deseada:** La usuaria debe poder agregar un gasto fijo nuevo sin bloqueos, diligenciando normalmente su nombre y los demás datos requeridos.
+- **Historia de usuario:** Como una usuaria que identificó un gasto fijo que no registré durante el onboarding, quiero poder escribir su nombre y agregarlo desde Mis gastos, para mantener mi información actualizada.
+- **Lineamientos de implementación:** Corregir el bug del campo Nombre en el formulario de nuevos gastos fijos. Verificar entrada por teclado, foco, edición, validaciones y guardado. Probar también agregar más de un gasto consecutivamente y editar un gasto ya creado.
+- **Consideraciones de UX:** El campo debe comportarse igual que los demás inputs de texto y conservar las reglas globales de guardado y formato del producto.
+- **Objetivo de negocio:** Evitar bloqueos funcionales y permitir que la información financiera permanezca completa.
+- **Resultado esperado:** La usuaria puede crear nuevos gastos fijos desde Mis gastos sin errores.
+- **Criterio de éxito:** El campo Nombre acepta texto, el gasto puede guardarse correctamente y el flujo funciona en los dispositivos soportados.
+
+### 4.12 · Aclarar que el bolsillo o sobre de cada cajita se crea una sola vez
+**Epic:** Dashboard | Mis cajitas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** El texto actual indica 'Cada mes, crea un bolsillo o sobre en tu banco por cada cajita', lo que puede hacer pensar que la usuaria debe crear un nuevo bolsillo todos los meses.
+- **Experiencia deseada:** La experiencia debe explicar que la estructura se crea una sola vez y que, después, cada mes la usuaria únicamente agrega el monto correspondiente a ese mismo bolsillo o sobre.
+- **Historia de usuario:** Como una usuaria que está llevando mis cajitas a mi banco o a efectivo, quiero entender que debo crear cada bolsillo o sobre una sola vez y luego alimentarlo mensualmente, para no repetir una tarea innecesaria.
+- **Lineamientos de implementación:** Reescribir la instrucción bancaria. Explicar en dos pasos: 1) una sola vez, crear un bolsillo, cuenta, sobre digital o sobre físico por cada cajita; 2) cada mes, adicionar allí el monto recomendado por Amy. Usar ejemplos de nombres solo como apoyo.
+- **Consideraciones de UX:** Diferenciar visualmente la configuración inicial de la rutina mensual. No asumir que todas las usuarias utilizan bancos con función de bolsillos; permitir el equivalente en efectivo.
+- **Objetivo de negocio:** Conectar correctamente el plan de Amy con la acción real y evitar confusión operativa.
+- **Resultado esperado:** La usuaria entiende qué debe configurar una sola vez y qué acción debe repetir cada mes.
+- **Criterio de éxito:** El texto ya no indica crear un bolsillo cada mes y distingue claramente configuración inicial de aporte mensual.
+
+### 4.13 · Confirmar una sola vez la creación de las cajitas en banco o efectivo
+**Epic:** Dashboard | Mis cajitas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** Finance BFF guía a la usuaria para separar dinero, pero no registra si ya creó en su banco o en efectivo la estructura real donde guardará cada cajita.
+- **Experiencia deseada:** La usuaria debe poder confirmar una única vez que ya creó el bolsillo, cuenta o sobre correspondiente a cada cajita. Después de esa confirmación, la tarea de configuración no debe reaparecer mensualmente.
+- **Historia de usuario:** Como una usuaria que ya creó el espacio real para una cajita, quiero marcar que esa configuración ya está lista, para que Amy recuerde que ya hice ese paso y solo me pida los aportes mensuales.
+- **Lineamientos de implementación:** Agregar un check de configuración inicial por cajita, con opciones coherentes para banco o efectivo. Guardar este estado de forma persistente durante la vida de la cajita. Separarlo del check mensual de transferencia o aporte. Si se crea una cajita nueva en el futuro, mostrar la tarea únicamente para esa nueva cajita.
+- **Consideraciones de UX:** Usar lenguaje literal como 'Ya creé esta cajita en mi banco o en un sobre'. No confundir este check único con el cumplimiento mensual.
+- **Objetivo de negocio:** Reducir tareas repetitivas y ayudar a convertir el plan digital en una estructura real.
+- **Resultado esperado:** Amy sabe qué cajitas ya existen fuera de la plataforma y solo recuerda a la usuaria los aportes que correspondan.
+- **Criterio de éxito:** Cada cajita tiene un estado persistente de configuración inicial independiente del check mensual y este no se reinicia cada mes.
+
+### 4.14 · Confirmar una sola vez la creación de las bolsitas de ahorro en banco o efectivo
+**Epic:** Dashboard | Mis ahorros  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** Las bolsitas representan propósitos de ahorro dentro de Finance BFF, pero no existe un estado claro que indique si la usuaria ya creó el espacio equivalente en su banco o en efectivo.
+- **Experiencia deseada:** La usuaria debe poder confirmar una única vez que creó el bolsillo, cuenta o sobre donde guardará el dinero de cada bolsita. Luego Amy debe concentrarse en los aportes mensuales, no en repetir la configuración.
+- **Historia de usuario:** Como una usuaria que ya creó en mi banco o en efectivo el espacio para una bolsita de ahorro, quiero marcar que esa configuración ya está lista, para que Amy recuerde ese avance y me acompañe únicamente con los aportes siguientes.
+- **Lineamientos de implementación:** Agregar un check de configuración inicial por bolsita. Permitir indicar que se maneja mediante banco o efectivo si aporta valor a la experiencia. Persistir el estado mientras exista la bolsita y mantenerlo separado de los checks de aportes mensuales. Las nuevas bolsitas deben generar su propia tarea inicial.
+- **Consideraciones de UX:** Usar el mismo patrón visual y conceptual definido para Cajitas para evitar que la usuaria tenga que aprender dos comportamientos distintos.
+- **Objetivo de negocio:** Conectar las metas de ahorro con acciones reales y reducir repetición innecesaria.
+- **Resultado esperado:** La usuaria distingue entre crear la bolsita una vez y alimentarla periódicamente.
+- **Criterio de éxito:** Cada bolsita conserva un estado de configuración inicial independiente de los aportes mensuales y la experiencia es consistente con Cajitas.
+
+### 4.15 · Mover la explicación de qué son las cajitas al inicio
+**Epic:** Dashboard | Mis cajitas  ·  **Prioridad:** Media  ·  **Estado:** Completo
+
+- **Estado actual:** La explicación de qué son las Cajitas aparece después de otros contenidos, por lo que una usuaria puede empezar a interactuar con la sección antes de entender su propósito.
+- **Experiencia deseada:** Al entrar a Mis cajitas, la usuaria debe comprender primero qué son, para qué sirven y después qué debe hacer con ellas.
+- **Historia de usuario:** Como una usuaria que entra a Mis cajitas, quiero entender desde el inicio qué significa este concepto, para interpretar correctamente los montos y acciones que aparecen después.
+- **Lineamientos de implementación:** Reordenar la jerarquía de la página para ubicar '¿Qué son las Cajitas?' al inicio del contenido principal. Después mantener una secuencia consistente: qué son, cómo funcionan, qué debes hacer en tu banco o con efectivo y, finalmente, gestión de las cajitas.
+- **Consideraciones de UX:** La explicación inicial debe ser breve y escaneable. No aumentar innecesariamente la longitud de la página.
+- **Objetivo de negocio:** Reducir esfuerzo cognitivo y mejorar la comprensión del módulo.
+- **Resultado esperado:** La usuaria entiende el concepto antes de empezar a gestionar cajitas.
+- **Criterio de éxito:** La definición aparece antes de instrucciones y controles de gestión y la jerarquía de lectura sigue un orden lógico.
+
+### 4.16 · Unificar la estructura de Bolsitas con la de Cajitas
+**Epic:** Dashboard | Mis ahorros  ·  **Prioridad:** Media  ·  **Estado:** Completo
+
+- **Estado actual:** Mis cajitas y Mis ahorros presentan información relacionada con conceptos similares, pero el orden de definiciones, títulos e instrucciones no sigue siempre el mismo patrón, obligando a la usuaria a volver a buscar dónde está cada tipo de información.
+- **Experiencia deseada:** Los módulos deben compartir una arquitectura visual predecible. Si la definición, funcionamiento e instrucciones bancarias aparecen en determinadas posiciones en Cajitas, Bolsitas debe respetar el mismo orden y jerarquía.
+- **Historia de usuario:** Como una usuaria que ya aprendió a usar Cajitas, quiero encontrar la información de Bolsitas organizada de la misma manera, para moverme por Amy sin tener que aprender nuevamente dónde está cada cosa.
+- **Lineamientos de implementación:** Definir y aplicar un patrón común para ambos módulos: título del módulo, qué es, cómo funciona, qué debes hacer en tu banco o con efectivo y área de gestión. Alinear ubicación, jerarquía de títulos, componentes informativos y lenguaje cuando tengan funciones equivalentes.
+- **Consideraciones de UX:** La consistencia debe reducir esfuerzo cognitivo sin forzar que contenidos diferentes se vean idénticos. Reutilizar patrones, no duplicar información innecesaria.
+- **Objetivo de negocio:** Mejorar la usabilidad y crear un sistema de diseño más consistente y escalable.
+- **Resultado esperado:** La usuaria reconoce inmediatamente dónde encontrar explicación, funcionamiento e instrucciones en ambos módulos.
+- **Criterio de éxito:** Cajitas y Bolsitas comparten el mismo orden conceptual y patrones visuales equivalentes para contenidos equivalentes.
+
+### 4.17 · Limitar nuevas bolsitas al dinero realmente disponible para ahorrar
+**Epic:** Dashboard | Mis bolsitas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** Al crear una nueva bolsita, el sistema puede aceptar un aporte mensual superior a la capacidad disponible de la usuaria. En la prueba fue posible registrar una bolsita de $11.000.000 aun teniendo ingresos de $10.000.000.
+- **Experiencia deseada:** Antes de crear o modificar una bolsita, Amy debe mostrar cuánto dinero sigue disponible para ahorro y evitar comprometer un monto mensual superior a esa capacidad.
+- **Historia de usuario:** Como una usuaria que está creando nuevas bolsitas, quiero ver cuánto dinero todavía puedo destinar al ahorro y recibir un límite cuando intento superar esa capacidad, para no construir un plan imposible de cumplir.
+- **Lineamientos de implementación:** Mostrar de forma persistente el monto disponible para nuevas bolsitas y actualizarlo al agregar, editar o eliminar una. Validar el aporte mensual antes de guardar. Si supera el disponible, bloquear la creación y explicar cuánto puede asignar como máximo. La validación debe utilizar la misma fuente de cálculo que el dashboard para evitar inconsistencias.
+- **Consideraciones de UX:** El mensaje no debe regañar. Explicar de forma práctica: 'Para mantener tu plan equilibrado, te quedan $X disponibles para nuevas bolsitas'. Mantener visible el dato durante la creación.
+- **Objetivo de negocio:** Evitar planes de ahorro financieramente inviables y aumentar la confianza en las recomendaciones.
+- **Resultado esperado:** La usuaria solo puede comprometer ahorro dentro de su capacidad disponible y conoce su margen restante en todo momento.
+- **Criterio de éxito:** No se puede guardar una bolsita cuyo aporte mensual exceda el disponible y el monto restante se actualiza correctamente con cada cambio.
+
+### 4.18 · Validar nuevas cajitas contra la capacidad disponible
+**Epic:** Dashboard | Mis cajitas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** Al agregar nuevas cajitas después del onboarding, el sistema necesita controlar el impacto de la nueva reserva mensual sobre el dinero disponible. Sin una validación, la usuaria puede crear compromisos que superen su capacidad financiera.
+- **Experiencia deseada:** Antes de guardar una cajita nueva o modificar una existente, Amy debe mostrar el impacto de su cuota mensual y evitar que el conjunto de compromisos deje un plan financieramente inviable.
+- **Historia de usuario:** Como una usuaria que quiere prepararme para nuevos gastos periódicos, quiero saber cuánto espacio tengo disponible antes de crear una cajita, para no comprometer más dinero del que realmente puedo reservar cada mes.
+- **Lineamientos de implementación:** Calcular la cuota mensual de la nueva cajita antes de guardarla y mostrar cuánto dinero disponible quedaría después de incorporarla. Si la cuota supera la capacidad disponible definida por el plan, bloquear la creación o solicitar un ajuste del monto, fecha o configuración según corresponda. Actualizar el cálculo al editar o eliminar cajitas.
+- **Consideraciones de UX:** Explicar el límite en términos de capacidad mensual, no del monto total del gasto. Mantener coherencia con la fórmula central y evitar mensajes alarmistas.
+- **Objetivo de negocio:** Prevenir sobreasignación de dinero y mantener un plan mensual sostenible.
+- **Resultado esperado:** La usuaria entiende el costo mensual de cada nueva cajita y no puede crear una reserva que haga inviable su plan.
+- **Criterio de éxito:** La vista previa muestra el impacto mensual y el sistema impide guardar una cajita cuando su reserva excede la capacidad disponible.
+
+### 4.19 · Explicar la metodología de salida de deudas con su autor
+**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** Mis deudas muestra el nombre de la metodología recomendada, pero la explicación no ofrece suficiente contexto sobre qué significa, por qué Amy la eligió y de dónde viene el enfoque.
+- **Experiencia deseada:** La usuaria debe recibir una explicación breve y confiable de su metodología, incluyendo cómo funciona, por qué encaja con sus preferencias y la referencia al autor o fuente reconocida que corresponda.
+- **Historia de usuario:** Como una mujer que recibió una estrategia para salir de deudas, quiero entender en pocas palabras cómo funciona y en qué enfoque reconocido se basa, para confiar en el plan que estoy siguiendo.
+- **Lineamientos de implementación:** Crear un bloque compacto de 'Tu método' dentro de Mis deudas. Mostrar nombre del método, explicación de 2 a 3 frases, cómo se aplica en su caso y autor o fuente correspondiente. Para métodos inspirados en enfoques conocidos, atribuir con precisión y evitar presentar como autor único a quien no lo sea. Mantener un enlace o detalle ampliable si se necesita más contexto sin recargar la vista.
+- **Consideraciones de UX:** Debe sentirse educativo y confiable, no académico. Evitar párrafos largos. La atribución debe ser factual y revisada antes de publicación.
+- **Objetivo de negocio:** Aumentar comprensión y confianza en la estrategia de deuda recomendada por Amy.
+- **Resultado esperado:** La usuaria entiende qué método está siguiendo, cómo aplicarlo y cuál es su fundamento.
+- **Criterio de éxito:** Cada metodología tiene una explicación breve, aplicación práctica y atribución validada sin sobrecargar la pantalla.
+
+### 4.20 · Hacer literal el check del pago mensual de la deuda
+**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** El estado inicial del check dice 'Pendiente este mes'. Aunque después cambia a 'Pago de este mes registrado', el texto inicial no deja claro que la usuaria debe hacer clic allí después de pagar la cuota en su banco.
+- **Experiencia deseada:** La acción debe decir exactamente qué debe hacer la usuaria y cuándo debe marcarla, sin exigir que interprete un estado como una instrucción.
+- **Historia de usuario:** Como una usuaria que acaba de pagar la cuota de una deuda en mi banco, quiero ver una instrucción literal para marcar ese pago en Amy, para saber exactamente cómo mantener mi seguimiento actualizado.
+- **Lineamientos de implementación:** Reemplazar el texto accionable ambiguo por una instrucción como 'Haz clic aquí cuando pagues la cuota de este mes en tu banco' o una versión equivalente consistente con el diseño. Después de marcar, cambiar a un estado confirmado como 'Pago de este mes registrado'. Permitir deshacer si se marcó por error.
+- **Consideraciones de UX:** No depender solo del color o del ícono de check. El texto previo debe describir la acción y el posterior debe confirmar el resultado.
+- **Objetivo de negocio:** Mejorar la comprensión del seguimiento mensual y aumentar la calidad de los datos registrados.
+- **Resultado esperado:** La usuaria entiende sin explicación adicional dónde confirmar el pago de su cuota.
+- **Criterio de éxito:** El estado pendiente contiene una instrucción explícita, el clic cambia a confirmación y puede revertirse si fue accidental.
