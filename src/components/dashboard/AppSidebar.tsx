@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
 import {
   LayoutDashboard,
+  TrendingUp,
+  CalendarDays,
   ShoppingCart,
   Archive,
   PiggyBank,
@@ -16,6 +18,8 @@ import {
 
 const NAV = [
   { href: "/app", label: "Mis finanzas", icon: LayoutDashboard },
+  { href: "/app/ingresos", label: "Ingresos", icon: TrendingUp },
+  { href: "/app/ciclos", label: "Mis ciclos", icon: CalendarDays },
   { href: "/app/gastos", label: "Mis gastos", icon: ShoppingCart },
   { href: "/app/cajitas", label: "Cajitas", icon: Archive },
   { href: "/app/ahorro", label: "Bolsitas de ahorro", icon: PiggyBank },
