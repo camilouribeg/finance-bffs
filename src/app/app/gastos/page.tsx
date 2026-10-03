@@ -7,6 +7,7 @@ import MoneyInput from "@/components/MoneyInput";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { Inbox, X, Mic, Square, ChevronDown, ChevronUp, Pencil, Check, Plus } from "lucide-react";
 import Link from "next/link";
+import { inicioSemanaISO, leerSinGastos, guardarSinGastos, semanaAlDia } from "@/lib/semana";
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
@@ -65,6 +66,10 @@ export default function GastosPage() {
   const stopRef = useRef<(() => void) | null>(null);
 
   const [presupuestoDisponible, setPresupuestoDisponible] = useState<number | null>(null);
+
+  // Ritual semanal (3.8): cuantos gastos hay desde el lunes y si la semana se marco sin gastos.
+  const [gastosSemana, setGastosSemana] = useState(0);
+  const [sinGastos, setSinGastos] = useState(false);
 
   useEffect(() => {
     load();
@@ -135,6 +140,10 @@ export default function GastosPage() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    const { count: semanaCount } = await supabase.from("gastos").select("id", { count: "exact", head: true })
+      .eq("user_id", user.id).gte("fecha", inicioSemanaISO());
+    setGastosSemana(semanaCount ?? 0);
+    setSinGastos(leerSinGastos());
 
     const now = new Date();
     const [{ data: gastosData }, { data: plan }, { data: deudas }, { data: bolsillos }, { data: cajitas }] = await Promise.all([
@@ -319,6 +328,35 @@ export default function GastosPage() {
           {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
         </select>
       </div>
+
+      {/* Ritual semanal (3.8) */}
+      {!loading && (() => {
+        const alDia = semanaAlDia(gastosSemana) || sinGastos;
+        if (alDia) {
+          return (
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-green-200 bg-green-50 px-5 py-3 mb-5">
+              <p className="text-sm font-medium text-green-700 flex items-center gap-2"><Check size={15} strokeWidth={3} />
+                {gastosSemana > 0 ? "Esta semana ya registraste tus gastos." : "Esta semana no tuviste gastos que registrar."}</p>
+              {sinGastos && gastosSemana === 0 && (
+                <button onClick={() => { guardarSinGastos(false); setSinGastos(false); }}
+                  className="text-xs text-green-700 underline">Deshacer</button>
+              )}
+            </div>
+          );
+        }
+        return (
+          <div className="rounded-2xl border border-[#ffb8e0] bg-white px-5 py-4 mb-5">
+            <p className="text-sm font-semibold text-[#1a1a2e] mb-1">Tu rutina semanal</p>
+            <p className="text-sm text-[#1a1a2e]/60 leading-relaxed mb-3">
+              Dedica unos minutos una vez por semana, ideal el domingo o el lunes, a registrar los gastos de la semana. Puedes hacerlo con voz o a mano.
+            </p>
+            <button onClick={() => { guardarSinGastos(true); setSinGastos(true); }}
+              className="w-full border border-[#ec7fa9] text-[#ec7fa9] text-sm font-semibold py-2 rounded-xl hover:bg-[#ffedfa] transition-colors">
+              Esta semana no gasté nada
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Budget bar */}
       {presupuestoDisponible !== null && month === new Date().getMonth() && (

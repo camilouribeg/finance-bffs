@@ -23,7 +23,7 @@
 | 3.5 | Mostrar dinero restante al crear bolsitas | Onboarding Happy Path | Alta | Completo |
 | 3.6 | Convertir Mis finanzas en un plan de acción | Acompañamiento después del onboarding | Alta | Completo |
 | 3.7 | Guiar la creación de cajitas y bolsitas en el banco | Hábitos financieros y conexión con el banco | Alta | Completo |
-| 3.8 | Crear el ritual semanal de registro de gastos | Hábitos financieros y conexión con el banco | Alta | Pendiente |
+| 3.8 | Crear el ritual semanal de registro de gastos | Hábitos financieros y conexión con el banco | Alta | Completo |
 | 3.9 | Enseñar cómo usar el menú principal | Acompañamiento después del onboarding | Media | Completo |
 | 3.10 | Simplificar la selección de país | Onboarding Happy Path | Media | Completo |
 | 3.11 | Permitir configurar varias monedas | Onboarding Happy Path | Alta | Completo |
@@ -235,7 +235,7 @@
 - **Criterio de éxito:** Los módulos explican explícitamente la acción bancaria y permiten registrar el cumplimiento mensual sin confundir reserva presupuestal con transferencia real.
 
 ### 3.8 · Crear el ritual semanal de registro de gastos
-**Epic:** Hábitos financieros y conexión con el banco  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Hábitos financieros y conexión con el banco  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Mis gastos permite registrar transacciones manualmente o hablando con Amy, pero actualmente la funcionalidad depende de que la usuaria recuerde entrar por iniciativa propia.
 - **Experiencia deseada:** Finance BFF debe ayudar a convertir el registro de gastos en un hábito simple y sostenible. Amy debe proponer una rutina semanal corta para revisar y registrar los gastos de los últimos días.
