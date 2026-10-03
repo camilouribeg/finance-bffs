@@ -1,12 +1,14 @@
 // Pruebas del motor de ciclos y reservas (epic Flujo de caja).
 // Sin test runner en el repo: compilar y correr con:
 //   npx tsc src/lib/ciclos.ts src/lib/capacidad.ts --outDir <salida> --module commonjs --target es2020 --skipLibCheck && node tests/ciclos/run.cjs <salida>
-const path = require("path");
+import path from "node:path";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
 const dir = process.argv[2];
 const { planHastaProximoIngreso, proyectarEventos } = require(path.join(dir, "ciclos.js"));
 const { totalReservasActivas, calcularDisponible } = require(path.join(dir, "capacidad.js"));
 let ok = 0, fail = 0;
-const check = (name, cond, extra = "") => { cond ? ok++ : fail++; console.log(cond ? "PASS" : "FAIL", name, extra); };
+const check = (name, cond, extra = "") => { if (cond) ok++; else fail++; console.log(cond ? "PASS" : "FAIL", name, extra); };
 const fmtD = (d) => d.toDateString();
 
 let p = planHastaProximoIngreso(new Date(2026, 9, 3), 0, [{ nombre: "S", monto: 100, frecuencia: "quincenal", dia_1: 15, dia_2: 30, fecha_inicio: null }], []);

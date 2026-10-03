@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
-import { calcularDisponible, type ReservaLike } from "@/lib/capacidad";
+import { calcularDisponible, cuotaMensualBolsillo, type ReservaLike } from "@/lib/capacidad";
+import TransferenciaBanco from "@/components/dashboard/TransferenciaBanco";
+import { filasTransferencia, resumenTransferencia } from "@/lib/transferencia";
 import { PiggyBank, Target, Check, X, PartyPopper, Star, Plus, Pencil, AlertTriangle } from "lucide-react";
 
 type Bolsillo = {
@@ -462,6 +464,12 @@ export default function AhorroPage() {
           </p>
         </div>
       )}
+
+      {/* Transferencia al banco (3.7): explica la accion en el banco, con el desglose */}
+      {!loading && (() => {
+        const filas = filasTransferencia(conAporteMensual, cuotaMensualBolsillo, confirmadas);
+        return <TransferenciaBanco singular="bolsita" filas={filas} resumen={resumenTransferencia(filas)} ocupado={false} error={null} />;
+      })()}
 
       {loading ? (
         <div className="flex flex-col gap-6 animate-pulse">

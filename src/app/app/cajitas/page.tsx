@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
-import { calcularDisponible, type ReservaLike } from "@/lib/capacidad";
+import { calcularDisponible, cuotaMensualCajita, type ReservaLike } from "@/lib/capacidad";
+import TransferenciaBanco from "@/components/dashboard/TransferenciaBanco";
+import { filasTransferencia, resumenTransferencia } from "@/lib/transferencia";
 import { Archive, Lightbulb, Check, X, PartyPopper, AlertTriangle } from "lucide-react";
 
 type Cajita = {
@@ -292,6 +294,12 @@ export default function CajitasPage() {
           </>
         )}
       </div>
+
+      {/* Transferencia al banco (3.7): explica la accion en el banco, con el desglose */}
+      {!loading && (() => {
+        const filas = filasTransferencia(cajitas.filter(c => c.monto_total - c.actual > 0), cuotaMensualCajita, confirmadas);
+        return <TransferenciaBanco singular="cajita" filas={filas} resumen={resumenTransferencia(filas)} ocupado={false} error={null} />;
+      })()}
 
       {showForm && (
         <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6 mb-6">

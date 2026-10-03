@@ -4,9 +4,11 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Pencil, Check, X, Search, Zap, Archive, PiggyBank, Target } from "lucide-react";
+import MoneyInput from "@/components/MoneyInput";
+import { Pencil, Check, X, Search, Zap, Archive, PiggyBank, Target, ChevronDown } from "lucide-react";
+import { MONEDAS } from "@/lib/monedas";
 
-type ListItem = { id: string; nombre: string; valor: number };
+type ListItem = { id: string; nombre: string; valor: number; divisaOriginal?: string; valorOriginal?: number };
 type CajitaOB = { id: string; nombre: string; emoji: string; monto_total: number; meses: number; fecha_pago?: string; };
 type BolsitaOB = { id: string; nombre: string; emoji: string; tipo: "fondos" | "metas"; cuota_mensual?: number; meta?: number; fecha_meta?: string; importancia: number; };
 type DeudaItem = {
@@ -72,6 +74,17 @@ const PAISES = [
   { nombre: "Perú", emoji: "🇵🇪", divisa: "PEN", locale: "es-PE" },
   { nombre: "Ecuador", emoji: "🇪🇨", divisa: "USD", locale: "es-EC" },
   { nombre: "Venezuela", emoji: "🇻🇪", divisa: "USD", locale: "es-VE" },
+  { nombre: "Guatemala", emoji: "🇬🇹", divisa: "GTQ", locale: "es-GT" },
+  { nombre: "Costa Rica", emoji: "🇨🇷", divisa: "CRC", locale: "es-CR" },
+  { nombre: "Panamá", emoji: "🇵🇦", divisa: "USD", locale: "es-PA" },
+  { nombre: "República Dominicana", emoji: "🇩🇴", divisa: "DOP", locale: "es-DO" },
+  { nombre: "Bolivia", emoji: "🇧🇴", divisa: "BOB", locale: "es-BO" },
+  { nombre: "Paraguay", emoji: "🇵🇾", divisa: "PYG", locale: "es-PY" },
+  { nombre: "Uruguay", emoji: "🇺🇾", divisa: "UYU", locale: "es-UY" },
+  { nombre: "Honduras", emoji: "🇭🇳", divisa: "HNL", locale: "es-HN" },
+  { nombre: "El Salvador", emoji: "🇸🇻", divisa: "USD", locale: "es-SV" },
+  { nombre: "Nicaragua", emoji: "🇳🇮", divisa: "NIO", locale: "es-NI" },
+  { nombre: "Puerto Rico", emoji: "🇵🇷", divisa: "USD", locale: "es-PR" },
   { nombre: "España", emoji: "🇪🇸", divisa: "EUR", locale: "es-ES" },
   { nombre: "Estados Unidos", emoji: "🇺🇸", divisa: "USD", locale: "en-US" },
   { nombre: "Otro", emoji: "🌎", divisa: "USD", locale: "en-US" },
@@ -136,6 +149,9 @@ export default function OnboardingPage() {
   const [ingresosOtros, setIngresosOtros] = useState<ListItem[]>([]);
   const [nuevoIngNombre, setNuevoIngNombre] = useState("");
   const [nuevoIngValor, setNuevoIngValor] = useState("");
+  const [nuevoIngOtraMoneda, setNuevoIngOtraMoneda] = useState(false);
+  const [nuevoIngDivisa, setNuevoIngDivisa] = useState("USD");
+  const [nuevoIngValorOriginal, setNuevoIngValorOriginal] = useState("");
 
   // Step 2: Gastos fijos
   const [gastosFijos, setGastosFijos] = useState<ListItem[]>([]);
@@ -177,14 +193,20 @@ export default function OnboardingPage() {
   const [bolCuota, setBolCuota] = useState("");
   const [bolMeta, setBolMeta] = useState("");
   const [bolFecha, setBolFecha] = useState("");
-  const [bolImportancia, setBolImportancia] = useState(3);
+  // roadmap 3.15: sin elegir importancia todavía (0 = ninguna estrella marcada),
+  // para que la recomendación de Amy no aparezca con un valor por defecto oculto.
+  const [bolImportancia, setBolImportancia] = useState(0);
   const [editingBolCuota, setEditingBolCuota] = useState(false);
 
   const [saving, setSaving] = useState(false);
 
   // Pre-onboarding profile
   const [paisSeleccionado, setPaisSeleccionado] = useState<typeof PAISES[0] | null>(null);
+  const [monedaSeleccionada, setMonedaSeleccionada] = useState("");
+  const [monedasSecundarias, setMonedasSecundarias] = useState<string[]>([]);
   const [edadRango, setEdadRango] = useState("");
+  const [paisAbierto, setPaisAbierto] = useState(false);
+  const [paisQuery, setPaisQuery] = useState("");
 
   useEffect(() => {
     async function init() {
@@ -197,10 +219,78 @@ export default function OnboardingPage() {
         .select("onboarding_completed")
         .eq("id", user.id)
         .single();
-      if (profile?.onboarding_completed) { window.location.href = "/app"; }
+      if (profile?.onboarding_completed) {
+        try { localStorage.removeItem(`amy_onboarding_draft_${user.id}`); } catch {}
+        window.location.href = "/app";
+      }
     }
     init();
   }, []);
+
+  // Guardado de progreso (roadmap 3.1): el borrador vive en localStorage. Sobrevive
+  // salir y volver en el mismo navegador; no cruza dispositivos (decisión consciente).
+  const draftRestored = useRef(false);
+  const draftKey = userId ? `amy_onboarding_draft_${userId}` : null;
+
+  useEffect(() => {
+    if (!draftKey || draftRestored.current) return;
+    draftRestored.current = true;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d.step && d.step !== "perfil_inicial") {
+        setStep(d.step === "guardando" ? "bolsitas_crear" : d.step);
+      }
+      if (typeof d.ingresoFijo === "string") setIngresoFijo(d.ingresoFijo);
+      if (Array.isArray(d.ingresosOtros)) setIngresosOtros(d.ingresosOtros);
+      if (Array.isArray(d.gastosFijos)) setGastosFijos(d.gastosFijos);
+      if (Array.isArray(d.deudas)) setDeudas(d.deudas);
+      if (typeof d.quizStep === "number") setQuizStep(d.quizStep);
+      if (Array.isArray(d.quizAnswers)) setQuizAnswers(d.quizAnswers);
+      if (d.debtMethod) setDebtMethod(d.debtMethod);
+      if (Array.isArray(d.cajitasOB)) setCajitasOB(d.cajitasOB);
+      if (typeof d.selectedAhorro === "number") setSelectedAhorro(d.selectedAhorro);
+      if (Array.isArray(d.bolsitasOB)) setBolsitasOB(d.bolsitasOB);
+      if (d.paisSeleccionado) {
+        setPaisSeleccionado(d.paisSeleccionado);
+        try {
+          localStorage.setItem("amy_pais", JSON.stringify({
+            ...d.paisSeleccionado,
+            divisa: d.monedaSeleccionada || d.paisSeleccionado.divisa,
+            secundarias: Array.isArray(d.monedasSecundarias) ? d.monedasSecundarias : [],
+          }));
+        } catch {}
+      }
+      if (d.monedaSeleccionada) setMonedaSeleccionada(d.monedaSeleccionada);
+      if (Array.isArray(d.monedasSecundarias)) setMonedasSecundarias(d.monedasSecundarias);
+      if (d.edadRango) setEdadRango(d.edadRango);
+    } catch {
+      // borrador corrupto: empezar de cero
+    }
+  }, [draftKey]);
+
+  useEffect(() => {
+    if (!draftKey || !draftRestored.current || step === "perfil_inicial" || step === "guardando") return;
+    try {
+      localStorage.setItem(draftKey, JSON.stringify({
+        step, ingresoFijo, ingresosOtros, gastosFijos, deudas,
+        quizStep, quizAnswers, debtMethod,
+        cajitasOB, selectedAhorro, bolsitasOB,
+        paisSeleccionado, monedaSeleccionada, monedasSecundarias, edadRango,
+      }));
+    } catch {
+      // cuota de localStorage llena u otro error: no bloquear el onboarding
+    }
+  }, [draftKey, step, ingresoFijo, ingresosOtros, gastosFijos, deudas, quizStep,
+      quizAnswers, debtMethod, cajitasOB, selectedAhorro, bolsitasOB,
+      paisSeleccionado, monedaSeleccionada, monedasSecundarias, edadRango]);
+
+  // Búsqueda de país (roadmap 3.10): sin tildes ni mayúsculas, así "peru" encuentra "Perú".
+  const normalizar = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const paisesFiltrados = paisQuery.trim()
+    ? PAISES.filter((p) => normalizar(p.nombre).includes(normalizar(paisQuery.trim())))
+    : PAISES;
 
   // Calculations
   const totalIngresos = (parseFloat(ingresoFijo) || 0) + ingresosOtros.reduce((s, i) => s + i.valor, 0);
@@ -216,9 +306,14 @@ export default function OnboardingPage() {
 
   function fmt(n: number) {
     const loc = paisSeleccionado?.locale ?? "es-CO";
-    const cur = paisSeleccionado?.divisa ?? "COP";
+    const cur = monedaSeleccionada || paisSeleccionado?.divisa || "COP";
     return new Intl.NumberFormat(loc, { style: "currency", currency: cur, maximumFractionDigits: 0 }).format(n);
   }
+
+  // El país se guarda en localStorage al final del primer paso, pero el hook de
+  // MoneyInput lo lee una sola vez al montar; le pasamos el país en vivo. La moneda es
+  // independiente del país (alguien puede vivir en Colombia y cobrar en USD).
+  const monedaProps = { locale: paisSeleccionado?.locale, currency: monedaSeleccionada || paisSeleccionado?.divisa };
 
   function showReinforcement(_msg: string, onContinue: () => void) {
     onContinue();
@@ -227,8 +322,13 @@ export default function OnboardingPage() {
   // List helpers
   function addIngreso() {
     if (!nuevoIngNombre || !nuevoIngValor) return;
-    setIngresosOtros([...ingresosOtros, { id: Date.now().toString(), nombre: nuevoIngNombre, valor: parseFloat(nuevoIngValor) }]);
-    setNuevoIngNombre(""); setNuevoIngValor("");
+    const item: ListItem = { id: Date.now().toString(), nombre: nuevoIngNombre, valor: parseFloat(nuevoIngValor) };
+    if (nuevoIngOtraMoneda && nuevoIngValorOriginal) {
+      item.divisaOriginal = nuevoIngDivisa;
+      item.valorOriginal = parseFloat(nuevoIngValorOriginal);
+    }
+    setIngresosOtros([...ingresosOtros, item]);
+    setNuevoIngNombre(""); setNuevoIngValor(""); setNuevoIngValorOriginal(""); setNuevoIngOtraMoneda(false);
   }
 
   function addGasto() {
@@ -304,8 +404,17 @@ export default function OnboardingPage() {
     setStep("ahorro_puede");
   }
 
+  function quizBack() {
+    if (quizStep > 0) {
+      setQuizStep(quizStep - 1);
+    } else {
+      setStep("deuda_intro");
+    }
+  }
+
   function answerQuiz(answer: string) {
-    const newAnswers = [...quizAnswers, answer];
+    // slice hasta quizStep: si volvió atrás y responde de nuevo, reemplaza en vez de acumular
+    const newAnswers = [...quizAnswers.slice(0, quizStep), answer];
     setQuizAnswers(newAnswers);
     if (quizStep < QUIZ.length - 1) {
       setQuizStep(quizStep + 1);
@@ -334,7 +443,10 @@ export default function OnboardingPage() {
         month: now.getMonth() + 1,
         year: now.getFullYear(),
         ingreso_fijo: parseFloat(ingresoFijo) || 0,
-        ingresos_otros: ingresosOtros.map(i => ({ id: i.id, descripcion: i.nombre, valor: i.valor })),
+        ingresos_otros: ingresosOtros.map(i => ({
+          id: i.id, descripcion: i.nombre, valor: i.valor,
+          ...(i.divisaOriginal ? { divisa_original: i.divisaOriginal, valor_original: i.valorOriginal } : {}),
+        })),
         gastos_fijos: gastosFijos.reduce((s, g) => s + g.valor, 0),
         gastos_fijos_items: gastosFijos.map(g => ({ id: g.id, nombre: g.nombre, valor: g.valor })),
         gastos_variables_items: [],
@@ -398,6 +510,7 @@ export default function OnboardingPage() {
         throw new Error("No se pudo completar el onboarding.");
       }
 
+      try { localStorage.removeItem(`amy_onboarding_draft_${userId}`); } catch {}
       window.location.href = "/app";
     } catch {
       setSaving(false);
@@ -418,9 +531,27 @@ export default function OnboardingPage() {
     return fondos + metas;
   })();
   const bolsitasDisponible = (selectedAhorro ?? 0) - bolsitasUsadoMensual;
-  const bolCuotaRecomendada = bolsitasDisponible > 0 && bolTipo === "fondos"
+  const bolCuotaRecomendada = bolsitasDisponible > 0 && bolTipo === "fondos" && bolImportancia > 0
     ? Math.round((bolImportancia / 15) * bolsitasDisponible)
     : 0;
+
+  // roadmap 3.14: si la fecha elegida ya pasó, proponer la próxima ocurrencia futura
+  // según cada cuántos meses llega el gasto (bimestral, anual, etc.).
+  function proximaFechaValida(fechaMes: string, periodoMeses: number) {
+    if (!fechaMes) return fechaMes;
+    const [y, m] = fechaMes.split("-").map(Number);
+    if (!y || !m) return fechaMes;
+    const ahora = new Date();
+    const actualY = ahora.getFullYear();
+    const actualM = ahora.getMonth() + 1;
+    const periodo = Math.max(1, periodoMeses || 12);
+    let ny = y, nm = m;
+    while (ny < actualY || (ny === actualY && nm < actualM)) {
+      nm += periodo;
+      while (nm > 12) { nm -= 12; ny += 1; }
+    }
+    return `${ny}-${String(nm).padStart(2, "0")}`;
+  }
 
   function addCajitaOB() {
     if (!cajNombre || !cajMonto) return;
@@ -448,9 +579,9 @@ export default function OnboardingPage() {
       cuota_mensual: bolTipo === "fondos" ? parseFloat(bolCuota) : undefined,
       meta: bolTipo === "metas" ? parseFloat(bolMeta) : undefined,
       fecha_meta: bolTipo === "metas" ? bolFecha : undefined,
-      importancia: bolImportancia,
+      importancia: bolImportancia || 3,
     }]);
-    setBolNombre(""); setBolEmoji("👜"); setBolCuota(""); setBolMeta(""); setBolFecha(""); setBolImportancia(3); setEditingBolCuota(false);
+    setBolNombre(""); setBolEmoji("👜"); setBolCuota(""); setBolMeta(""); setBolFecha(""); setBolImportancia(0); setEditingBolCuota(false);
   }
 
   const stepNum = step === "perfil_inicial" ? 0
@@ -504,7 +635,10 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-3xl shadow-xl border border-[#ffb8e0] overflow-hidden">
+        {/* roadmap 3.17: sin overflow-hidden aquí, para que el resumen sticky del paso
+            de bolsitas pueda pegarse al hacer scroll (todo el contenido interno ya va
+            con padding, así que ningún hijo llega a tocar las esquinas redondeadas). */}
+        <div className="bg-white rounded-3xl shadow-xl border border-[#ffb8e0]">
 
           {/* ─── PERFIL INICIAL ─── */}
           {step === "perfil_inicial" && (
@@ -522,24 +656,115 @@ export default function OnboardingPage() {
               <div className="space-y-5">
                 <div>
                   <label className="block text-sm font-semibold text-[#1a1a2e]/70 mb-2">¿De qué país eres?</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {PAISES.map((p) => (
-                      <button
-                        key={p.nombre}
-                        type="button"
-                        onClick={() => setPaisSeleccionado(p)}
-                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
-                          paisSeleccionado?.nombre === p.nombre
-                            ? "bg-[#ec7fa9] text-white border-[#ec7fa9]"
-                            : "bg-white border-[#ffb8e0] text-[#1a1a2e]/70 hover:border-[#ec7fa9] hover:bg-[#ffedfa]"
-                        }`}
-                      >
-                        <span>{p.emoji}</span>
-                        <span className="truncate">{p.nombre}</span>
-                      </button>
-                    ))}
+                  <div className="relative">
+                    <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#1a1a2e]/30" />
+                    <input
+                      type="text"
+                      value={paisAbierto ? paisQuery : paisSeleccionado ? `${paisSeleccionado.emoji} ${paisSeleccionado.nombre}` : ""}
+                      onFocus={() => { setPaisAbierto(true); setPaisQuery(""); }}
+                      onChange={(e) => setPaisQuery(e.target.value)}
+                      onBlur={() => setTimeout(() => setPaisAbierto(false), 150)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && paisesFiltrados.length > 0) {
+                          e.preventDefault();
+                          const p = paisesFiltrados[0];
+                          setPaisSeleccionado(p); setMonedaSeleccionada(p.divisa);
+                          setPaisAbierto(false); setPaisQuery("");
+                        } else if (e.key === "Escape") {
+                          setPaisAbierto(false);
+                        }
+                      }}
+                      placeholder="Escribe para buscar tu país…"
+                      className="w-full border border-[#ffb8e0] rounded-xl pl-10 pr-4 py-3 text-sm font-medium text-[#1a1a2e] bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all"
+                    />
+                    {paisAbierto && (
+                      <div className="absolute z-10 mt-1.5 w-full max-h-56 overflow-y-auto bg-white border border-[#ffb8e0] rounded-xl shadow-lg py-1">
+                        {paisesFiltrados.length === 0 ? (
+                          <p className="px-4 py-2.5 text-sm text-[#1a1a2e]/40">Ningún país coincide. Prueba con otro nombre.</p>
+                        ) : (
+                          paisesFiltrados.map((p) => (
+                            <button
+                              key={p.nombre}
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setPaisSeleccionado(p); setMonedaSeleccionada(p.divisa);
+                                setPaisAbierto(false); setPaisQuery("");
+                              }}
+                              className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left transition-colors ${
+                                paisSeleccionado?.nombre === p.nombre
+                                  ? "bg-[#ec7fa9]/10 text-[#ec7fa9] font-semibold"
+                                  : "text-[#1a1a2e]/70 hover:bg-[#ffedfa]"
+                              }`}
+                            >
+                              <span>{p.emoji}</span>
+                              <span>{p.nombre}</span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
+                  {paisSeleccionado?.nombre === "Otro" && (
+                    <p className="text-xs text-[#1a1a2e]/40 mt-2">
+                      No pasa nada, elige abajo en qué moneda manejas tu dinero.
+                    </p>
+                  )}
                 </div>
+
+                {paisSeleccionado && (
+                  <div>
+                    <label className="block text-sm font-semibold text-[#1a1a2e]/70 mb-2">¿En qué moneda manejas tu dinero?</label>
+                    <div className="relative">
+                      <select
+                        value={monedaSeleccionada}
+                        onChange={(e) => setMonedaSeleccionada(e.target.value)}
+                        className="w-full appearance-none border border-[#ffb8e0] rounded-xl pl-4 pr-10 py-3 text-sm font-medium text-[#1a1a2e] bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 focus:border-[#ec7fa9] transition-all cursor-pointer"
+                      >
+                        {MONEDAS.map((m) => (
+                          <option key={m.code} value={m.code}>{m.code} · {m.nombre}</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={18} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#ec7fa9]" />
+                    </div>
+                    <p className="text-xs text-[#1a1a2e]/40 mt-1.5">
+                      Por defecto usamos la de tu país, pero si cobras en otra, por ejemplo dólares, la puedes cambiar aquí.
+                    </p>
+                  </div>
+                )}
+
+                {paisSeleccionado && (
+                  <div>
+                    <label className="block text-sm font-semibold text-[#1a1a2e]/70 mb-2">
+                      ¿Manejas dinero en otras monedas también? <span className="text-[#1a1a2e]/30 font-normal">(opcional)</span>
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {MONEDAS.filter((m) => m.code !== monedaSeleccionada).map((m) => {
+                        const activa = monedasSecundarias.includes(m.code);
+                        return (
+                          <button
+                            key={m.code}
+                            type="button"
+                            onClick={() => setMonedasSecundarias((prev) =>
+                              activa ? prev.filter((c) => c !== m.code) : [...prev, m.code]
+                            )}
+                            className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
+                              activa
+                                ? "bg-[#ec7fa9] text-white border-[#ec7fa9]"
+                                : "bg-white border-[#ffb8e0] text-[#1a1a2e]/60 hover:border-[#ec7fa9]"
+                            }`}
+                          >
+                            {m.code}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-[#1a1a2e]/40 mt-1.5">
+                      {monedaSeleccionada || paisSeleccionado?.divisa} sigue siendo tu moneda principal. Esta selección solo
+                      hace que, al registrar un ingreso o gasto en otra moneda, la tengas más a la mano en la lista.
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-semibold text-[#1a1a2e]/70 mb-2">¿En qué rango de edad estás?</label>
@@ -566,7 +791,13 @@ export default function OnboardingPage() {
                 type="button"
                 disabled={!paisSeleccionado}
                 onClick={() => {
-                  if (paisSeleccionado) localStorage.setItem("amy_pais", JSON.stringify(paisSeleccionado));
+                  if (paisSeleccionado) {
+                    localStorage.setItem("amy_pais", JSON.stringify({
+                      ...paisSeleccionado,
+                      divisa: monedaSeleccionada || paisSeleccionado.divisa,
+                      secundarias: monedasSecundarias,
+                    }));
+                  }
                   if (edadRango) localStorage.setItem("amy_edad", edadRango);
                   setStep("welcome");
                 }}
@@ -591,14 +822,20 @@ export default function OnboardingPage() {
                 <p>Este es un proceso que vamos a hacer <strong>juntas</strong>.</p>
                 <p>No tienes que saber de finanzas ni hacerlo perfecto.</p>
                 <p>Yo te voy a ir guiando <strong>paso a paso</strong>.</p>
-                <p>Confía en el proceso. 🌸</p>
+                <p>Voy guardando tu avance, así que puedes salir y volver cuando quieras. 🌸</p>
               </div>
-              <button
-                onClick={() => setStep("ingresos")}
-                className={`${btnPink} w-full text-base`}
-              >
-                Empecemos juntas →
-              </button>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setStep("perfil_inicial")}
+                  className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
+                  ← Atrás
+                </button>
+                <button
+                  onClick={() => setStep("ingresos")}
+                  className={`${btnPink} flex-[2] text-base`}
+                >
+                  Empecemos juntas →
+                </button>
+              </div>
             </div>
           )}
 
@@ -616,11 +853,16 @@ export default function OnboardingPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#1a1a2e]/70 mb-1.5">Ingreso principal del mes</label>
-                  <input
-                    type="number"
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <label className="block text-sm font-medium text-[#1a1a2e]/70">Ingreso principal del mes</label>
+                    <span className="text-[10px] font-semibold text-[#ec7fa9] bg-[#ffedfa] border border-[#ffb8e0] rounded-full px-2 py-0.5">
+                      {paisSeleccionado?.emoji} {monedaSeleccionada || paisSeleccionado?.divisa}
+                    </span>
+                  </div>
+                  <MoneyInput
+                    {...monedaProps}
                     value={ingresoFijo}
-                    onChange={(e) => setIngresoFijo(e.target.value)}
+                    onChange={setIngresoFijo}
                     placeholder="Ej: 3.000.000"
                     className={inputCls}
                   />
@@ -632,8 +874,19 @@ export default function OnboardingPage() {
                       <div key={item.id} className="flex items-center justify-between bg-[#ffedfa] rounded-xl px-4 py-2.5">
                         <span className="text-sm text-[#1a1a2e]">{item.nombre}</span>
                         <div className="flex items-center gap-3">
-                          <span className="text-sm font-semibold text-[#ec7fa9]">{fmt(item.valor)}</span>
-                          <button onClick={() => { setNuevoIngNombre(item.nombre); setNuevoIngValor(String(item.valor)); setIngresosOtros(ingresosOtros.filter(i => i.id !== item.id)); }}
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-[#ec7fa9]">{fmt(item.valor)}</p>
+                            {item.divisaOriginal && item.valorOriginal != null && (
+                              <p className="text-[10px] text-[#1a1a2e]/40">
+                                {item.valorOriginal.toLocaleString(paisSeleccionado?.locale ?? "es-CO")} {item.divisaOriginal}
+                              </p>
+                            )}
+                          </div>
+                          <button onClick={() => {
+                            setNuevoIngNombre(item.nombre); setNuevoIngValor(String(item.valor));
+                            if (item.divisaOriginal) { setNuevoIngOtraMoneda(true); setNuevoIngDivisa(item.divisaOriginal); setNuevoIngValorOriginal(String(item.valorOriginal ?? "")); }
+                            setIngresosOtros(ingresosOtros.filter(i => i.id !== item.id));
+                          }}
                             className="text-[#1a1a2e]/30 hover:text-[#ec7fa9] flex items-center"><Pencil size={12} /></button>
                           <button onClick={() => setIngresosOtros(ingresosOtros.filter(i => i.id !== item.id))}
                             className="text-[#1a1a2e]/20 hover:text-red-400 flex items-center"><X size={12} /></button>
@@ -644,18 +897,79 @@ export default function OnboardingPage() {
                 )}
 
                 <div>
-                  <p className="text-xs text-[#1a1a2e]/50 mb-2">¿Tienes otros ingresos? (freelance, arriendos, etc.)</p>
+                  <p className="text-xs text-[#1a1a2e]/50 mb-2 flex items-center gap-2">
+                    ¿Tienes otros ingresos? (freelance, arriendos, etc.)
+                    <span className="text-[10px] font-semibold text-[#ec7fa9] bg-[#ffedfa] border border-[#ffb8e0] rounded-full px-2 py-0.5 flex-shrink-0">
+                      {paisSeleccionado?.emoji} {monedaSeleccionada || paisSeleccionado?.divisa}
+                    </span>
+                  </p>
                   <div className="flex flex-col gap-2">
                     <div className="flex gap-2">
                       <input type="text" value={nuevoIngNombre} onChange={(e) => setNuevoIngNombre(e.target.value)}
                         placeholder="¿De dónde?"
                         onKeyDown={(e) => e.key === "Enter" && addIngreso()}
                         className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
-                      <input type="number" value={nuevoIngValor} onChange={(e) => setNuevoIngValor(e.target.value)}
-                        placeholder="Valor"
-                        onKeyDown={(e) => e.key === "Enter" && addIngreso()}
-                        className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                      {!nuevoIngOtraMoneda && (
+                        <MoneyInput {...monedaProps} value={nuevoIngValor} onChange={setNuevoIngValor}
+                          placeholder="Valor"
+                          onKeyDown={(e) => e.key === "Enter" && addIngreso()}
+                          className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                      )}
                     </div>
+
+                    {!nuevoIngOtraMoneda ? (
+                      <button type="button" onClick={() => {
+                        if (monedasSecundarias.length > 0) setNuevoIngDivisa(monedasSecundarias[0]);
+                        setNuevoIngOtraMoneda(true);
+                      }}
+                        className="text-left text-xs text-[#ec7fa9] font-medium hover:underline w-fit">
+                        ¿Es en otra moneda?
+                      </button>
+                    ) : (
+                      <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl p-3 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-[#1a1a2e]/60">Ingreso en otra moneda</p>
+                          <button type="button" onClick={() => { setNuevoIngOtraMoneda(false); setNuevoIngValorOriginal(""); }}
+                            className="text-[#1a1a2e]/30 hover:text-[#ec7fa9] text-xs flex items-center gap-1"><X size={11} />quitar</button>
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <select value={nuevoIngDivisa} onChange={(e) => setNuevoIngDivisa(e.target.value)}
+                              className="w-full appearance-none border border-[#ffb8e0] rounded-xl pl-3 pr-8 py-2.5 text-sm font-medium bg-white outline-none focus:ring-2 focus:ring-[#ec7fa9]/30 cursor-pointer">
+                              {monedasSecundarias.length > 0 ? (
+                                <>
+                                  <optgroup label="Tus monedas">
+                                    {monedasSecundarias.map((c) => <option key={c} value={c}>{c}</option>)}
+                                  </optgroup>
+                                  <optgroup label="Otras">
+                                    {MONEDAS.filter((m) => !monedasSecundarias.includes(m.code)).map((m) => (
+                                      <option key={m.code} value={m.code}>{m.code}</option>
+                                    ))}
+                                  </optgroup>
+                                </>
+                              ) : (
+                                MONEDAS.map((m) => <option key={m.code} value={m.code}>{m.code}</option>)
+                              )}
+                            </select>
+                            <ChevronDown size={15} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#ec7fa9]" />
+                          </div>
+                          <input type="text" inputMode="decimal" value={nuevoIngValorOriginal}
+                            onChange={(e) => setNuevoIngValorOriginal(e.target.value.replace(/[^0-9.]/g, ""))}
+                            placeholder={`¿Cuánto ganas en ${nuevoIngDivisa}?`}
+                            className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                        </div>
+                        <div>
+                          <label className="text-[11px] text-[#1a1a2e]/50 block mb-1">
+                            ¿Cuánto es eso en {MONEDAS.find(m => m.code === (monedaSeleccionada || paisSeleccionado?.divisa))?.nombre.toLowerCase() ?? "tu moneda"}?
+                          </label>
+                          <MoneyInput {...monedaProps} value={nuevoIngValor} onChange={setNuevoIngValor}
+                            placeholder="Valor convertido"
+                            onKeyDown={(e) => e.key === "Enter" && addIngreso()}
+                            className="w-full border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
+                        </div>
+                      </div>
+                    )}
+
                     <button type="button" onClick={addIngreso}
                       className="w-full bg-[#ec7fa9] text-white font-semibold px-4 py-2.5 rounded-xl hover:bg-[#d96d97] transition-colors text-sm">+ Agregar</button>
                   </div>
@@ -670,13 +984,19 @@ export default function OnboardingPage() {
                 )}
               </div>
 
-              <button
-                onClick={goToGastos}
-                disabled={!ingresoFijo && ingresosOtros.length === 0}
-                className={`${btnPink} w-full mt-6`}
-              >
-                Siguiente →
-              </button>
+              <div className="flex gap-3 mt-6">
+                <button type="button" onClick={() => setStep("welcome")}
+                  className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
+                  ← Atrás
+                </button>
+                <button
+                  onClick={goToGastos}
+                  disabled={!ingresoFijo && ingresosOtros.length === 0}
+                  className={`${btnPink} flex-[2]`}
+                >
+                  Siguiente →
+                </button>
+              </div>
             </div>
           )}
 
@@ -686,10 +1006,13 @@ export default function OnboardingPage() {
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
                 Ahora, lo que pagas cada mes
               </h2>
-              <div className="text-sm text-[#1a1a2e]/60 leading-relaxed mb-6 space-y-2">
+              <div className="text-sm text-[#1a1a2e]/60 leading-relaxed mb-4 space-y-2">
                 <p>Estos son los gastos que pagas todos los meses, casi siempre por el mismo valor.</p>
                 <p className="text-[#1a1a2e]/50">Por ejemplo: arriendo, servicios, suscripciones o internet.</p>
               </div>
+              <p className="text-xs text-[#ec7fa9] bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-3 py-2 mb-4">
+                No hace falta que los recuerdes todos ahora. Puedes agregar o corregir gastos fijos más adelante desde Mis finanzas, sin perder lo que ya escribiste.
+              </p>
 
               {gastosFijos.length > 0 && (
                 <div className="space-y-2 mb-4">
@@ -714,7 +1037,7 @@ export default function OnboardingPage() {
                     placeholder="Nombre del gasto"
                     onKeyDown={(e) => e.key === "Enter" && addGasto()}
                     className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
-                  <input type="number" value={nuevoGastValor} onChange={(e) => setNuevoGastValor(e.target.value)}
+                  <MoneyInput {...monedaProps} value={nuevoGastValor} onChange={setNuevoGastValor}
                     placeholder="Valor"
                     onKeyDown={(e) => e.key === "Enter" && addGasto()}
                     className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
@@ -747,51 +1070,65 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ─── FINLY DETECTIVE ─── */}
-          {step === "amy_detective" && (
+          {/* ─── AMY DETECTIVE (roadmap 3.3: reconocer el avance primero) ─── */}
+          {step === "amy_detective" && (() => {
+            const disponibleGF = totalIngresos - totalGastos;
+            const pctGF = totalIngresos > 0 ? Math.round((totalGastos / totalIngresos) * 100) : 0;
+            return (
             <div className="p-8">
               <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5 mb-4">
                 <span className="text-blue-600 text-sm font-bold flex items-center gap-1.5"><Search size={13} />Amy Detective</span>
               </div>
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-3" style={{ fontFamily: "var(--font-playfair)" }}>
-                Tus gastos fijos están tomando mucho espacio
+                Primero, lo que estás haciendo bien
               </h2>
-              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-5 text-sm text-[#1a1a2e]/70 leading-relaxed space-y-2">
-                <p>¡Oops! Con lo que registraste, tus gastos fijos están usando más del 65% de tus ingresos.</p>
-                <p>Eso deja muy poco margen para deudas, ahorro y gastos del día a día.</p>
-                <p className="text-blue-700 font-medium">Pero no te preocupes, para eso existe Amy Detective: vamos a revisar juntas cada gasto y encontrar dónde puede haber un respiro.</p>
+
+              <div className="bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-2xl p-5 mb-4 text-sm text-[#1a1a2e]/75 leading-relaxed space-y-2">
+                {deudas.length === 0 ? (
+                  <p><strong className="text-[#1a1a2e]">No tienes deudas</strong> y, con lo que registraste, te queda con qué empezar a ahorrar. Esa ya es una base sólida. 🌸</p>
+                ) : (
+                  <p>Ya armamos tu plan para las deudas y <strong className="text-[#1a1a2e]">aún te queda capacidad para ahorrar</strong>. Vas por buen camino. 🌸</p>
+                )}
               </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-5 text-sm text-[#1a1a2e]/70 leading-relaxed space-y-2">
+                <p>Una cosa que noté: tus gastos fijos se están llevando cerca del <strong className="text-[#1a1a2e]">{pctGF}%</strong> de tus ingresos.</p>
+                <p>No es un problema, pero si quieres, más adelante podemos revisarlos juntas para ver si hay espacio para liberar un poco más de dinero cada mes.</p>
+              </div>
+
               <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm mb-5">
                 <div className="flex justify-between">
                   <span className="text-[#1a1a2e]/60">Tus ingresos</span>
-                  <span className="font-semibold text-[#ec7fa9]">{(parseFloat(String(totalIngresos)) || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}</span>
+                  <span className="font-semibold text-[#ec7fa9]">{fmt(totalIngresos)}</span>
                 </div>
                 <div className="flex justify-between mt-1">
                   <span className="text-[#1a1a2e]/60">Gastos fijos</span>
-                  <span className="font-semibold text-red-400">{totalGastos.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}</span>
+                  <span className="font-semibold text-[#1a1a2e]/70">{fmt(totalGastos)}</span>
                 </div>
                 <div className="flex justify-between mt-1 pt-1 border-t border-[#ffb8e0]">
-                  <span className="text-[#1a1a2e]/60">Disponible después de GF</span>
-                  <span className={`font-bold ${totalIngresos - totalGastos < 0 ? "text-red-500" : "text-[#ec7fa9]"}`}>
-                    {(totalIngresos - totalGastos).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 })}
+                  <span className="text-[#1a1a2e]/60">Te queda después de gastos fijos</span>
+                  <span className={`font-bold ${disponibleGF < 0 ? "text-red-500" : "text-[#ec7fa9]"}`}>
+                    {fmt(disponibleGF)}
                   </span>
                 </div>
               </div>
+
               <p className="text-xs text-[#1a1a2e]/50 mb-5 text-center">
-                Puedes volver atrás y revisar tus gastos, o continuar y hacerlo después desde la app.
+                Puedes revisar tus gastos ahora, o seguir y hacerlo después desde la app.
               </p>
               <div className="flex gap-3">
                 <button type="button" onClick={() => setStep("gastos")}
                   className="flex-1 border border-[#ffb8e0] text-[#1a1a2e]/60 font-semibold py-3.5 rounded-xl hover:bg-[#ffedfa] text-sm transition-colors">
-                  ← Revisar gastos
+                  ← Revisar mis gastos
                 </button>
                 <button onClick={() => setStep("ahorro_intro")}
                   className="flex-[2] bg-[#ec7fa9] hover:bg-[#d96d97] text-white font-semibold py-3.5 rounded-xl text-sm transition-colors">
-                  Entendido, continuar →
+                  Seguir, continuar →
                 </button>
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* ─── DEUDAS ─── */}
           {step === "deudas" && (
@@ -843,13 +1180,13 @@ export default function OnboardingPage() {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Cuánto pagas al mes?</label>
-                    <input type="number" value={dCuota} onChange={(e) => setDCuota(e.target.value)}
+                    <MoneyInput {...monedaProps} value={dCuota} onChange={setDCuota}
                       placeholder="Ej: 300.000"
                       className={inputCls} />
                   </div>
                   <div>
                     <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Cuánto debes en total?</label>
-                    <input type="number" value={dTotal} onChange={(e) => setDTotal(e.target.value)}
+                    <MoneyInput {...monedaProps} value={dTotal} onChange={setDTotal}
                       placeholder="Ej: 5.000.000"
                       className={inputCls} />
                   </div>
@@ -928,31 +1265,41 @@ export default function OnboardingPage() {
               <h2 className="text-xl font-bold text-[#1a1a2e] mb-1" style={{ fontFamily: "var(--font-playfair)" }}>
                 Este es tu punto de partida
               </h2>
-              <p className="text-sm text-[#1a1a2e]/60 mb-2 leading-relaxed">
-                Con lo que registraste, Amy analizó tu situación y te propone diferentes formas de ahorrar.
-              </p>
-              <p className="text-sm text-[#ec7fa9] font-medium mb-6">
-                Puedes elegir la que mejor se adapte a ti.
+              <p className="text-sm text-[#1a1a2e]/60 mb-4 leading-relaxed">
+                Con todo lo que registraste hice la cuenta: a tus ingresos les resté tus gastos fijos{totalDeudas > 0 ? ", las cuotas de deudas" : ""}{totalCajitasOBMensual > 0 ? " y lo que apartas para cajitas" : ""}. Esto es lo que te queda para decidir cuánto ahorrar.
               </p>
 
-              <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm mb-4 space-y-1">
+              <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3 text-sm mb-5 space-y-1.5">
                 <div className="flex justify-between">
-                  <span className="text-[#1a1a2e]/60">Después de gastos y deudas</span>
-                  <span className="font-semibold text-[#1a1a2e]">{fmt(capacidad)}/mes</span>
+                  <span className="text-[#1a1a2e]/60">Ingresos del mes</span>
+                  <span className="font-semibold text-[#1a1a2e]">{fmt(totalIngresos)}</span>
                 </div>
-                {totalCajitasOBMensual > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-[#1a1a2e]/60">− Gastos fijos</span>
+                  <span className="font-semibold text-[#1a1a2e]/70">− {fmt(totalGastos)}</span>
+                </div>
+                {totalDeudas > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-[#1a1a2e]/60">Reserva cajitas mensuales</span>
-                    <span className="font-semibold text-orange-400">- {fmt(totalCajitasOBMensual)}/mes</span>
+                    <span className="text-[#1a1a2e]/60">− Cuotas de deudas</span>
+                    <span className="font-semibold text-[#1a1a2e]/70">− {fmt(totalDeudas)}</span>
                   </div>
                 )}
-                <div className="flex justify-between border-t border-[#ffb8e0] pt-1 mt-1">
-                  <span className="text-[#1a1a2e]/60 font-medium">Disponible para ahorrar</span>
-                  <span className="font-bold text-[#ec7fa9]">{fmt(capacidadNeta)}/mes</span>
+                {totalCajitasOBMensual > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-[#1a1a2e]/60">− Reserva para cajitas</span>
+                    <span className="font-semibold text-[#1a1a2e]/70">− {fmt(totalCajitasOBMensual)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t border-[#ffb8e0] pt-1.5 mt-1.5">
+                  <span className="text-[#1a1a2e] font-semibold">Te queda para decidir</span>
+                  <span className="font-bold text-[#ec7fa9] text-base">{fmt(capacidadNeta)}/mes</span>
                 </div>
               </div>
 
-              <p className="text-sm font-semibold text-[#1a1a2e] mb-4">Selecciona la opción que más te guste 👇</p>
+              <p className="text-sm font-semibold text-[#1a1a2e] mb-1">¿Cuánto de eso quieres ahorrar?</p>
+              <p className="text-xs text-[#1a1a2e]/50 mb-4">
+                Entre más ahorres, más rápido avanzas, pero menos te queda libre cada mes. Elige el equilibrio que te sirva.
+              </p>
 
               <div className="space-y-3 mb-6">
                 {savingsOptions.map((opt) => {
@@ -980,7 +1327,7 @@ export default function OnboardingPage() {
                           <p className="text-lg font-bold text-[#1a1a2e]">Ahorrar {fmt(monto)} al mes</p>
                           <p className="text-xs text-[#1a1a2e]/50 mt-1">{opt.desc}</p>
                           <p className="text-xs text-green-600 font-medium mt-2">
-                            Te quedan {fmt(restante)} libres para el mes
+                            Te quedan {fmt(restante)} libres para gastos del día a día
                           </p>
                         </div>
                         <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-1 ml-3 flex items-center justify-center ${
@@ -1037,6 +1384,10 @@ export default function OnboardingPage() {
               >
                 {saving ? "Guardando..." : deudas.length > 1 ? "Vamos a encontrar la mejor forma para ti →" : "Entendido, empecemos →"}
               </button>
+              <button type="button" onClick={() => setStep("deudas")} disabled={saving}
+                className="w-full text-center text-sm text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-2 mt-1 transition-colors disabled:opacity-40">
+                ← Atrás
+              </button>
             </div>
           )}
 
@@ -1080,6 +1431,10 @@ export default function OnboardingPage() {
               >
                 Omitir por ahora, hacer el test después
               </button>
+              <button type="button" onClick={() => setStep("deudas")}
+                className="w-full text-center text-sm text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-2 transition-colors">
+                ← Atrás
+              </button>
             </div>
           )}
 
@@ -1098,7 +1453,7 @@ export default function OnboardingPage() {
                 {QUIZ[quizStep].pregunta}
               </h2>
 
-              <div className="space-y-3">
+              <div className="space-y-3 mb-4">
                 {QUIZ[quizStep].opciones.map((opt) => (
                   <button
                     key={opt.id}
@@ -1110,6 +1465,10 @@ export default function OnboardingPage() {
                   </button>
                 ))}
               </div>
+              <button type="button" onClick={quizBack}
+                className="w-full text-center text-sm text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-2 transition-colors">
+                ← Atrás
+              </button>
             </div>
           )}
 
@@ -1215,6 +1574,11 @@ export default function OnboardingPage() {
                   Ahora veamos cuánto puedes ahorrar →
                 </button>
               )}
+              <button type="button" disabled={saving}
+                onClick={() => { setQuizStep(QUIZ.length - 1); setStep("deuda_quiz"); }}
+                className="w-full text-center text-sm text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-2 mt-1 transition-colors disabled:opacity-40">
+                ← Atrás
+              </button>
             </div>
           )}
 
@@ -1248,6 +1612,10 @@ export default function OnboardingPage() {
               </div>
               <button onClick={() => setStep("cajitas_onboarding")} className={`${btnPink} w-full`}>
                 Empecemos con las cajitas →
+              </button>
+              <button type="button" onClick={() => setStep("deudas")}
+                className="w-full text-center text-sm text-[#1a1a2e]/40 hover:text-[#1a1a2e]/60 py-2 mt-1 transition-colors">
+                ← Atrás
               </button>
             </div>
           )}
@@ -1305,7 +1673,7 @@ export default function OnboardingPage() {
                   <input value={cajNombre} onChange={e => setCajNombre(e.target.value)} placeholder="Nombre" className={`${inputCls} flex-1`} />
                 </div>
                 <div className="flex gap-2">
-                  <input type="number" value={cajMonto} onChange={e => setCajMonto(e.target.value)} placeholder="Monto total" className={`${inputCls} flex-1`} />
+                  <MoneyInput {...monedaProps} value={cajMonto} onChange={setCajMonto} placeholder="Monto total" className={`${inputCls} flex-1`} />
                   <div className="flex flex-col gap-1 w-44">
                     <label className="text-xs text-[#1a1a2e]/50 font-medium">¿Cada cuánto te llega ese gasto?</label>
                     <input
@@ -1325,7 +1693,7 @@ export default function OnboardingPage() {
                   <input
                     type="month"
                     value={cajFecha}
-                    onChange={e => setCajFecha(e.target.value)}
+                    onChange={e => setCajFecha(proximaFechaValida(e.target.value, parseInt(cajMeses) || 12))}
                     className={`${inputCls} mt-1 w-full`}
                   />
                   <p className="text-[10px] text-[#1a1a2e]/40 mt-1">Así Amy sabe cuándo tienes que tener el dinero listo.</p>
@@ -1398,14 +1766,46 @@ export default function OnboardingPage() {
                 <PiggyBank size={20} className="text-[#ec7fa9]" />Crea tus bolsitas
               </h2>
               <p className="text-sm text-[#1a1a2e]/60 mb-3 leading-relaxed">
-                Ahorro mensual: <strong className="text-[#ec7fa9]">{fmt(selectedAhorro ?? 0)}/mes</strong>. Distribúyelo como quieras.
+                Tienes <strong className="text-[#ec7fa9]">{fmt(selectedAhorro ?? 0)}/mes</strong> de ahorro. Repártelo en bolsitas según para qué es.
               </p>
-              <div className={`rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between text-sm ${bolsitasDisponible < 0 ? "bg-red-50 border border-red-200" : bolsitasDisponible === 0 ? "bg-orange-50 border border-orange-200" : "bg-[#ec7fa9]/10 border border-[#ec7fa9]/30"}`}>
-                <span className={bolsitasDisponible < 0 ? "text-red-500 font-medium" : bolsitasDisponible === 0 ? "text-orange-500 font-medium" : "text-[#1a1a2e]/60"}>
-                  {bolsitasDisponible <= 0 ? "¡Dinero completamente repartido!" : "Dinero disponible para repartir"}
-                </span>
-                <span className={`font-bold ${bolsitasDisponible < 0 ? "text-red-500" : bolsitasDisponible === 0 ? "text-orange-500" : "text-[#ec7fa9]"}`}>{fmt(bolsitasDisponible)}/mes</span>
-              </div>
+
+              {(() => {
+                const totalAhorro = selectedAhorro ?? 0;
+                const queda = bolsitasDisponible;
+                const listo = queda === 0 && bolsitasOB.length > 0;
+                const excedido = queda < 0;
+                return (
+                  // roadmap 3.17: sticky para que el resumen del reparto se mantenga
+                  // visible mientras se hace scroll por la lista de bolsitas y el formulario.
+                  <div className={`sticky top-2 z-10 rounded-2xl px-5 py-4 mb-4 border-2 shadow-sm ${
+                    excedido ? "bg-red-50 border-red-200"
+                    : listo ? "bg-[#ec7fa9]/10 border-[#ec7fa9]"
+                    : "bg-[#ffedfa] border-[#ffb8e0]"
+                  }`}>
+                    {listo ? (
+                      <div className="text-center">
+                        <p className="text-2xl mb-1">🎉</p>
+                        <p className="text-base font-bold text-[#ec7fa9]">¡Listo! Repartiste todo tu ahorro mensual</p>
+                        <p className="text-xs text-[#1a1a2e]/50 mt-1">
+                          {fmt(totalAhorro)}/mes en {bolsitasOB.length} {bolsitasOB.length === 1 ? "bolsita" : "bolsitas"}. Ya puedes continuar.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-sm text-[#1a1a2e]/60">{excedido ? "Te pasaste por" : "Te queda por repartir"}</span>
+                          <span className={`text-2xl font-bold ${excedido ? "text-red-500" : "text-[#ec7fa9]"}`}>
+                            {fmt(Math.abs(queda))}<span className="text-sm font-normal text-[#1a1a2e]/40">/mes</span>
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#1a1a2e]/40 mt-1">
+                          {fmt(bolsitasUsadoMensual)} repartidos de {fmt(totalAhorro)} al mes
+                        </p>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
 
               {bolsitasOB.length > 0 && (
                 <div className="space-y-2 mb-4">
@@ -1426,11 +1826,10 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {bolsitasDisponible <= 0 && (
-                <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 mb-4 text-center">
-                  <p className="text-sm text-orange-600 font-medium">Ya repartiste todo tu dinero de ahorro</p>
-                  <p className="text-xs text-orange-500 mt-0.5">Elimina una bolsita para agregar otra, o continúa así.</p>
-                </div>
+              {bolsitasDisponible <= 0 && bolsitasOB.length > 0 && (
+                <p className="text-xs text-[#1a1a2e]/40 text-center mb-4">
+                  Si quieres agregar otra bolsita, primero elimina una para hacer espacio.
+                </p>
               )}
 
               <div className={`bg-[#ffedfa] rounded-2xl p-4 mb-4 ${bolsitasDisponible <= 0 ? "opacity-50 pointer-events-none" : ""}`}>
@@ -1467,9 +1866,25 @@ export default function OnboardingPage() {
                     className={`${inputCls} flex-1`} />
                 </div>
 
+                <div className="mb-3">
+                  <p className="text-xs text-[#1a1a2e]/50 mb-1.5">¿Qué tan importante es esta bolsita?</p>
+                  <div className="flex items-center gap-1.5">
+                    {[1,2,3,4,5].map(n => (
+                      <button key={n} type="button" onClick={() => { setBolImportancia(n); if (bolTipo === "fondos") { setBolCuota(""); setEditingBolCuota(false); } }}
+                        className={`transition-all ${n <= bolImportancia ? "text-[#ec7fa9]" : "text-[#ffb8e0]"}`}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill={n <= bolImportancia ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {bolTipo === "fondos" && (
                   <div className="mb-2">
-                    {bolCuota && !editingBolCuota ? (
+                    {bolImportancia === 0 ? (
+                      <div className="border border-dashed border-[#ffb8e0] rounded-xl px-3 py-3 text-center">
+                        <p className="text-xs text-[#1a1a2e]/40">Elige arriba qué tan importante es esta bolsita y te recomendamos un monto.</p>
+                      </div>
+                    ) : bolCuota && !editingBolCuota ? (
                       <div className="flex items-center justify-between bg-[#ec7fa9]/10 border border-[#ec7fa9]/40 rounded-xl px-3 py-2.5">
                         <div>
                           <p className="text-xs text-[#1a1a2e]/50">Apartando</p>
@@ -1482,8 +1897,8 @@ export default function OnboardingPage() {
                       </div>
                     ) : editingBolCuota ? (
                       <div className="flex gap-2">
-                        <input type="number" value={bolCuota} onChange={e => setBolCuota(e.target.value)}
-                          autoFocus max={bolsitasDisponible}
+                        <MoneyInput {...monedaProps} value={bolCuota} onChange={setBolCuota}
+                          autoFocus
                           placeholder={bolCuotaRecomendada > 0 ? String(bolCuotaRecomendada) : "Monto mensual"}
                           className={`${inputCls} flex-1 ${bolCuota && parseFloat(bolCuota) > bolsitasDisponible ? "border-red-400" : ""}`} />
                         <button type="button" onClick={() => setEditingBolCuota(false)} disabled={!bolCuota}
@@ -1509,7 +1924,7 @@ export default function OnboardingPage() {
                         </div>
                       </div>
                     ) : (
-                      <input type="number" value={bolCuota} onChange={e => setBolCuota(e.target.value)}
+                      <MoneyInput {...monedaProps} value={bolCuota} onChange={setBolCuota}
                         placeholder="¿Cuánto apartas al mes?"
                         className={inputCls} />
                     )}
@@ -1520,32 +1935,26 @@ export default function OnboardingPage() {
                 )}
                 {bolTipo === "metas" && (
                   <div className="grid grid-cols-2 gap-2 mb-2">
-                    <input type="number" value={bolMeta} onChange={e => setBolMeta(e.target.value)} placeholder="Meta total" className={inputCls} />
+                    <MoneyInput {...monedaProps} value={bolMeta} onChange={setBolMeta} placeholder="Meta total" className={inputCls} />
                     <input type="date" value={bolFecha} onChange={e => setBolFecha(e.target.value)} className={inputCls} />
                   </div>
                 )}
 
-                <div className="mb-3">
-                  <p className="text-xs text-[#1a1a2e]/50 mb-1.5">¿Qué tan importante es esta bolsita?</p>
-                  <div className="flex items-center gap-1.5">
-                    {[1,2,3,4,5].map(n => (
-                      <button key={n} type="button" onClick={() => { setBolImportancia(n); if (bolTipo === "fondos") { setBolCuota(""); setEditingBolCuota(false); } }}
-                        className={`transition-all ${n <= bolImportancia ? "text-[#ec7fa9]" : "text-[#ffb8e0]"}`}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill={n <= bolImportancia ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <button type="button" onClick={addBolsitaOB}
-                  disabled={
-                    !bolNombre ||
-                    (bolTipo === "fondos" && (!bolCuota || parseFloat(bolCuota) > bolsitasDisponible)) ||
-                    (bolTipo === "metas" && (!bolMeta || !bolFecha))
-                  }
-                  className="w-full border border-[#ec7fa9] text-[#ec7fa9] font-semibold py-2 rounded-xl text-sm hover:bg-white disabled:opacity-40 transition-colors">
-                  + Agregar bolsita
-                </button>
+                {(() => {
+                  const bolsitaLista = !!bolNombre &&
+                    (bolTipo === "fondos" ? !!bolCuota && parseFloat(bolCuota) <= bolsitasDisponible : true) &&
+                    (bolTipo === "metas" ? !!bolMeta && !!bolFecha : true);
+                  return (
+                    <button type="button" onClick={addBolsitaOB} disabled={!bolsitaLista}
+                      className={`w-full font-semibold py-2.5 rounded-xl text-sm transition-all ${
+                        bolsitaLista
+                          ? "bg-[#ec7fa9] text-white hover:bg-[#d96d97] shadow-sm"
+                          : "border border-[#ffb8e0] text-[#1a1a2e]/30"
+                      }`}>
+                      + Agregar bolsita
+                    </button>
+                  );
+                })()}
               </div>
 
               <button

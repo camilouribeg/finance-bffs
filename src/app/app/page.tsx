@@ -5,6 +5,11 @@ import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
 import { calcularDisponible, cuotaMensualCajita, cuotaMensualBolsillo, totalReservasActivas, type ReservaLike } from "@/lib/capacidad";
 import IngresosCard from "@/components/dashboard/IngresosCard";
+import GuiaMenu from "@/components/dashboard/GuiaMenu";
+import PlanConAmy from "@/components/dashboard/PlanConAmy";
+import { proximosPasos } from "@/lib/proximosPasos";
+import { inicioSemanaISO, semanaAlDia } from "@/lib/semana";
+import type { ResumenTransferencia } from "@/lib/transferencia";
 import Link from "next/link";
 import {
   TrendingUp,
@@ -14,8 +19,6 @@ import {
   PiggyBank,
   BarChart3,
   Pencil,
-  X,
-  Info,
   Box,
   Check,
 } from "lucide-react";
@@ -35,7 +38,8 @@ export default function DashboardPage() {
   const [year] = useState(currentYear);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showTip, setShowTip] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [gastosSemana, setGastosSemana] = useState(0);
 
   // Editable ingresos/gastos (inline edit mode)
   const [editingIngresos, setEditingIngresos] = useState(false);
@@ -59,18 +63,6 @@ export default function DashboardPage() {
   const [confirmadasDeudas, setConfirmadasDeudas] = useState<Set<string>>(new Set());
   const [confirmadasBolsillos, setConfirmadasBolsillos] = useState<Set<string>>(new Set());
 
-  // First-week tip banner
-  useEffect(() => {
-    const key = "amy_dashboard_first_visit";
-    const stored = localStorage.getItem(key);
-    if (!stored) {
-      localStorage.setItem(key, String(Date.now()));
-      setShowTip(true);
-    } else {
-      const diff = Date.now() - parseInt(stored);
-      if (diff < 7 * 24 * 60 * 60 * 1000) setShowTip(true);
-    }
-  }, []);
 
   const loadMonth = useCallback(async (m: number, y: number) => {
     setLoading(true);
@@ -116,6 +108,10 @@ export default function DashboardPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setUserId(user.id);
+      const { count: semanaCount } = await supabase.from("gastos").select("id", { count: "exact", head: true })
+        .eq("user_id", user.id).gte("fecha", inicioSemanaISO());
+      setGastosSemana(semanaCount ?? 0);
       const { data: profile } = await supabase.from("profiles").select("onboarding_completed").eq("id", user.id).single();
       if (profile && profile.onboarding_completed === false) { window.location.href = "/onboarding"; return; }
       const [{ data: d }, { data: b }, { data: c }] = await Promise.all([
@@ -196,18 +192,31 @@ export default function DashboardPage() {
   return (
     <div className="max-w-5xl mx-auto">
 
-      {/* First-week tip banner */}
-      {showTip && (
-        <div className="flex items-start gap-3 bg-white border border-[#ffb8e0] rounded-2xl px-5 py-4 mb-6">
-          <Info size={16} className="text-[#ec7fa9] mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-[#1a1a2e]/70 flex-1">
-            <span className="font-semibold text-[#ec7fa9]">Este es tu panel de monitoreo.</span> Aquí puedes ver el resumen de tus finanzas de un vistazo. Para registrar gastos, gestionar deudas, cajitas o bolsillos, usa el menú de la izquierda.
-          </p>
-          <button onClick={() => setShowTip(false)} className="text-[#1a1a2e]/30 hover:text-[#1a1a2e]/60 flex-shrink-0">
-            <X size={14} />
-          </button>
-        </div>
-      )}
+      {userId && <GuiaMenu userId={userId} />}
+
+      {/* Que hacer ahora (3.6): pasos priorizados con su CTA */}
+      {!loading && (() => {
+        const cajitasResumen: ResumenTransferencia = {
+          hay: cajitasActivas.length > 0,
+          total: cajitasActivas.reduce((s, c) => s + cuotaMensualCajita(c), 0),
+          pendiente: cajitasActivas.filter(c => !confirmadasCajitas.has(c.id)).reduce((s, c) => s + cuotaMensualCajita(c), 0),
+          completa: cajitasActivas.length > 0 && cajitasConfirmadasCount === cajitasActivas.length,
+        };
+        const bolsitasResumen: ResumenTransferencia = {
+          hay: bolsillosActivos.length > 0,
+          total: bolsillosActivos.reduce((s, b) => s + cuotaMensualBolsillo(b), 0),
+          pendiente: bolsillosActivos.filter(b => !confirmadasBolsillos.has(b.id)).reduce((s, b) => s + cuotaMensualBolsillo(b), 0),
+          completa: bolsillosActivos.length > 0 && bolsillosConfirmadosCount === bolsillosActivos.length,
+        };
+        const { pendientes, hechos } = proximosPasos({
+          cajitas: cajitasResumen,
+          bolsitas: bolsitasResumen,
+          hayBolsitas: bolsillos.length > 0,
+          disponible,
+          semanaAlDia: semanaAlDia(gastosSemana),
+        });
+        return <PlanConAmy pendientes={pendientes} hechos={hechos} />;
+      })()}
 
       {/* Header */}
       <div className="flex items-center justify-between mb-8">

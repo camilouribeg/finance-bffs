@@ -21,10 +21,10 @@
 | 3.3 | Amy Detective reconoce primero el progreso | Onboarding Happy Path | Alta | Completo |
 | 3.4 | Explicar claramente el punto de partida del ahorro | Onboarding Happy Path | Alta | Completo |
 | 3.5 | Mostrar dinero restante al crear bolsitas | Onboarding Happy Path | Alta | Completo |
-| 3.6 | Convertir Mis finanzas en un plan de acción | Acompañamiento después del onboarding | Alta | Pendiente |
-| 3.7 | Guiar la creación de cajitas y bolsitas en el banco | Hábitos financieros y conexión con el banco | Alta | Pendiente |
+| 3.6 | Convertir Mis finanzas en un plan de acción | Acompañamiento después del onboarding | Alta | Completo |
+| 3.7 | Guiar la creación de cajitas y bolsitas en el banco | Hábitos financieros y conexión con el banco | Alta | Completo |
 | 3.8 | Crear el ritual semanal de registro de gastos | Hábitos financieros y conexión con el banco | Alta | Pendiente |
-| 3.9 | Enseñar cómo usar el menú principal | Acompañamiento después del onboarding | Media | Pendiente |
+| 3.9 | Enseñar cómo usar el menú principal | Acompañamiento después del onboarding | Media | Completo |
 | 3.10 | Simplificar la selección de país | Onboarding Happy Path | Media | Completo |
 | 3.11 | Permitir configurar varias monedas | Onboarding Happy Path | Alta | Completo |
 | 3.12 | Eliminar guiones -Hyphens innecesarios de los textos | Onboarding Happy Path | Media | Completo |
@@ -211,7 +211,7 @@
 - **Criterio de éxito:** El saldo restante se actualiza inmediatamente y el estado de $0 se presenta como éxito, no como alerta.
 
 ### 3.6 · Convertir Mis finanzas en un plan de acción
-**Epic:** Acompañamiento después del onboarding  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Acompañamiento después del onboarding  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Al terminar el onboarding la usuaria llega a un dashboard con información financiera completa, pero no recibe suficiente orientación sobre qué hacer con esos números ni cuál debería ser su siguiente acción.
 - **Experiencia deseada:** El dashboard debe funcionar como el centro de acompañamiento de Amy. Además de mostrar números, debe traducir el plan financiero en acciones concretas, simples y priorizadas para que la usuaria sepa qué hacer en Finance BFF y en su vida real.
@@ -223,7 +223,7 @@
 - **Criterio de éxito:** El dashboard presenta próximos pasos accionables y cada acción lleva directamente al lugar donde puede completarse o aprender cómo hacerla.
 
 ### 3.7 · Guiar la creación de cajitas y bolsitas en el banco
-**Epic:** Hábitos financieros y conexión con el banco  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Hábitos financieros y conexión con el banco  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Finance BFF calcula cuánto reservar para cajitas y bolsitas, pero la aplicación no mueve físicamente el dinero. En algunos puntos se explica parcialmente qué hacer en el banco, mientras que en otros esta conexión con la vida real no es suficientemente visible.
 - **Experiencia deseada:** La usuaria debe entender que Finance BFF organiza el plan y que ella debe separar el dinero en su banco. Amy debe convertir cada recomendación en una instrucción sencilla y permitir registrar que la acción ya fue realizada.
@@ -247,7 +247,7 @@
 - **Criterio de éxito:** Mis gastos comunica la rutina semanal y el dashboard puede reflejar si la actualización de la semana está pendiente o completada.
 
 ### 3.9 · Enseñar cómo usar el menú principal
-**Epic:** Acompañamiento después del onboarding  ·  **Prioridad:** Media  ·  **Estado:** Pendiente
+**Epic:** Acompañamiento después del onboarding  ·  **Prioridad:** Media  ·  **Estado:** Completo
 
 - **Estado actual:** Después del onboarding aparecen varios módulos en el menú lateral, pero una usuaria nueva puede no saber qué función cumple cada uno ni cuándo debería entrar a cada sección.
 - **Experiencia deseada:** La primera llegada al dashboard debe orientar brevemente sobre la estructura de Finance BFF y mostrar que el menú lateral es el lugar desde donde administrará cada parte de su vida financiera.
