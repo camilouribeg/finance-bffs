@@ -39,11 +39,22 @@ export function calcularDisponible(params: {
   deudas: DeudaLike[];
   cajitas: CajitaLike[];
   bolsillos: BolsilloLike[];
+  // Reservas del periodo activo (epic Flujo de caja, 5.5/5.8): dinero que ya no es libre.
+  reservas?: ReservaLike[];
 }): number {
   const totalIngresos = params.ingresoFijo + params.ingresosOtros.reduce((s, i) => s + i.valor, 0);
   const totalGastosFijos = params.gastosFijosItems.reduce((s, i) => s + i.valor, 0);
   const totalCuotas = params.deudas.reduce((s, d) => s + d.cuota_mensual, 0);
   const totalCajitasMensual = params.cajitas.reduce((s, c) => s + cuotaMensualCajita(c), 0);
   const totalBolsitasMensual = params.bolsillos.reduce((s, b) => s + cuotaMensualBolsillo(b), 0);
-  return totalIngresos - totalGastosFijos - totalCajitasMensual - totalBolsitasMensual - totalCuotas;
+  const totalReservas = totalReservasActivas(params.reservas ?? []);
+  return totalIngresos - totalGastosFijos - totalCajitasMensual - totalBolsitasMensual - totalCuotas - totalReservas;
+}
+
+export type ReservaLike = { monto: number; periodo_fin: string };
+
+// Suma las reservas cuyo periodo todavia no termina. Las vencidas ya no comprometen dinero.
+export function totalReservasActivas(reservas: ReservaLike[], hoy: Date = new Date()): number {
+  const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
+  return reservas.reduce((s, r) => (r.periodo_fin >= hoyStr ? s + r.monto : s), 0);
 }

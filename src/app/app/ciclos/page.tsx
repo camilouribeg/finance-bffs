@@ -9,6 +9,10 @@ import { Check, X } from "lucide-react";
 type Fuente = { id: string; nombre: string; monto: number; frecuencia: Frecuencia; dia_1: number | null; dia_2: number | null };
 type Obl = { id: string; nombre: string; monto: number; dia_pago: number };
 
+function fechaISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 const FRECUENCIAS: { value: Frecuencia; label: string }[] = [
   { value: "quincenal", label: "Quincenal" },
   { value: "mensual", label: "Mensual" },
@@ -23,6 +27,7 @@ export default function CiclosPage() {
   const [fuentes, setFuentes] = useState<Fuente[]>([]);
   const [obligaciones, setObligaciones] = useState<Obl[]>([]);
   const [saldo, setSaldo] = useState("");
+  const [reservas, setReservas] = useState<{ id: string; monto: number; periodo_fin: string; apartada: boolean }[]>([]);
 
   // formulario de fuente
   const [fNombre, setFNombre] = useState("");
@@ -50,7 +55,43 @@ export default function CiclosPage() {
     if (f.data) setFuentes(f.data);
     if (o.data) setObligaciones(o.data);
     if (s.data && s.data.length > 0) setSaldo(String(s.data[0].saldo));
+    const r = await supabase.from("reservas_ciclo").select("id, monto, periodo_fin, apartada").eq("user_id", user.id);
+    const reservasActuales = r.data ?? [];
+    setReservas(reservasActuales);
+    await sincronizarReserva(user.id, reservasActuales, f.data ?? [], o.data ?? [], parseFloat(s.data?.[0]?.saldo ?? "0") || 0);
     setLoading(false);
+  }
+
+  // Reserva del periodo actual (5.5): si el plan muestra un faltante, se guarda o actualiza
+  // la reserva hasta el proximo ingreso. Si ya no hay faltante, la reserva se borra.
+  // 5.6: solo cuenta una reserva que existe de verdad; nunca se inventa una del primer ciclo.
+  async function sincronizarReserva(userId: string, existentes: { id: string; monto: number; periodo_fin: string; apartada: boolean }[], f: Fuente[], o: Obl[], saldoActual: number) {
+    const supabase = createClient();
+    const plan = planHastaProximoIngreso(
+      new Date(), saldoActual,
+      f.map(x => ({ nombre: x.nombre, monto: x.monto, frecuencia: x.frecuencia, dia_1: x.dia_1, dia_2: x.dia_2 })),
+      o.map(x => ({ nombre: x.nombre, monto: x.monto, dia_pago: x.dia_pago })),
+    );
+    if (!plan.proximoIngreso) return;
+    const fin = fechaISO(plan.proximoIngreso.fecha);
+    const actual = existentes.find(r => r.periodo_fin === fin);
+    if (plan.faltante > 0) {
+      if (actual) {
+        if (actual.monto !== plan.faltante) {
+          await supabase.from("reservas_ciclo").update({ monto: plan.faltante, apartada: false }).eq("id", actual.id);
+        }
+      } else {
+        await supabase.from("reservas_ciclo").insert({ user_id: userId, periodo_inicio: fechaISO(new Date()), periodo_fin: fin, monto: plan.faltante });
+      }
+    } else if (actual) {
+      await supabase.from("reservas_ciclo").delete().eq("id", actual.id);
+    }
+  }
+
+  async function marcarApartada(id: string, apartada: boolean) {
+    const supabase = createClient();
+    await supabase.from("reservas_ciclo").update({ apartada }).eq("id", id);
+    setReservas(reservas.map(r => r.id === id ? { ...r, apartada } : r));
   }
 
   async function addFuente(e: React.FormEvent) {
@@ -66,6 +107,7 @@ export default function CiclosPage() {
       .select().single();
     if (data) setFuentes([...fuentes, data]);
     setFNombre(""); setFMonto("");
+    load();
   }
 
   async function addObligacion(e: React.FormEvent) {
@@ -79,18 +121,21 @@ export default function CiclosPage() {
       .select().single();
     if (data) setObligaciones([...obligaciones, data].sort((a, b) => a.dia_pago - b.dia_pago));
     setONombre(""); setOMonto(""); setODia("");
+    load();
   }
 
   async function removeFuente(id: string) {
     const supabase = createClient();
     await supabase.from("ingresos_fuentes").delete().eq("id", id);
     setFuentes(fuentes.filter(f => f.id !== id));
+    load();
   }
 
   async function removeObligacion(id: string) {
     const supabase = createClient();
     await supabase.from("obligaciones_recurrentes").delete().eq("id", id);
     setObligaciones(obligaciones.filter(o => o.id !== id));
+    load();
   }
 
   async function guardarSaldo(e: React.FormEvent) {
@@ -99,6 +144,7 @@ export default function CiclosPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || saldo === "") return;
     await supabase.from("saldo_cuenta").upsert({ user_id: user.id, saldo: parseFloat(saldo), actualizado_at: new Date().toISOString() });
+    load();
   }
 
   // Plan hasta el proximo ingreso (5.4 / 5.7). Usa el saldo escrito a mano (5.8).
@@ -156,6 +202,27 @@ export default function CiclosPage() {
           ) : (
             <p className="text-sm text-[#1a1a2e]/70">Agrega una fuente de ingreso para ver tu plan.</p>
           )}
+        </div>
+      )}
+
+      {/* Reservas del periodo (5.5, 5.9) */}
+      {reservas.length > 0 && (
+        <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
+          <p className="font-semibold text-[#1a1a2e] mb-3">Reservas para tu próximo ingreso</p>
+          <div className="space-y-2">
+            {reservas.map(r => (
+              <div key={r.id} className={`flex items-center justify-between rounded-xl px-4 py-2.5 border ${r.apartada ? "bg-green-50 border-green-200" : "bg-[#ffedfa] border-[#ffb8e0]"}`}>
+                <p className="text-sm text-[#1a1a2e]">
+                  Aparta <span className="font-semibold">{fmt(r.monto)}</span> antes del{" "}
+                  {new Date(r.periodo_fin + "T12:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "long" })}
+                </p>
+                <button onClick={() => marcarApartada(r.id, !r.apartada)}
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${r.apartada ? "border-green-300 text-green-700 bg-white" : "border-[#ec7fa9] text-[#ec7fa9] bg-white hover:bg-[#ffedfa]"}`}>
+                  {r.apartada ? "✓ Apartada" : "Ya la aparté"}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

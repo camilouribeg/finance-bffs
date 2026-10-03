@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
-import { calcularDisponible, cuotaMensualCajita, cuotaMensualBolsillo } from "@/lib/capacidad";
+import { calcularDisponible, cuotaMensualCajita, cuotaMensualBolsillo, totalReservasActivas, type ReservaLike } from "@/lib/capacidad";
 import IngresosCard from "@/components/dashboard/IngresosCard";
 import Link from "next/link";
 import {
@@ -51,6 +51,7 @@ export default function DashboardPage() {
   const [deudas, setDeudas] = useState<Deuda[]>([]);
   const [cajitas, setCajitas] = useState<Cajita[]>([]);
   const [bolsillos, setBolsillos] = useState<Bolsillo[]>([]);
+  const [reservas, setReservas] = useState<ReservaLike[]>([]);
 
   // Confirmaciones del mes visible (4.3): item_id confirmado, por tipo
   const [confirmadasCajitas, setConfirmadasCajitas] = useState<Set<string>>(new Set());
@@ -121,6 +122,8 @@ export default function DashboardPage() {
         supabase.from("bolsillos").select("*").eq("user_id", user.id).order("created_at"),
         supabase.from("cajitas").select("*").eq("user_id", user.id).order("fecha_pago"),
       ]);
+      const { data: resData } = await supabase.from("reservas_ciclo").select("monto, periodo_fin").eq("user_id", user.id);
+      setReservas(resData ?? []);
       if (d) setDeudas(d);
       if (b) setBolsillos(b);
       if (c) setCajitas(c);
@@ -157,7 +160,7 @@ export default function DashboardPage() {
   const totalCajitasMensual = cajitas.reduce((s, c) => s + cuotaMensualCajita(c), 0);
   const disponible = calcularDisponible({
     ingresoFijo: parseFloat(ingresoFijo) || 0,
-    ingresosOtros, gastosFijosItems, deudas, cajitas, bolsillos,
+    ingresosOtros, gastosFijosItems, deudas, cajitas, bolsillos, reservas,
   });
   const pctDisponible = totalIngresos > 0 ? (disponible / totalIngresos) * 100 : 0;
 
@@ -183,7 +186,8 @@ export default function DashboardPage() {
   const cajitasConfirmadasMonto = cajitas.reduce((s, c) => confirmadasCajitas.has(c.id) ? s + cuotaMensualCajita(c) : s, 0);
   const bolsitasConfirmadasMonto = bolsillos.reduce((s, b) => confirmadasBolsillos.has(b.id) ? s + cuotaMensualBolsillo(b) : s, 0);
   const cuotasConfirmadasMonto = deudas.reduce((s, d) => confirmadasDeudas.has(d.id) ? s + d.cuota_mensual : s, 0);
-  const sinComprometer = totalIngresos - gastosFijosPagadosMonto - cajitasConfirmadasMonto - bolsitasConfirmadasMonto - cuotasConfirmadasMonto;
+  // Las reservas del periodo tambien dejan de ser libres (5.8): se restan siempre.
+  const sinComprometer = totalIngresos - gastosFijosPagadosMonto - cajitasConfirmadasMonto - bolsitasConfirmadasMonto - cuotasConfirmadasMonto - totalReservasActivas(reservas);
   const pctSinComprometer = totalIngresos > 0 ? (sinComprometer / totalIngresos) * 100 : 0;
 
   return (

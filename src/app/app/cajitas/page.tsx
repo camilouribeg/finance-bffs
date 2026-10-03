@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
-import { calcularDisponible } from "@/lib/capacidad";
+import { calcularDisponible, type ReservaLike } from "@/lib/capacidad";
 import { Archive, Lightbulb, Check, X, PartyPopper, AlertTriangle } from "lucide-react";
 
 type Cajita = {
@@ -75,6 +75,7 @@ export default function CajitasPage() {
       supabase.from("deudas").select("cuota_mensual").eq("user_id", user.id),
       supabase.from("bolsillos").select("tipo,meta,actual,fecha_meta,cuota_mensual").eq("user_id", user.id),
     ]);
+    const { data: reservasData } = await supabase.from("reservas_ciclo").select("monto, periodo_fin").eq("user_id", user.id);
     if (data) setCajitas(data);
     if (confs) setConfirmadas(Object.fromEntries(confs.map(c => [c.item_id, { id: c.id, monto: c.monto ?? 0 }])));
     setDisponible(calcularDisponible({
@@ -84,6 +85,7 @@ export default function CajitasPage() {
       deudas: deudasData || [],
       cajitas: data || [],
       bolsillos: bolsillosData || [],
+      reservas: (reservasData ?? []) as ReservaLike[],
     }));
     setLoading(false);
   }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
-import { calcularDisponible } from "@/lib/capacidad";
+import { calcularDisponible, type ReservaLike } from "@/lib/capacidad";
 import { PiggyBank, Target, Check, X, PartyPopper, Star, Plus, Pencil, AlertTriangle } from "lucide-react";
 
 type Bolsillo = {
@@ -137,13 +137,14 @@ export default function AhorroPage() {
     if (!user) return;
     const now = new Date();
     const { mes, anio } = mesActual();
-    const [bolRes, dashRes, deudasRes, cajitasRes, confsRes] = await Promise.all([
+    const [bolRes, dashRes, deudasRes, cajitasRes, confsRes, reservasRes] = await Promise.all([
       supabase.from("bolsillos").select("*").eq("user_id", user.id).order("importancia", { ascending: false }),
       supabase.from("dashboard_mensual").select("ingreso_fijo,ingresos_otros,gastos_fijos_items").eq("user_id", user.id).eq("month", now.getMonth() + 1).eq("year", now.getFullYear()).single(),
       supabase.from("deudas").select("cuota_mensual").eq("user_id", user.id),
       supabase.from("cajitas").select("monto_total,actual,fecha_pago").eq("user_id", user.id),
       supabase.from("confirmaciones_mensuales").select("id, item_id, monto")
         .eq("user_id", user.id).eq("tipo", "bolsillo").eq("mes", mes).eq("anio", anio),
+      supabase.from("reservas_ciclo").select("monto, periodo_fin").eq("user_id", user.id),
     ]);
     if (bolRes.data) {
       setBolsillos(bolRes.data);
@@ -159,6 +160,7 @@ export default function AhorroPage() {
       deudas: deudasRes.data || [],
       cajitas: cajitasRes.data || [],
       bolsillos: bolRes.data || [],
+      reservas: (reservasRes.data ?? []) as ReservaLike[],
     }));
     if (confsRes.data) setConfirmadas(Object.fromEntries(confsRes.data.map(c => [c.item_id, { id: c.id, monto: c.monto ?? 0 }])));
     setLoading(false);
