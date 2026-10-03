@@ -40,7 +40,7 @@
 | 4.5 | Convertir la metodología de deuda en un plan de acción mensual | Dashboard | Mis deudas | Alta | Completo |
 | 4.6 | Diferenciar cuota normal y abono adicional a capital | Dashboard | Mis deudas | Alta | Completo |
 | 4.7 | Confirmar individualmente los pagos realizados en el banco | Dashboard | Mis deudas | Alta | Completo |
-| 4.8 | Pedir el saldo real de la deuda después de registrar pagos | Dashboard | Mis deudas | Alta | Pendiente |
+| 4.8 | Pedir el saldo real de la deuda después de registrar pagos | Dashboard | Mis deudas | Alta | Completo |
 | 4.9 | Mostrar progreso y siguiente objetivo de salida de deudas | Dashboard | Mis deudas | Alta | Completo |
 | 4.10 | Agregar Ingresos al menú lateral | Dashboard | Alta | Completo |
 | 4.11 | Corregir el campo nombre al agregar gastos fijos | Dashboard | Mis gastos | Alta | Completo |
@@ -439,7 +439,7 @@
 - **Criterio de éxito:** Cada deuda puede marcarse de manera independiente, el estado se conserva por mes y el resumen mensual coincide con los pagos registrados.
 
 ### 4.8 · Pedir el saldo real de la deuda después de registrar pagos
-**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Dashboard | Mis deudas  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** El dashboard muestra saldos y meses estimados, pero después de registrar una cuota la experiencia no deja suficientemente claro que Amy necesita conocer el saldo real que aparece en el banco o entidad financiera. Una cuota puede incluir intereses, capital y otros cargos, por lo que no es correcto asumir que todo el valor pagado reduce el capital.
 - **Experiencia deseada:** Después de registrar un pago, Amy debe pedir de forma explícita y sencilla el saldo actual que la usuaria ve en su banco, extracto o entidad financiera. Ese dato debe convertirse en la referencia para actualizar el progreso de la deuda.
