@@ -52,6 +52,7 @@ export default function DashboardPage() {
   const [cajitas, setCajitas] = useState<Cajita[]>([]);
   const [bolsillos, setBolsillos] = useState<Bolsillo[]>([]);
   const [reservas, setReservas] = useState<ReservaLike[]>([]);
+  const [saldoCuenta, setSaldoCuenta] = useState<number | null>(null);
 
   // Confirmaciones del mes visible (4.3): item_id confirmado, por tipo
   const [confirmadasCajitas, setConfirmadasCajitas] = useState<Set<string>>(new Set());
@@ -124,6 +125,8 @@ export default function DashboardPage() {
       ]);
       const { data: resData } = await supabase.from("reservas_ciclo").select("monto, periodo_fin").eq("user_id", user.id);
       setReservas(resData ?? []);
+      const { data: saldoData } = await supabase.from("saldo_cuenta").select("saldo").eq("user_id", user.id);
+      setSaldoCuenta(saldoData && saldoData.length > 0 ? Number(saldoData[0].saldo) : null);
       if (d) setDeudas(d);
       if (b) setBolsillos(b);
       if (c) setCajitas(c);
@@ -244,6 +247,12 @@ export default function DashboardPage() {
                 Ingresos − GF − Cajitas − Bolsitas − Deudas. No cambia aunque confirmes pagos.
               </p>
             </div>
+          )}
+          {!loading && saldoCuenta !== null && (
+            <p className="text-[11px] text-[#1a1a2e]/50 mt-3 leading-snug">
+              En tu cuenta tienes {fmt(saldoCuenta)}.
+              {totalReservasActivas(reservas) > 0 && <> De ese dinero, {fmt(totalReservasActivas(reservas))} ya están apartados para tus próximos pagos, por eso no cuentan como libres.</>}
+            </p>
           )}
         </div>
 

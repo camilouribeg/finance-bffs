@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
 import { planHastaProximoIngreso, type Frecuencia } from "@/lib/ciclos";
 import { Check, X } from "lucide-react";
 
-type Fuente = { id: string; nombre: string; monto: number; frecuencia: Frecuencia; dia_1: number | null; dia_2: number | null };
+type Fuente = { id: string; nombre: string; monto: number; frecuencia: Frecuencia; dia_1: number | null; dia_2: number | null; fecha_inicio: string | null };
 type Obl = { id: string; nombre: string; monto: number; dia_pago: number };
 
 function fechaISO(d: Date): string {
@@ -14,6 +14,7 @@ function fechaISO(d: Date): string {
 }
 
 const FRECUENCIAS: { value: Frecuencia; label: string }[] = [
+  { value: "semanal", label: "Semanal" },
   { value: "quincenal", label: "Quincenal" },
   { value: "mensual", label: "Mensual" },
   { value: "variable", label: "Irregular (freelance)" },
@@ -27,6 +28,8 @@ export default function CiclosPage() {
   const [fuentes, setFuentes] = useState<Fuente[]>([]);
   const [obligaciones, setObligaciones] = useState<Obl[]>([]);
   const [saldo, setSaldo] = useState("");
+  // Solo la recarga mas reciente puede escribir la reserva: las viejas que terminan tarde no la pisan.
+  const loadSeq = useRef(0);
   const [reservas, setReservas] = useState<{ id: string; monto: number; periodo_fin: string; apartada: boolean }[]>([]);
 
   // formulario de fuente
@@ -35,15 +38,16 @@ export default function CiclosPage() {
   const [fFrec, setFFrec] = useState<Frecuencia>("quincenal");
   const [fDia1, setFDia1] = useState("15");
   const [fDia2, setFDia2] = useState("30");
+  const [fInicio, setFInicio] = useState("");
 
   // formulario de obligacion
   const [oNombre, setONombre] = useState("");
   const [oMonto, setOMonto] = useState("");
   const [oDia, setODia] = useState("");
 
-  useEffect(() => { load(); }, []);
 
   async function load() {
+    const seq = ++loadSeq.current;
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -58,7 +62,11 @@ export default function CiclosPage() {
     const r = await supabase.from("reservas_ciclo").select("id, monto, periodo_fin, apartada").eq("user_id", user.id);
     const reservasActuales = r.data ?? [];
     setReservas(reservasActuales);
+    if (seq !== loadSeq.current) return;
     await sincronizarReserva(user.id, reservasActuales, f.data ?? [], o.data ?? [], parseFloat(s.data?.[0]?.saldo ?? "0") || 0);
+    // Releer despues de sincronizar: la reserva recien creada tiene que verse sin recargar.
+    const r2 = await supabase.from("reservas_ciclo").select("id, monto, periodo_fin, apartada").eq("user_id", user.id);
+    setReservas(r2.data ?? []);
     setLoading(false);
   }
 
@@ -69,7 +77,7 @@ export default function CiclosPage() {
     const supabase = createClient();
     const plan = planHastaProximoIngreso(
       new Date(), saldoActual,
-      f.map(x => ({ nombre: x.nombre, monto: x.monto, frecuencia: x.frecuencia, dia_1: x.dia_1, dia_2: x.dia_2 })),
+      f.map(x => ({ nombre: x.nombre, monto: x.monto, frecuencia: x.frecuencia, dia_1: x.dia_1, dia_2: x.dia_2, fecha_inicio: x.fecha_inicio })),
       o.map(x => ({ nombre: x.nombre, monto: x.monto, dia_pago: x.dia_pago })),
     );
     if (!plan.proximoIngreso) return;
@@ -94,19 +102,22 @@ export default function CiclosPage() {
     setReservas(reservas.map(r => r.id === id ? { ...r, apartada } : r));
   }
 
+  useEffect(() => { load(); }, []);
+
   async function addFuente(e: React.FormEvent) {
     e.preventDefault();
     if (!fNombre || !fMonto) return;
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const dia1 = fFrec === "variable" ? null : parseInt(fDia1) || null;
+    if (fFrec === "semanal" && !fInicio) return;
+    const dia1 = fFrec === "variable" || fFrec === "semanal" ? null : parseInt(fDia1) || null;
     const dia2 = fFrec === "quincenal" ? parseInt(fDia2) || null : null;
     const { data } = await supabase.from("ingresos_fuentes")
-      .insert({ user_id: user.id, nombre: fNombre, monto: parseFloat(fMonto), frecuencia: fFrec, dia_1: dia1, dia_2: dia2 })
+      .insert({ user_id: user.id, nombre: fNombre, monto: parseFloat(fMonto), frecuencia: fFrec, dia_1: dia1, dia_2: dia2, fecha_inicio: fFrec === "semanal" ? fInicio || null : null })
       .select().single();
     if (data) setFuentes([...fuentes, data]);
-    setFNombre(""); setFMonto("");
+    setFNombre(""); setFMonto(""); setFInicio("");
     load();
   }
 
@@ -151,7 +162,7 @@ export default function CiclosPage() {
   const plan = planHastaProximoIngreso(
     new Date(),
     parseFloat(saldo) || 0,
-    fuentes.map(f => ({ nombre: f.nombre, monto: f.monto, frecuencia: f.frecuencia, dia_1: f.dia_1, dia_2: f.dia_2 })),
+    fuentes.map(f => ({ nombre: f.nombre, monto: f.monto, frecuencia: f.frecuencia, dia_1: f.dia_1, dia_2: f.dia_2, fecha_inicio: f.fecha_inicio })),
     obligaciones.map(o => ({ nombre: o.nombre, monto: o.monto, dia_pago: o.dia_pago })),
   );
 
@@ -236,7 +247,7 @@ export default function CiclosPage() {
                 <p className="font-medium text-[#1a1a2e]">{f.nombre} · {fmt(f.monto)}</p>
                 <p className="text-xs text-[#1a1a2e]/50">
                   {FRECUENCIAS.find(x => x.value === f.frecuencia)?.label}
-                  {f.frecuencia === "quincenal" ? ` · días ${f.dia_1} y ${f.dia_2}` : f.frecuencia === "mensual" ? ` · día ${f.dia_1}` : ""}
+                  {f.frecuencia === "quincenal" ? ` · días ${f.dia_1} y ${f.dia_2}` : f.frecuencia === "mensual" ? ` · día ${f.dia_1}` : f.frecuencia === "semanal" && f.fecha_inicio ? ` · cada 7 días desde el ${f.fecha_inicio}` : ""}
                 </p>
               </div>
               <button onClick={() => removeFuente(f.id)} className="text-[#1a1a2e]/30 hover:text-red-400"><X size={14} /></button>
@@ -253,6 +264,12 @@ export default function CiclosPage() {
             <div className="flex gap-2">
               <input type="number" min={1} max={31} value={fDia1} onChange={e => setFDia1(e.target.value)} className={inputCls} />
               <input type="number" min={1} max={31} value={fDia2} onChange={e => setFDia2(e.target.value)} className={inputCls} />
+            </div>
+          )}
+          {fFrec === "semanal" && (
+            <div>
+              <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Primer día que te pagan</label>
+              <input type="date" value={fInicio} onChange={e => setFInicio(e.target.value)} className={inputCls} />
             </div>
           )}
           {fFrec === "mensual" && (

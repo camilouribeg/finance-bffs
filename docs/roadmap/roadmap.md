@@ -3,7 +3,7 @@
 > Fuente de verdad: [`Finance-BFF-Experience-Roadmap.xlsx`](./Finance-BFF-Experience-Roadmap.xlsx), generado con el socio del proyecto.
 > Este `.md` es un espejo fiel y legible/diff-eable. Regenerar con `python3 docs/roadmap/sync.py`.
 
-Última sincronización del espejo: 2026-09-18
+Última sincronización del espejo: 2026-10-03
 
 ## Tablero de estado
 
@@ -53,6 +53,16 @@
 | 4.18 | Validar nuevas cajitas contra la capacidad disponible | Dashboard | Mis cajitas | Alta | Completo |
 | 4.19 | Explicar la metodología de salida de deudas con su autor | Dashboard | Mis deudas | Alta | Completo |
 | 4.20 | Hacer literal el check del pago mensual de la deuda | Dashboard | Mis deudas | Alta | Completo |
+| 5.1 | Identificar la frecuencia con la que la usuaria recibe sus ingresos | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.2 | Registrar el monto y la fecha aproximada de cada pago | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.3 | Registrar cuándo deben pagarse las obligaciones recurrentes | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.4 | Detectar falta de liquidez entre un ingreso y el siguiente | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.5 | Crear una reserva para equilibrar el siguiente periodo de ingreso | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.6 | Acompañar el primer ciclo cuando todavía no existe una reserva previa | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.7 | Mostrar en el dashboard el plan hasta el próximo ingreso | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.8 | Diferenciar saldo en cuenta de dinero realmente disponible | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.9 | Confirmar que la reserva del siguiente periodo ya fue apartada | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.10 | Calcular el ahorro disponible después de proteger la liquidez | Flujo de caja y ciclos de ingreso | Alta | Completo |
 
 ## Detalle por User Story
 
@@ -583,3 +593,123 @@
 - **Objetivo de negocio:** Mejorar la comprensión del seguimiento mensual y aumentar la calidad de los datos registrados.
 - **Resultado esperado:** La usuaria entiende sin explicación adicional dónde confirmar el pago de su cuota.
 - **Criterio de éxito:** El estado pendiente contiene una instrucción explícita, el clic cambia a confirmación y puede revertirse si fue accidental.
+
+### 5.1 · Identificar la frecuencia con la que la usuaria recibe sus ingresos
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** El onboarding conoce cuánto dinero recibe la usuaria, pero no distingue con suficiente detalle la frecuencia con la que ese dinero entra. Dos usuarias con el mismo ingreso mensual pueden vivir realidades muy diferentes si una recibe todo una vez al mes y otra recibe varios pagos durante el mes.
+- **Experiencia deseada:** Durante el registro de ingresos, Amy debe entender cómo recibe el dinero la usuaria antes de construir su plan financiero. Debe reconocer frecuencias como mensual, quincenal, cada dos semanas, semanal, variable u otra frecuencia que la usuaria necesite.
+- **Historia de usuario:** Como una mujer que no recibe todo mi ingreso una sola vez al mes, quiero contarle a Amy con qué frecuencia me pagan, para que mi plan financiero refleje cómo funciona realmente mi dinero y no solo cuánto recibo en total.
+- **Lineamientos de implementación:** Agregar la frecuencia de pago como parte de la configuración de cada fuente de ingreso. Permitir seleccionar mensual, quincenal, cada dos semanas, semanal, variable u otra. La frecuencia debe guardarse por fuente de ingreso porque una misma usuaria puede recibir ingresos con ciclos diferentes. La selección debe alimentar posteriormente la construcción de los periodos de flujo de caja.
+- **Consideraciones de UX:** Explicar las opciones con lenguaje cotidiano. No asumir que quincenal y cada dos semanas significan lo mismo. Si la usuaria tiene varias fuentes de ingreso, cada una debe poder tener su propia frecuencia.
+- **Objetivo de negocio:** Construir planes financieros que representen el momento real en el que el dinero entra y mejorar la precisión de las recomendaciones de Amy.
+- **Resultado esperado:** Amy conoce no solo cuánto gana la usuaria sino también el ritmo con el que recibe cada ingreso.
+- **Criterio de éxito:** Cada fuente de ingreso conserva su frecuencia y Amy utiliza esa información para construir los periodos de disponibilidad de dinero.
+
+### 5.2 · Registrar el monto y la fecha aproximada de cada pago
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** Conocer que un ingreso es quincenal no permite saber cuánto recibe la usuaria en cada pago ni cuándo lo recibe. El sistema podría asumir incorrectamente una distribución igual aunque en la vida real un pago represente, por ejemplo, 40 por ciento del ingreso y el otro 60 por ciento.
+- **Experiencia deseada:** Amy debe permitir registrar cuánto dinero llega en cada pago y en qué fecha o momento aproximado del mes suele llegar, sin asumir que los pagos tienen el mismo valor.
+- **Historia de usuario:** Como una mujer que recibe diferentes montos durante el mes, quiero indicar cuánto recibo en cada pago y cuándo suele llegar, para que Amy pueda organizar mis obligaciones con el dinero que realmente tendré disponible en cada momento.
+- **Lineamientos de implementación:** Cuando una fuente tenga más de un pago por mes, solicitar monto y fecha aproximada de cada pago. No dividir automáticamente el ingreso mensual en partes iguales. Permitir editar estos datos cuando cambie el empleo, el salario o la estructura de pagos. Para ingresos variables, permitir registrar una estimación y actualizar el monto real cuando se reciba.
+- **Consideraciones de UX:** Mantener el flujo simple y progresivo. Mostrar el total mensual resultante para que la usuaria pueda validar que la información registrada tiene sentido. Evitar exigir fechas exactas cuando la usuaria solo conoce un rango aproximado.
+- **Objetivo de negocio:** Dar a Amy información temporal suficiente para organizar el dinero de forma realista.
+- **Resultado esperado:** El plan refleja la distribución real de los ingresos dentro del mes, incluso cuando los pagos no son iguales.
+- **Criterio de éxito:** Los pagos pueden tener montos diferentes, conservan su fecha aproximada y el total mensual se calcula correctamente a partir de ellos.
+
+### 5.3 · Registrar cuándo deben pagarse las obligaciones recurrentes
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** Los gastos fijos indican cuánto debe pagar la usuaria, pero el monto mensual por sí solo no permite saber qué ingreso debe cubrir cada obligación. Esto puede ocultar periodos en los que la usuaria se queda con muy poco dinero aunque el mes completo cierre positivamente.
+- **Experiencia deseada:** Amy debe conocer aproximadamente cuándo vence o se paga cada obligación recurrente para relacionarla con los ingresos disponibles antes de esa fecha.
+- **Historia de usuario:** Como una mujer que tiene varias obligaciones en momentos diferentes del mes, quiero indicarle a Amy cuándo debo pagarlas, para que me ayude a preparar el dinero antes de cada vencimiento.
+- **Lineamientos de implementación:** Agregar fecha de pago o vencimiento a los gastos fijos y demás obligaciones recurrentes que afecten el flujo de caja. Permitir una fecha exacta o un momento aproximado del mes cuando corresponda. Usar esta información para asignar cada obligación al periodo de ingreso que debe financiarla. Permitir modificar la fecha cuando cambien las condiciones del servicio o contrato.
+- **Consideraciones de UX:** No convertir el onboarding en una captura interminable de fechas. Pedir este dato únicamente donde sea útil para el flujo de caja y permitir completarlo después si la usuaria no lo conoce en ese momento.
+- **Objetivo de negocio:** Permitir que Amy anticipe necesidades de efectivo y reduzca desbalances dentro del mes.
+- **Resultado esperado:** La usuaria puede ver sus obligaciones en relación con los ingresos que estarán disponibles antes de pagarlas.
+- **Criterio de éxito:** Las obligaciones recurrentes conservan una fecha o periodo de pago y Amy puede asociarlas correctamente con los ciclos de ingreso.
+
+### 5.4 · Detectar falta de liquidez entre un ingreso y el siguiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** Una usuaria puede tener capacidad financiera positiva al finalizar el mes y aun así quedarse prácticamente sin dinero durante varios días porque sus obligaciones se concentran antes de uno de sus pagos. El cálculo mensual puede mostrar dinero disponible y ocultar este problema.
+- **Experiencia deseada:** Antes de recomendar ahorro o mostrar dinero libre, Amy debe revisar cada periodo entre ingresos y detectar si la usuaria tendrá suficiente dinero para cubrir obligaciones y gastos necesarios hasta recibir el siguiente pago.
+- **Historia de usuario:** Como una mujer cuyos ingresos mensuales sí alcanzan pero están distribuidos de forma desigual, quiero que Amy detecte cuando una parte del mes queda demasiado ajustada, para no creer que tengo dinero disponible cuando todavía necesito cubrir los días antes de mi próximo pago.
+- **Lineamientos de implementación:** Construir periodos de flujo de caja desde cada ingreso hasta el siguiente. Para cada periodo calcular dinero inicial, ingresos recibidos, obligaciones que vencen durante ese intervalo, reservas ya asignadas y monto restante para los gastos necesarios del periodo. Si el resultado deja a la usuaria sin liquidez suficiente, identificar el desbalance antes de calcular capacidad de ahorro. No clasificar automáticamente el caso como falta de ingresos mensuales si el problema es temporal.
+- **Consideraciones de UX:** Comunicar el hallazgo sin alarmar ni culpabilizar. Explicar la diferencia entre que el mes alcance y que el dinero esté disponible en el momento correcto. Evitar mostrar como libre dinero que ya se necesita para un periodo futuro.
+- **Objetivo de negocio:** Evitar recomendaciones de ahorro que comprometan la capacidad de la usuaria para llegar a su siguiente ingreso.
+- **Resultado esperado:** Amy distingue entre capacidad mensual y liquidez dentro del mes y puede intervenir antes de que aparezca un periodo sin dinero.
+- **Criterio de éxito:** El sistema identifica periodos con insuficiente liquidez aunque el balance mensual sea positivo y no recomienda como disponible el dinero necesario para cubrirlos.
+
+### 5.5 · Crear una reserva para equilibrar el siguiente periodo de ingreso
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** Cuando un periodo del mes queda muy ajustado y otro tiene mayor holgura, la usuaria puede necesitar conservar parte del ingreso más fuerte para utilizarlo después. Sin esta reserva, el excedente puede parecer disponible para ahorro o gasto aunque tenga un propósito próximo.
+- **Experiencia deseada:** Si Amy detecta un desbalance entre periodos, debe calcular cuánto dinero conviene reservar desde el periodo más holgado para complementar el siguiente y permitir que la usuaria llegue a su próximo ingreso con el dinero necesario.
+- **Historia de usuario:** Como una mujer que recibe más dinero en una parte del mes que en otra, quiero que Amy me diga cuánto debo dejar preparado para mi siguiente periodo, para no quedarme sin liquidez aunque mi presupuesto mensual sí alcance.
+- **Lineamientos de implementación:** Calcular una reserva de transición entre periodos cuando sea necesaria. La reserva debe considerar las obligaciones y necesidades que ocurren antes del siguiente ingreso suficiente. Mostrar cuánto debe apartarse, desde qué ingreso debe reservarse y para qué periodo se está protegiendo. Restar esta reserva del dinero realmente disponible antes de calcular nuevas bolsitas o ahorro adicional. Recalcularla cuando cambien ingresos, fechas u obligaciones.
+- **Consideraciones de UX:** No presentar esta reserva como ahorro porque su propósito es financiar gastos próximos. Debe sentirse como dinero con destino. Explicar claramente que la usuaria no está perdiendo capacidad financiera, sino moviendo dinero en el tiempo para que esté disponible cuando lo necesite.
+- **Objetivo de negocio:** Reducir la dependencia de crédito para cubrir desbalances temporales y ayudar a la usuaria a anticiparse a sus necesidades.
+- **Resultado esperado:** La usuaria llega al siguiente periodo con dinero previamente preparado y entiende por qué ese monto no está disponible para otros objetivos.
+- **Criterio de éxito:** La reserva se calcula cuando existe un desbalance, se descuenta del dinero disponible y se actualiza cuando cambian las condiciones del flujo.
+
+### 5.6 · Acompañar el primer ciclo cuando todavía no existe una reserva previa
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** Una usuaria que acaba de cambiar de trabajo o de frecuencia de pago puede necesitar una reserva entre periodos, pero durante su primer ciclo todavía no ha tenido un ingreso anterior desde el cual construirla. El sistema no debe comportarse como si esa reserva ya existiera.
+- **Experiencia deseada:** Amy debe reconocer el primer ciclo como una etapa de transición y mostrar con claridad cuánto falta para estabilizar el flujo, qué puede cubrir con el dinero actual y cómo construir progresivamente la reserva necesaria.
+- **Historia de usuario:** Como una mujer que acaba de empezar a recibir mi salario con una nueva frecuencia, quiero que Amy reconozca que todavía no tengo dinero preparado del periodo anterior, para recibir un plan realista mientras organizo mi nuevo ciclo.
+- **Lineamientos de implementación:** Detectar cuando la usuaria está iniciando un nuevo esquema de ingresos y no cuenta con la reserva calculada. Crear un plan de transición que muestre la necesidad temporal y permita construir la reserva en uno o varios ingresos posteriores según la capacidad disponible. No asumir el uso de tarjeta de crédito ni recomendar endeudamiento como solución predeterminada. Una vez completada la reserva, cambiar automáticamente al funcionamiento regular.
+- **Consideraciones de UX:** Evitar hacer sentir a la usuaria que su plan está mal por una situación temporal. Diferenciar claramente transición de funcionamiento habitual y mostrar progreso hacia la estabilización.
+- **Objetivo de negocio:** Acompañar cambios laborales o de frecuencia de pago sin generar recomendaciones inviables durante el primer ciclo.
+- **Resultado esperado:** La usuaria entiende por qué el primer periodo es diferente y cómo llegará a una estructura estable sin que Amy presuponga dinero que todavía no existe.
+- **Criterio de éxito:** El sistema identifica el primer ciclo, no contabiliza una reserva inexistente y permite construirla progresivamente hasta activar el flujo regular.
+
+### 5.7 · Mostrar en el dashboard el plan hasta el próximo ingreso
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** El dashboard se organiza principalmente alrededor del mes, pero una usuaria que recibe varios pagos necesita saber qué debe hacer con el dinero disponible ahora y qué debe cubrir antes de recibir el siguiente ingreso.
+- **Experiencia deseada:** Además de conservar la visión mensual, el dashboard debe mostrar un plan sencillo para el periodo actual con el próximo ingreso, las obligaciones que deben cubrirse antes de esa fecha, el dinero reservado y el monto que realmente puede utilizarse.
+- **Historia de usuario:** Como una mujer que recibe varios pagos durante el mes, quiero ver qué debo cubrir hasta mi próximo ingreso, para tomar decisiones con el dinero que tengo hoy sin perder de vista mi plan mensual.
+- **Lineamientos de implementación:** Crear un bloque de periodo actual dentro del dashboard para usuarias cuya frecuencia de ingreso lo requiera. Mostrar fecha aproximada del próximo ingreso, obligaciones pendientes antes de esa fecha, reservas asignadas y dinero disponible para ese periodo. Al llegar un nuevo ingreso, avanzar al siguiente periodo y recalcular la información. Mantener la visión mensual como contexto general.
+- **Consideraciones de UX:** Evitar duplicar todo el dashboard. La vista del periodo debe responder una pregunta concreta: qué necesito hacer con mi dinero hasta que vuelva a recibir ingresos. Mantener jerarquía visual clara entre mes y periodo actual.
+- **Objetivo de negocio:** Convertir el dashboard en una herramienta útil para decisiones cotidianas y aumentar la frecuencia de uso de Amy.
+- **Resultado esperado:** La usuaria entiende su mes completo y al mismo tiempo sabe qué debe hacer con el dinero disponible hasta el próximo pago.
+- **Criterio de éxito:** El dashboard muestra el periodo vigente, el siguiente ingreso y las obligaciones que deben cubrirse antes de recibirlo con datos consistentes con el plan mensual.
+
+### 5.8 · Diferenciar saldo en cuenta de dinero realmente disponible
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** Una usuaria puede ver un saldo alto en su cuenta después de recibir un pago, pero una parte de ese dinero puede estar destinada a obligaciones o a complementar el siguiente periodo. Mostrar todo el saldo como disponible puede llevarla a gastar o ahorrar dinero que ya tiene un propósito.
+- **Experiencia deseada:** Amy debe separar conceptualmente el dinero que existe en la cuenta del dinero que realmente está libre para decisiones nuevas después de proteger obligaciones y reservas.
+- **Historia de usuario:** Como una mujer que acaba de recibir mi salario, quiero saber cuánto de ese dinero realmente puedo usar, para no confundir tener dinero en la cuenta con tener dinero libre.
+- **Lineamientos de implementación:** Actualizar la lógica de Dinero disponible para excluir obligaciones pendientes, cajitas, compromisos confirmados y reservas necesarias para periodos futuros según las reglas vigentes del producto. Cuando exista dinero reservado para el siguiente periodo, mostrarlo de forma separada y explicar su propósito. Todos los módulos que utilicen Dinero disponible deben consumir la misma lógica central.
+- **Consideraciones de UX:** Usar términos muy claros y consistentes. La usuaria debe poder entender por qué su saldo bancario puede ser mayor que el monto que Amy considera disponible sin sentir que el dinero desapareció.
+- **Objetivo de negocio:** Evitar decisiones basadas en una falsa sensación de liquidez y fortalecer la confianza en los cálculos de Amy.
+- **Resultado esperado:** La usuaria sabe qué parte de su dinero tiene destino y qué parte puede utilizar para nuevas decisiones.
+- **Criterio de éxito:** Dinero disponible excluye correctamente las reservas y obligaciones comprometidas y la diferencia puede explicarse desde el dashboard.
+
+### 5.9 · Confirmar que la reserva del siguiente periodo ya fue apartada
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** Amy puede calcular que una parte del ingreso debe reservarse para el siguiente periodo, pero el cálculo por sí solo no garantiza que la usuaria haya separado ese dinero en la vida real.
+- **Experiencia deseada:** La usuaria debe recibir una acción concreta para apartar la reserva y poder confirmar cuando ya lo hizo, siguiendo la misma filosofía de conexión entre Amy y las acciones reales que existe en Cajitas, Bolsitas y Deudas.
+- **Historia de usuario:** Como una mujer que necesita guardar parte de este ingreso para mi siguiente periodo, quiero marcar cuando ya aparté ese dinero, para que Amy me ayude a convertir el plan en una acción real y pueda seguir mi progreso.
+- **Lineamientos de implementación:** Cuando exista una reserva entre periodos, mostrar el monto y una instrucción para separarlo en el banco, cuenta o método que utilice la usuaria. Incluir una confirmación explícita cuando la acción esté realizada. Conservar el estado durante el periodo correspondiente y crear una nueva tarea únicamente cuando exista una nueva reserva por separar. No confundir esta acción con ahorro de largo plazo.
+- **Consideraciones de UX:** El texto debe ser literal y orientado a la acción. Mostrar qué cantidad debe apartarse y para qué periodo se está guardando. La confirmación debe sentirse como cumplimiento de una tarea, no como una operación bancaria automática.
+- **Objetivo de negocio:** Convertir la recomendación de flujo de caja en un hábito concreto y medible.
+- **Resultado esperado:** La usuaria efectivamente separa el dinero que Amy identificó como necesario para el siguiente periodo.
+- **Criterio de éxito:** Cada reserva necesaria genera una acción clara, puede marcarse como realizada y conserva correctamente su estado durante el ciclo correspondiente.
+
+### 5.10 · Calcular el ahorro disponible después de proteger la liquidez
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
+
+- **Estado actual:** El excedente mensual puede parecer disponible para ahorro aunque una parte sea necesaria para complementar un periodo del mes que queda corto. Si Amy recomienda bolsitas antes de proteger esa liquidez, puede crear un plan que funciona en el total mensual pero falla durante el mes.
+- **Experiencia deseada:** Amy debe determinar la capacidad de ahorro únicamente después de cubrir obligaciones y proteger el dinero necesario para llegar de forma sostenible al siguiente ingreso.
+- **Historia de usuario:** Como una mujer que quiere ahorrar sin quedarme corta antes de mi próximo pago, quiero que Amy calcule mi capacidad de ahorro después de reservar lo que necesito para vivir y cumplir mis obligaciones entre ingresos.
+- **Lineamientos de implementación:** Incorporar las reservas de flujo de caja dentro del cálculo central de capacidad de ahorro. El orden lógico debe proteger primero las obligaciones y necesidades del periodo, después las reservas necesarias para periodos futuros y solo entonces determinar cuánto dinero puede destinarse a nuevas bolsitas u otros objetivos de ahorro. Recalcular automáticamente cuando cambien ingresos, pagos, fechas, gastos u obligaciones.
+- **Consideraciones de UX:** No presentar una capacidad de ahorro mayor simplemente porque existe un excedente al final del mes. Si una reserva reduce temporalmente lo disponible para ahorrar, explicar que ese dinero está protegiendo el flujo y no representa una pérdida.
+- **Objetivo de negocio:** Evitar planes de ahorro que obliguen a la usuaria a recurrir a deuda o quedarse sin liquidez durante el mes.
+- **Resultado esperado:** La recomendación de ahorro de Amy es sostenible tanto a nivel mensual como entre cada ingreso.
+- **Criterio de éxito:** Las recomendaciones de ahorro se calculan después de las reservas necesarias y nunca utilizan dinero que Amy ya identificó como necesario antes del siguiente ingreso.

@@ -13,6 +13,8 @@ export type FuenteIngreso = {
   frecuencia: Frecuencia;
   dia_1: number | null;
   dia_2: number | null;
+  // Semanal: primer dia de pago (yyyy-mm-dd); desde ahi cada 7 dias.
+  fecha_inicio?: string | null;
 };
 
 export type Obligacion = { nombre: string; monto: number; dia_pago: number };
@@ -47,9 +49,20 @@ export function proyectarEventos(
     meses.push({ anio: d.getFullYear(), mes: d.getMonth() });
   }
 
+  for (const f of fuentes) {
+    if (f.frecuencia === "semanal" && f.fecha_inicio) {
+      const [y, m, d] = f.fecha_inicio.split("-").map(Number);
+      let fecha = new Date(y, m - 1, d);
+      // Avanza hasta el primer pago dentro de la ventana y luego cada 7 dias.
+      while (fecha < inicioDia) fecha = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate() + 7);
+      for (; fecha <= hasta; fecha = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate() + 7)) {
+        eventos.push({ fecha, nombre: f.nombre, monto: f.monto, tipo: "ingreso" });
+      }
+    }
+  }
+
   for (const { anio, mes } of meses) {
     for (const f of fuentes) {
-      // Semanal aun no se proyecta: no hay dia de inicio en el esquema todavia.
       if (f.frecuencia === "semanal" || f.dia_1 == null) continue;
       const dias = f.frecuencia === "quincenal" && f.dia_2 != null ? [f.dia_1, f.dia_2] : [f.dia_1];
       for (const dia of dias) {
