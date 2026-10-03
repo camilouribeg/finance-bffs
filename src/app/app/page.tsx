@@ -6,6 +6,12 @@ import { useFmt, usePais } from "@/lib/useFmt";
 import MoneyInput from "@/components/MoneyInput";
 import { MONEDAS } from "@/lib/monedas";
 import { calcularDisponible, cuotaMensualCajita, cuotaMensualBolsillo } from "@/lib/capacidad";
+import PlanConAmy from "@/components/dashboard/PlanConAmy";
+import GuiaMenu from "@/components/dashboard/GuiaMenu";
+import { cargarConfirmadas } from "@/lib/confirmaciones";
+import { filasTransferencia, resumenTransferencia, type Confirmadas } from "@/lib/transferencia";
+import { proximosPasos } from "@/lib/proximosPasos";
+import { inicioSemanaISO, semanaAlDia } from "@/lib/semana";
 import Link from "next/link";
 import {
   TrendingUp,
@@ -16,7 +22,6 @@ import {
   BarChart3,
   Pencil,
   X,
-  Info,
   Box,
   ChevronDown,
 } from "lucide-react";
@@ -37,7 +42,7 @@ export default function DashboardPage() {
   const [year] = useState(currentYear);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showTip, setShowTip] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Editable ingresos/gastos (inline edit mode)
   const [editingIngresos, setEditingIngresos] = useState(false);
@@ -59,18 +64,11 @@ export default function DashboardPage() {
   const [cajitas, setCajitas] = useState<Cajita[]>([]);
   const [bolsillos, setBolsillos] = useState<Bolsillo[]>([]);
 
-  // First-week tip banner
-  useEffect(() => {
-    const key = "amy_dashboard_first_visit";
-    const stored = localStorage.getItem(key);
-    if (!stored) {
-      localStorage.setItem(key, String(Date.now()));
-      setShowTip(true);
-    } else {
-      const diff = Date.now() - parseInt(stored);
-      if (diff < 7 * 24 * 60 * 60 * 1000) setShowTip(true);
-    }
-  }, []);
+  // Datos del plan "Qué hacer ahora" (3.6): lo confirmado este mes y si la semana de gastos está al día.
+  const [confirmCajitas, setConfirmCajitas] = useState<Confirmadas>({});
+  const [confirmBolsillos, setConfirmBolsillos] = useState<Confirmadas>({});
+  const [semanaOk, setSemanaOk] = useState(false);
+  const [planListo, setPlanListo] = useState(false);
 
   const loadMonth = useCallback(async (m: number, y: number) => {
     setLoading(true);
@@ -120,6 +118,21 @@ export default function DashboardPage() {
       if (d) setDeudas(d);
       if (b) setBolsillos(b);
       if (c) setCajitas(c);
+      setUserId(user.id);
+      try {
+        const [cc, cb, { count }] = await Promise.all([
+          cargarConfirmadas(supabase, user.id, "cajita"),
+          cargarConfirmadas(supabase, user.id, "bolsillo"),
+          supabase.from("gastos").select("id", { count: "exact", head: true })
+            .eq("user_id", user.id).gte("fecha", inicioSemanaISO()),
+        ]);
+        setConfirmCajitas(cc);
+        setConfirmBolsillos(cb);
+        setSemanaOk(semanaAlDia(count ?? 0));
+        setPlanListo(true);
+      } catch {
+        // Sin el plan el dashboard sigue funcionando; solo no se muestra el bloque.
+      }
     }
     loadPermanent();
   }, []);
@@ -157,21 +170,20 @@ export default function DashboardPage() {
   });
   const pctDisponible = totalIngresos > 0 ? (disponible / totalIngresos) * 100 : 0;
 
+  const pasos = proximosPasos({
+    cajitas: resumenTransferencia(filasTransferencia(cajitas, cuotaMensualCajita, confirmCajitas)),
+    bolsitas: resumenTransferencia(filasTransferencia(bolsillos, cuotaMensualBolsillo, confirmBolsillos)),
+    hayBolsitas: bolsillos.length > 0,
+    disponible,
+    semanaAlDia: semanaOk,
+  });
+
   return (
     <div className="max-w-5xl mx-auto">
 
-      {/* First-week tip banner */}
-      {showTip && (
-        <div className="flex items-start gap-3 bg-white border border-[#ffb8e0] rounded-2xl px-5 py-4 mb-6">
-          <Info size={16} className="text-[#ec7fa9] mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-[#1a1a2e]/70 flex-1">
-            <span className="font-semibold text-[#ec7fa9]">Este es tu panel de monitoreo.</span> Aquí puedes ver el resumen de tus finanzas de un vistazo. Para registrar gastos, gestionar deudas, cajitas o bolsillos, usa el menú de la izquierda.
-          </p>
-          <button onClick={() => setShowTip(false)} className="text-[#1a1a2e]/30 hover:text-[#1a1a2e]/60 flex-shrink-0">
-            <X size={14} />
-          </button>
-        </div>
-      )}
+      {userId && <GuiaMenu key={userId} userId={userId} />}
+
+      {planListo && <PlanConAmy pendientes={pasos.pendientes} hechos={pasos.hechos} />}
 
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
