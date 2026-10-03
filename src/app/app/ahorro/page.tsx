@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
 import MoneyInput from "@/components/MoneyInput";
+import TransferenciaBanco from "@/components/dashboard/TransferenciaBanco";
+import { monthsUntilDate, cuotaMensualBolsillo } from "@/lib/capacidad";
+import { cargarConfirmadas, confirmarItems, revertirItems } from "@/lib/confirmaciones";
+import { filasTransferencia, resumenTransferencia, type Confirmadas } from "@/lib/transferencia";
 import { PiggyBank, Target, Check, X, PartyPopper, Star, Plus, Pencil } from "lucide-react";
 
 type Bolsillo = {
@@ -60,6 +64,9 @@ export default function AhorroPage() {
   const [bolsillos, setBolsillos] = useState<Bolsillo[]>([]);
   const [loading, setLoading] = useState(true);
   const [formType, setFormType] = useState<"fondos" | "metas" | null>(null);
+  const [confirmadas, setConfirmadas] = useState<Confirmadas>({});
+  const [confirmando, setConfirmando] = useState(false);
+  const [errorTransferencia, setErrorTransferencia] = useState<string | null>(null);
 
   // Capacidad de ahorro disponible (ingreso - gastos fijos - cuotas deudas)
   const [capacidadBase, setCapacidadBase] = useState(0);
@@ -116,21 +123,15 @@ export default function AhorroPage() {
       const cuotas = (deudasRes.data || []).reduce((s: number, d: { cuota_mensual: number }) => s + d.cuota_mensual, 0);
       setCapacidadBase(Math.max(0, ingreso - gastos - cuotas));
     }
+    try {
+      setConfirmadas(await cargarConfirmadas(supabase, user.id, "bolsillo"));
+    } catch {
+      setErrorTransferencia("No pudimos cargar tu transferencia de este mes. Recarga la página en un momento.");
+    }
     setLoading(false);
   }
 
-  function monthsUntil(fechaStr: string): number {
-    const now = new Date();
-    const fecha = new Date(fechaStr + "T12:00:00");
-    const diff = (fecha.getFullYear() - now.getFullYear()) * 12 + (fecha.getMonth() - now.getMonth());
-    return Math.max(1, diff);
-  }
-
-  function cuotaMeta(b: Bolsillo): number {
-    if (!b.fecha_meta || b.meta <= 0) return 0;
-    const falta = Math.max(0, b.meta - b.actual);
-    return Math.ceil(falta / monthsUntil(b.fecha_meta));
-  }
+  const monthsUntil = monthsUntilDate;
 
   async function addFondo(e: React.FormEvent) {
     e.preventDefault();
@@ -245,8 +246,47 @@ export default function AhorroPage() {
   const fondos = bolsillos.filter(b => !b.tipo || b.tipo === "fondos");
   const metas = bolsillos.filter(b => b.tipo === "metas");
   const totalAhorrado = bolsillos.reduce((s, b) => s + b.actual, 0);
-  const totalMensual = fondos.reduce((s, b) => s + (b.cuota_mensual || 0), 0)
-    + metas.reduce((s, b) => s + cuotaMeta(b), 0);
+  const totalMensual = bolsillos.reduce((s, b) => s + cuotaMensualBolsillo(b), 0);
+
+  // "Ya separe este dinero en mi banco": acredita la cuota de cada bolsita pendiente y deja
+  // constancia. Deshacer revierte exactamente lo acreditado (3.7).
+  async function toggleTransferencia() {
+    if (confirmando) return;
+    setConfirmando(true);
+    setErrorTransferencia(null);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      if (resumen.completa) {
+        const revertidos = await revertirItems(supabase, user.id, "bolsillo",
+          bolsillos.filter(b => confirmadas[b.id]).map(b => ({
+            id: b.id, confirmacionId: confirmadas[b.id].id, monto: confirmadas[b.id].monto, actual: b.actual,
+          })));
+        const nuevo = new Map(revertidos.map(r => [r.id, r.nuevoActual]));
+        setBolsillos(prev => prev.map(b => nuevo.has(b.id) ? { ...b, actual: nuevo.get(b.id)! } : b));
+        setConfirmadas({});
+      } else {
+        const hechos = await confirmarItems(supabase, user.id, "bolsillo",
+          bolsillos.filter(b => !confirmadas[b.id] && cuotaMensualBolsillo(b) > 0).map(b => ({
+            id: b.id, actual: b.actual, monto: cuotaMensualBolsillo(b),
+          })));
+        const nuevo = new Map(hechos.map(h => [h.id, h.nuevoActual]));
+        setBolsillos(prev => prev.map(b => nuevo.has(b.id) ? { ...b, actual: nuevo.get(b.id)! } : b));
+        setConfirmadas(prev => ({
+          ...prev,
+          ...Object.fromEntries(hechos.map(h => [h.id, { id: h.confirmacionId, monto: h.monto }])),
+        }));
+      }
+    } catch {
+      setErrorTransferencia("No pudimos guardar esto. Inténtalo de nuevo en un momento.");
+    } finally {
+      setConfirmando(false);
+    }
+  }
+
+  const filas = filasTransferencia(bolsillos, cuotaMensualBolsillo, confirmadas);
+  const resumen = resumenTransferencia(filas);
 
   const disponibleParaAhorro = Math.max(0, capacidadBase - totalMensual);
   const recomendacionFCuota = disponibleParaAhorro > 0
@@ -329,6 +369,11 @@ export default function AhorroPage() {
           </div>
         </div>
       </div>
+
+      {!loading && (
+        <TransferenciaBanco singular="bolsita" filas={filas} resumen={resumen}
+          ocupado={confirmando} error={errorTransferencia} onToggle={toggleTransferencia} />
+      )}
 
       {loading ? (
         <div className="flex flex-col gap-6 animate-pulse">
@@ -645,7 +690,7 @@ export default function AhorroPage() {
                 {metas.map((b) => {
                   const pct = b.meta > 0 ? Math.min((b.actual / b.meta) * 100, 100) : 0;
                   const falta = Math.max(0, b.meta - b.actual);
-                  const cuota = cuotaMeta(b);
+                  const cuota = cuotaMensualBolsillo(b);
                   const done = b.actual >= b.meta && b.meta > 0;
                   const meses = b.fecha_meta ? monthsUntil(b.fecha_meta) : null;
                   const fechaStr = b.fecha_meta

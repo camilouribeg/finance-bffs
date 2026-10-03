@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
 import MoneyInput from "@/components/MoneyInput";
+import TransferenciaBanco from "@/components/dashboard/TransferenciaBanco";
+import { monthsUntilDate, cuotaMensualCajita } from "@/lib/capacidad";
+import { cargarConfirmadas, confirmarItems, revertirItems } from "@/lib/confirmaciones";
+import { filasTransferencia, resumenTransferencia, type Confirmadas } from "@/lib/transferencia";
 import { Archive, Lightbulb, Check, X, PartyPopper } from "lucide-react";
 
 type Cajita = {
@@ -29,17 +33,14 @@ const EJEMPLOS = [
   { nombre: "Mantenimiento del hogar", emoji: "🏠" },
 ];
 
-function mesKey() {
-  const now = new Date();
-  return `cajitas_transferido_${now.getFullYear()}_${now.getMonth() + 1}`;
-}
-
 export default function CajitasPage() {
   const fmt = useFmt();
   const [cajitas, setCajitas] = useState<Cajita[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [transferido, setTransferido] = useState(false);
+  const [confirmadas, setConfirmadas] = useState<Confirmadas>({});
+  const [confirmando, setConfirmando] = useState(false);
+  const [errorTransferencia, setErrorTransferencia] = useState<string | null>(null);
 
   const [nombre, setNombre] = useState("");
   const [montoTotal, setMontoTotal] = useState("");
@@ -49,10 +50,7 @@ export default function CajitasPage() {
   const [abonarId, setAbonarId] = useState<string | null>(null);
   const [abonarMonto, setAbonarMonto] = useState("");
 
-  useEffect(() => {
-    load();
-    setTransferido(localStorage.getItem(mesKey()) === "1");
-  }, []);
+  useEffect(() => { load(); }, []);
 
   async function load() {
     const supabase = createClient();
@@ -60,21 +58,16 @@ export default function CajitasPage() {
     if (!user) return;
     const { data } = await supabase.from("cajitas").select("*").eq("user_id", user.id).order("fecha_pago");
     if (data) setCajitas(data);
+    try {
+      setConfirmadas(await cargarConfirmadas(supabase, user.id, "cajita"));
+    } catch {
+      setErrorTransferencia("No pudimos cargar tu transferencia de este mes. Recarga la página en un momento.");
+    }
     setLoading(false);
   }
 
-  function monthsUntil(fechaStr: string): number {
-    const now = new Date();
-    const fecha = new Date(fechaStr + "T12:00:00");
-    const diff = (fecha.getFullYear() - now.getFullYear()) * 12 + (fecha.getMonth() - now.getMonth());
-    return Math.max(1, diff);
-  }
-
-  function cuotaMensual(cajita: Cajita): number {
-    const falta = Math.max(0, cajita.monto_total - cajita.actual);
-    return Math.ceil(falta / monthsUntil(cajita.fecha_pago));
-  }
-
+  const monthsUntil = monthsUntilDate;
+  const cuotaMensual = cuotaMensualCajita;
 
   async function addCajita(e: React.FormEvent) {
     e.preventDefault();
@@ -125,13 +118,45 @@ export default function CajitasPage() {
     setCajitas(cajitas.filter(c => c.id !== id));
   }
 
-  function toggleTransferido() {
-    const next = !transferido;
-    setTransferido(next);
-    if (next) localStorage.setItem(mesKey(), "1");
-    else localStorage.removeItem(mesKey());
+  // "Ya separe este dinero en mi banco": acredita la cuota de cada cajita pendiente y deja
+  // constancia. Deshacer revierte exactamente lo acreditado (3.7).
+  async function toggleTransferencia() {
+    if (confirmando) return;
+    setConfirmando(true);
+    setErrorTransferencia(null);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      if (resumen.completa) {
+        const revertidos = await revertirItems(supabase, user.id, "cajita",
+          cajitas.filter(c => confirmadas[c.id]).map(c => ({
+            id: c.id, confirmacionId: confirmadas[c.id].id, monto: confirmadas[c.id].monto, actual: c.actual,
+          })));
+        const nuevo = new Map(revertidos.map(r => [r.id, r.nuevoActual]));
+        setCajitas(prev => prev.map(c => nuevo.has(c.id) ? { ...c, actual: nuevo.get(c.id)! } : c));
+        setConfirmadas({});
+      } else {
+        const hechos = await confirmarItems(supabase, user.id, "cajita",
+          cajitas.filter(c => !confirmadas[c.id] && cuotaMensual(c) > 0).map(c => ({
+            id: c.id, actual: c.actual, monto: cuotaMensual(c), tope: c.monto_total,
+          })));
+        const nuevo = new Map(hechos.map(h => [h.id, h.nuevoActual]));
+        setCajitas(prev => prev.map(c => nuevo.has(c.id) ? { ...c, actual: nuevo.get(c.id)! } : c));
+        setConfirmadas(prev => ({
+          ...prev,
+          ...Object.fromEntries(hechos.map(h => [h.id, { id: h.confirmacionId, monto: h.monto }])),
+        }));
+      }
+    } catch {
+      setErrorTransferencia("No pudimos guardar esto. Inténtalo de nuevo en un momento.");
+    } finally {
+      setConfirmando(false);
+    }
   }
 
+  const filas = filasTransferencia(cajitas, cuotaMensual, confirmadas);
+  const resumen = resumenTransferencia(filas);
   const totalMensual = cajitas.reduce((s, c) => s + cuotaMensual(c), 0);
 
   return (
@@ -178,30 +203,12 @@ export default function CajitasPage() {
           )}
           . Así el dinero estará apartado cuando llegue ese gasto.
         </p>
-        {totalMensual > 0 && (
-          <>
-            <div className="mt-3 flex items-center gap-2 bg-white border border-[#ffb8e0] rounded-xl px-4 py-2.5">
-              <span className="text-xs text-[#1a1a2e]/50">Transferencia mensual recomendada:</span>
-              <span className="text-sm font-bold text-[#ec7fa9]">{fmt(totalMensual)}</span>
-            </div>
-            <button
-              onClick={toggleTransferido}
-              className={`mt-3 w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-colors ${
-                transferido
-                  ? "bg-green-50 border-green-200 text-green-700"
-                  : "bg-white border-[#ffb8e0] text-[#1a1a2e]/60 hover:bg-white/80"
-              }`}
-            >
-              <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                transferido ? "bg-green-500 border-green-500" : "border-[#ffb8e0]"
-              }`}>
-                {transferido && <Check size={12} className="text-white" strokeWidth={3} />}
-              </span>
-              {transferido ? "¡Transferencia de este mes registrada!" : "Marcar transferencia de este mes como hecha"}
-            </button>
-          </>
-        )}
       </div>
+
+      {!loading && (
+        <TransferenciaBanco singular="cajita" filas={filas} resumen={resumen}
+          ocupado={confirmando} error={errorTransferencia} onToggle={toggleTransferencia} />
+      )}
 
       {showForm && (
         <div className="bg-white rounded-2xl border border-[#ffb8e0] p-6 mb-6">
