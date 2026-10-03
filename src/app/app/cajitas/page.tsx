@@ -257,14 +257,14 @@ export default function CajitasPage() {
         <p className="text-sm text-[#1a1a2e]/70 leading-relaxed">
           <span className="font-semibold">Una sola vez:</span> crea un bolsillo o sobre en tu banco por cada cajita y etiquétalo{" "}
           {cajitas.length === 0 ? (
-            <span className="font-semibold">"Cajita de [nombre]"</span>
+            <span className="font-semibold">&quot;Cajita de [nombre]&quot;</span>
           ) : cajitas.length === 1 ? (
-            <span className="font-semibold">"Cajita de {cajitas[0].nombre}"</span>
+            <span className="font-semibold">&quot;Cajita de {cajitas[0].nombre}&quot;</span>
           ) : (
             <>
               {cajitas.map((c, i) => (
                 <span key={c.id}>
-                  <span className="font-semibold">"Cajita de {c.nombre}"</span>
+                  <span className="font-semibold">&quot;Cajita de {c.nombre}&quot;</span>
                   {i < cajitas.length - 1 ? ", " : ""}
                 </span>
               ))}
