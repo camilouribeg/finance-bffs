@@ -1,19 +1,27 @@
-// Motor de ciclos de ingreso (epic Flujo de caja, roadmap 5.4-5.7).
+// Motor de ciclos de ingreso (epic Flujo de caja, roadmap 5.2, 5.4-5.7).
 // Funciones puras: sin Supabase ni React, para poder revisarlas y reusarlas.
 //
 // Modelo: se proyectan los pagos y obligaciones en orden cronologico desde hoy,
 // partiendo del saldo en cuenta. Si el saldo proyectado cae por debajo de cero antes
 // del siguiente ingreso, ese hueco es el faltante que hay que cubrir con una reserva.
 
-export type Frecuencia = "semanal" | "quincenal" | "mensual" | "variable";
+export type Frecuencia = "semanal" | "quincenal" | "cada_dos_semanas" | "mensual" | "variable";
 
 export type FuenteIngreso = {
   nombre: string;
-  monto: number;
   frecuencia: Frecuencia;
+  // Dia del mes del primer/unico pago (quincenal, mensual). Semanal/cada_dos_semanas/
+  // variable usan fecha_inicio en su lugar y dejan esto en null.
   dia_1: number | null;
+  // Monto del primer (o unico) pago (5.2): cada fecha de pago tiene su propio valor,
+  // nunca se asume que un pago quincenal reparte el total mensual en partes iguales.
+  monto_1: number;
+  // Quincenal: dia del segundo pago.
   dia_2: number | null;
-  // Semanal: primer dia de pago (yyyy-mm-dd); desde ahi cada 7 dias.
+  // Quincenal: monto del segundo pago. Si no se especifico, se usa monto_1 como
+  // fallback razonable (ej. datos viejos antes de 5.2), pero nunca se inventa un reparto.
+  monto_2: number | null;
+  // Semanal / cada_dos_semanas: primer dia de pago (yyyy-mm-dd); desde ahi cada 7 o 14 dias.
   fecha_inicio?: string | null;
 };
 
@@ -33,7 +41,12 @@ function mismoOPosterior(a: Date, b: Date): boolean {
   return a.getTime() >= b.getTime();
 }
 
+function sumarDias(fecha: Date, dias: number): Date {
+  return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate() + dias);
+}
+
 // Eventos (pagos y obligaciones) entre `desde` y `desde + HORIZONTE_DIAS`, ordenados.
+// Cada evento de ingreso conserva el monto propio de esa fecha de pago (5.2, 5.11).
 export function proyectarEventos(
   desde: Date,
   fuentes: FuenteIngreso[],
@@ -50,25 +63,29 @@ export function proyectarEventos(
   }
 
   for (const f of fuentes) {
-    if (f.frecuencia === "semanal" && f.fecha_inicio) {
+    // Cada 7 o 14 dias desde una fecha de inicio: no depende del calendario mensual.
+    const pasoDias = f.frecuencia === "semanal" ? 7 : f.frecuencia === "cada_dos_semanas" ? 14 : null;
+    if (pasoDias != null && f.fecha_inicio) {
       const [y, m, d] = f.fecha_inicio.split("-").map(Number);
       let fecha = new Date(y, m - 1, d);
-      // Avanza hasta el primer pago dentro de la ventana y luego cada 7 dias.
-      while (fecha < inicioDia) fecha = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate() + 7);
-      for (; fecha <= hasta; fecha = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate() + 7)) {
-        eventos.push({ fecha, nombre: f.nombre, monto: f.monto, tipo: "ingreso" });
+      // Avanza hasta el primer pago dentro de la ventana y luego cada `pasoDias` dias.
+      while (fecha < inicioDia) fecha = sumarDias(fecha, pasoDias);
+      for (; fecha <= hasta; fecha = sumarDias(fecha, pasoDias)) {
+        eventos.push({ fecha, nombre: f.nombre, monto: f.monto_1, tipo: "ingreso" });
       }
     }
   }
 
   for (const { anio, mes } of meses) {
     for (const f of fuentes) {
-      if (f.frecuencia === "semanal" || f.dia_1 == null) continue;
-      const dias = f.frecuencia === "quincenal" && f.dia_2 != null ? [f.dia_1, f.dia_2] : [f.dia_1];
-      for (const dia of dias) {
+      if (f.frecuencia === "semanal" || f.frecuencia === "cada_dos_semanas" || f.dia_1 == null) continue;
+      const pagos = f.frecuencia === "quincenal" && f.dia_2 != null
+        ? [{ dia: f.dia_1, monto: f.monto_1 }, { dia: f.dia_2, monto: f.monto_2 ?? f.monto_1 }]
+        : [{ dia: f.dia_1, monto: f.monto_1 }];
+      for (const { dia, monto } of pagos) {
         const fecha = fechaDelMes(anio, mes, dia);
         if (mismoOPosterior(fecha, inicioDia) && fecha <= hasta) {
-          eventos.push({ fecha, nombre: f.nombre, monto: f.monto, tipo: "ingreso" });
+          eventos.push({ fecha, nombre: f.nombre, monto, tipo: "ingreso" });
         }
       }
     }

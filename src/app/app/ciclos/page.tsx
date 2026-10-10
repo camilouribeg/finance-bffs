@@ -7,7 +7,7 @@ import MoneyInput from "@/components/MoneyInput";
 import { planHastaProximoIngreso, type Frecuencia } from "@/lib/ciclos";
 import { Check, X } from "lucide-react";
 
-type Fuente = { id: string; nombre: string; monto: number; frecuencia: Frecuencia; dia_1: number | null; dia_2: number | null; fecha_inicio: string | null };
+type Fuente = { id: string; nombre: string; monto_1: number; monto_2: number | null; frecuencia: Frecuencia; dia_1: number | null; dia_2: number | null; fecha_inicio: string | null };
 type Obl = { id: string; nombre: string; monto: number; dia_pago: number };
 
 function fechaISO(d: Date): string {
@@ -16,7 +16,8 @@ function fechaISO(d: Date): string {
 
 const FRECUENCIAS: { value: Frecuencia; label: string }[] = [
   { value: "semanal", label: "Semanal" },
-  { value: "quincenal", label: "Quincenal" },
+  { value: "cada_dos_semanas", label: "Cada dos semanas" },
+  { value: "quincenal", label: "Quincenal (días fijos del mes, ej. 15 y 30)" },
   { value: "mensual", label: "Mensual" },
   { value: "variable", label: "Irregular (freelance)" },
 ];
@@ -36,7 +37,8 @@ export default function CiclosPage() {
 
   // formulario de fuente
   const [fNombre, setFNombre] = useState("");
-  const [fMonto, setFMonto] = useState("");
+  const [fMonto1, setFMonto1] = useState("");
+  const [fMonto2, setFMonto2] = useState("");
   const [fFrec, setFFrec] = useState<Frecuencia>("quincenal");
   const [fDia1, setFDia1] = useState("15");
   const [fDia2, setFDia2] = useState("30");
@@ -79,7 +81,7 @@ export default function CiclosPage() {
     const supabase = createClient();
     const plan = planHastaProximoIngreso(
       new Date(), saldoActual,
-      f.map(x => ({ nombre: x.nombre, monto: x.monto, frecuencia: x.frecuencia, dia_1: x.dia_1, dia_2: x.dia_2, fecha_inicio: x.fecha_inicio })),
+      f.map(x => ({ nombre: x.nombre, monto_1: x.monto_1, monto_2: x.monto_2, frecuencia: x.frecuencia, dia_1: x.dia_1, dia_2: x.dia_2, fecha_inicio: x.fecha_inicio })),
       o.map(x => ({ nombre: x.nombre, monto: x.monto, dia_pago: x.dia_pago })),
     );
     if (!plan.proximoIngreso) return;
@@ -108,18 +110,24 @@ export default function CiclosPage() {
 
   async function addFuente(e: React.FormEvent) {
     e.preventDefault();
-    if (!fNombre || !fMonto) return;
+    if (!fNombre || !fMonto1) return;
+    if (fFrec === "quincenal" && !fMonto2) return;
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    if (fFrec === "semanal" && !fInicio) return;
-    const dia1 = fFrec === "variable" || fFrec === "semanal" ? null : parseInt(fDia1) || null;
+    const esPorFecha = fFrec === "semanal" || fFrec === "cada_dos_semanas";
+    if (esPorFecha && !fInicio) return;
+    const dia1 = fFrec === "variable" || esPorFecha ? null : parseInt(fDia1) || null;
     const dia2 = fFrec === "quincenal" ? parseInt(fDia2) || null : null;
     const { data } = await supabase.from("ingresos_fuentes")
-      .insert({ user_id: user.id, nombre: fNombre, monto: parseFloat(fMonto), frecuencia: fFrec, dia_1: dia1, dia_2: dia2, fecha_inicio: fFrec === "semanal" ? fInicio || null : null })
+      .insert({
+        user_id: user.id, nombre: fNombre, frecuencia: fFrec,
+        monto_1: parseFloat(fMonto1), monto_2: fFrec === "quincenal" ? parseFloat(fMonto2) || null : null,
+        dia_1: dia1, dia_2: dia2, fecha_inicio: esPorFecha ? fInicio || null : null,
+      })
       .select().single();
     if (data) setFuentes([...fuentes, data]);
-    setFNombre(""); setFMonto(""); setFInicio("");
+    setFNombre(""); setFMonto1(""); setFMonto2(""); setFInicio("");
     load();
   }
 
@@ -164,7 +172,7 @@ export default function CiclosPage() {
   const plan = planHastaProximoIngreso(
     new Date(),
     parseFloat(saldo) || 0,
-    fuentes.map(f => ({ nombre: f.nombre, monto: f.monto, frecuencia: f.frecuencia, dia_1: f.dia_1, dia_2: f.dia_2, fecha_inicio: f.fecha_inicio })),
+    fuentes.map(f => ({ nombre: f.nombre, monto_1: f.monto_1, monto_2: f.monto_2, frecuencia: f.frecuencia, dia_1: f.dia_1, dia_2: f.dia_2, fecha_inicio: f.fecha_inicio })),
     obligaciones.map(o => ({ nombre: o.nombre, monto: o.monto, dia_pago: o.dia_pago })),
   );
 
@@ -257,10 +265,18 @@ export default function CiclosPage() {
           {fuentes.map(f => (
             <div key={f.id} className="flex items-center justify-between bg-[#ffedfa] rounded-xl px-4 py-2.5">
               <div className="text-sm">
-                <p className="font-medium text-[#1a1a2e]">{f.nombre} · {fmt(f.monto)}</p>
+                <p className="font-medium text-[#1a1a2e]">
+                  {f.nombre} · {f.frecuencia === "quincenal"
+                    ? `${fmt(f.monto_1)} + ${fmt(f.monto_2 ?? f.monto_1)}`
+                    : fmt(f.monto_1)}
+                </p>
                 <p className="text-xs text-[#1a1a2e]/50">
                   {FRECUENCIAS.find(x => x.value === f.frecuencia)?.label}
-                  {f.frecuencia === "quincenal" ? ` · días ${f.dia_1} y ${f.dia_2}` : f.frecuencia === "mensual" ? ` · día ${f.dia_1}` : f.frecuencia === "semanal" && f.fecha_inicio ? ` · cada 7 días desde el ${f.fecha_inicio}` : ""}
+                  {f.frecuencia === "quincenal" ? ` · días ${f.dia_1} y ${f.dia_2}`
+                    : f.frecuencia === "mensual" ? ` · día ${f.dia_1}`
+                    : f.frecuencia === "semanal" && f.fecha_inicio ? ` · cada 7 días desde el ${f.fecha_inicio}`
+                    : f.frecuencia === "cada_dos_semanas" && f.fecha_inicio ? ` · cada 14 días desde el ${f.fecha_inicio}`
+                    : ""}
                 </p>
               </div>
               <button onClick={() => removeFuente(f.id)} aria-label="Quitar ingreso" className="text-[#1a1a2e]/30 hover:text-red-400"><X size={14} /></button>
@@ -273,35 +289,52 @@ export default function CiclosPage() {
             <input value={fNombre} onChange={e => setFNombre(e.target.value)} placeholder="Ej: Sueldo" className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>{fFrec === "quincenal" ? "Cuánto recibes en cada pago" : "Cuánto recibes"}</label>
-            <MoneyInput value={fMonto} onChange={setFMonto} placeholder="Monto" className={inputCls} />
-          </div>
-          <div className="col-span-2">
             <label className={labelCls}>¿Cada cuánto te pagan?</label>
             <select value={fFrec} onChange={e => setFFrec(e.target.value as Frecuencia)} className={inputCls}>
               {FRECUENCIAS.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
             </select>
           </div>
-          {fFrec === "quincenal" && (
-            <>
-              <div>
-                <label className={labelCls}>Primer pago: día del mes en que lo recibes</label>
-                <input type="number" min={1} max={31} value={fDia1} onChange={e => setFDia1(e.target.value)} className={inputCls} />
+
+          {fFrec === "quincenal" ? (
+            <div className="col-span-2 grid grid-cols-2 gap-3">
+              <div className="border border-[#ffb8e0] rounded-xl p-3 space-y-2">
+                <p className="text-xs font-semibold text-[#ec7fa9]">Primer pago</p>
+                <div>
+                  <label className={labelCls}>Día en que lo recibes</label>
+                  <input type="number" min={1} max={31} value={fDia1} onChange={e => setFDia1(e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Cuánto recibes</label>
+                  <MoneyInput value={fMonto1} onChange={setFMonto1} placeholder="Monto" className={inputCls} />
+                </div>
               </div>
-              <div>
-                <label className={labelCls}>Segundo pago: día del mes en que lo recibes</label>
-                <input type="number" min={1} max={31} value={fDia2} onChange={e => setFDia2(e.target.value)} className={inputCls} />
+              <div className="border border-[#ffb8e0] rounded-xl p-3 space-y-2">
+                <p className="text-xs font-semibold text-[#ec7fa9]">Segundo pago</p>
+                <div>
+                  <label className={labelCls}>Día en que lo recibes</label>
+                  <input type="number" min={1} max={31} value={fDia2} onChange={e => setFDia2(e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Cuánto recibes</label>
+                  <MoneyInput value={fMonto2} onChange={setFMonto2} placeholder="Monto" className={inputCls} />
+                </div>
               </div>
-            </>
+            </div>
+          ) : (
+            <div>
+              <label className={labelCls}>Cuánto recibes</label>
+              <MoneyInput value={fMonto1} onChange={setFMonto1} placeholder="Monto" className={inputCls} />
+            </div>
           )}
-          {fFrec === "semanal" && (
-            <div className="col-span-2">
-              <label className={labelCls}>Primer día que te pagan</label>
+
+          {(fFrec === "semanal" || fFrec === "cada_dos_semanas") && (
+            <div>
+              <label className={labelCls}>{fFrec === "semanal" ? "Primer día que te pagan" : "Día del primer pago de este ciclo"}</label>
               <input type="date" value={fInicio} onChange={e => setFInicio(e.target.value)} className={inputCls} />
             </div>
           )}
           {fFrec === "mensual" && (
-            <div className="col-span-2">
+            <div>
               <label className={labelCls}>Día del mes en que lo recibes</label>
               <input type="number" min={1} max={31} value={fDia1} onChange={e => setFDia1(e.target.value)} placeholder="Ej: 30" className={inputCls} />
             </div>
