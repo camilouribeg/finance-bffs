@@ -12,7 +12,6 @@ import { proximosPasos } from "@/lib/proximosPasos";
 import { inicioSemanaISO, semanaAlDia } from "@/lib/semana";
 import type { ResumenTransferencia } from "@/lib/transferencia";
 import Link from "next/link";
-import MoneyInput from "@/components/MoneyInput";
 import {
   TrendingUp,
   Receipt,

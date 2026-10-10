@@ -6,7 +6,6 @@ import { useFmt } from "@/lib/useFmt";
 import MoneyInput from "@/components/MoneyInput";
 import { ordenarDeudas, METHOD_META, type DebtMethod } from "@/lib/debtMethods";
 import { CreditCard, Landmark, Home, Car, Users, FileText, Check, X, Plus, Lightbulb, PartyPopper, TrendingDown } from "lucide-react";
-import MoneyInput from "@/components/MoneyInput";
 
 type Deuda = { id: string; nombre: string; tipo: string; cuota_mensual: number; total_pendiente: number; tasa: number | null; saldo_inicial: number | null };
 
