@@ -7,6 +7,7 @@ import { calcularDisponible, cuotaMensualBolsillo, type ReservaLike } from "@/li
 import TransferenciaBanco from "@/components/dashboard/TransferenciaBanco";
 import { filasTransferencia, resumenTransferencia } from "@/lib/transferencia";
 import { PiggyBank, Target, Check, X, PartyPopper, Star, Plus, Pencil, AlertTriangle } from "lucide-react";
+import MoneyInput from "@/components/MoneyInput";
 
 type Bolsillo = {
   id: string;
@@ -407,7 +408,7 @@ export default function AhorroPage() {
                   </select>
                   {reasignarId && (
                     <div className="flex gap-2">
-                      <input type="number" value={reasignarMonto} onChange={(e) => setReasignarMonto(e.target.value)}
+                      <MoneyInput value={reasignarMonto} onChange={setReasignarMonto}
                         placeholder="Monto a reasignar" className={`${inputCls} flex-1`} />
                       <button onClick={reasignarDinero}
                         className="bg-[#ec7fa9] text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-[#d96d97] flex items-center">
@@ -565,7 +566,7 @@ export default function AhorroPage() {
                       </div>
                     ) : editingCuota ? (
                       <div className="flex gap-2">
-                        <input type="number" value={fCuota} onChange={(e) => setFCuota(e.target.value)}
+                        <MoneyInput value={fCuota} onChange={setFCuota}
                           autoFocus placeholder={recomendacionFCuota > 0 ? String(recomendacionFCuota) : "Ej: 100000"}
                           className={`${inputCls} flex-1`} />
                         <button type="button" onClick={() => setEditingCuota(false)} disabled={!fCuota}
@@ -591,7 +592,7 @@ export default function AhorroPage() {
                         </div>
                       </div>
                     ) : (
-                      <input type="number" value={fCuota} onChange={(e) => setFCuota(e.target.value)}
+                      <MoneyInput value={fCuota} onChange={setFCuota}
                         placeholder="Ej: 100000" className={inputCls} />
                     )}
                   </div>
@@ -608,7 +609,7 @@ export default function AhorroPage() {
 
                   <div>
                     <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Meta total (opcional)</label>
-                    <input type="number" value={fMeta} onChange={(e) => setFMeta(e.target.value)} placeholder="Ej: 2000000" className={inputCls} />
+                    <MoneyInput value={fMeta} onChange={setFMeta} placeholder="Ej: 2000000" className={inputCls} />
                   </div>
                   <div className="flex gap-3 pt-1">
                     <button type="button" onClick={() => { setFormType(null); setFCuota(""); setEditingCuota(false); }}
@@ -690,7 +691,7 @@ export default function AhorroPage() {
                       )}
                       {abonarId === b.id ? (
                         <div className="flex gap-2">
-                          <input type="number" value={abonarMonto} onChange={(e) => setAbonarMonto(e.target.value)}
+                          <MoneyInput value={abonarMonto} onChange={setAbonarMonto}
                             placeholder="Monto a abonar" autoFocus
                             className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
                           <button onClick={() => abonar(b.id)} className="bg-[#ec7fa9] text-white text-sm px-4 py-2 rounded-xl hover:bg-[#d96d97] flex items-center"><Check size={14} /></button>
@@ -699,7 +700,7 @@ export default function AhorroPage() {
                         </div>
                       ) : retirarId === b.id ? (
                         <div className="flex gap-2">
-                          <input type="number" value={retirarMonto} onChange={(e) => setRetirarMonto(e.target.value)}
+                          <MoneyInput value={retirarMonto} onChange={setRetirarMonto}
                             placeholder={`Máx. ${fmt(b.actual)}`} autoFocus
                             className="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm bg-slate-50 outline-none" />
                           <button onClick={() => retirar(b.id)} className="bg-slate-500 text-white text-sm px-4 py-2 rounded-xl hover:bg-slate-600 flex items-center"><Check size={14} /></button>
@@ -791,7 +792,7 @@ export default function AhorroPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Cuánto cuesta?</label>
-                      <input type="number" value={mMeta} onChange={(e) => setMMeta(e.target.value)} placeholder="Ej: 5.000.000" className={inputCls} />
+                      <MoneyInput value={mMeta} onChange={setMMeta} placeholder="Ej: 5.000.000" className={inputCls} />
                     </div>
                     <div>
                       <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Para cuándo?</label>
@@ -905,7 +906,7 @@ export default function AhorroPage() {
                         <p className="text-sm font-semibold text-green-600 flex items-center gap-1.5"><PartyPopper size={14} />¡Lo lograste!</p>
                       ) : abonarId === b.id ? (
                         <div className="flex gap-2">
-                          <input type="number" value={abonarMonto} onChange={(e) => setAbonarMonto(e.target.value)}
+                          <MoneyInput value={abonarMonto} onChange={setAbonarMonto}
                             placeholder="Monto a abonar" autoFocus
                             className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
                           <button onClick={() => abonar(b.id)} className="bg-[#ec7fa9] text-white text-sm px-4 py-2 rounded-xl hover:bg-[#d96d97] flex items-center"><Check size={14} /></button>
@@ -914,7 +915,7 @@ export default function AhorroPage() {
                         </div>
                       ) : retirarId === b.id ? (
                         <div className="flex gap-2">
-                          <input type="number" value={retirarMonto} onChange={(e) => setRetirarMonto(e.target.value)}
+                          <MoneyInput value={retirarMonto} onChange={setRetirarMonto}
                             placeholder={`Máx. ${fmt(b.actual)}`} autoFocus
                             className="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm bg-slate-50 outline-none" />
                           <button onClick={() => retirar(b.id)} className="bg-slate-500 text-white text-sm px-4 py-2 rounded-xl hover:bg-slate-600 flex items-center"><Check size={14} /></button>
