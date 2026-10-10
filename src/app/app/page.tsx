@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
+import MoneyInput from "@/components/MoneyInput";
 import { calcularDisponible, cuotaMensualCajita, cuotaMensualBolsillo, totalReservasActivas, type ReservaLike } from "@/lib/capacidad";
 import IngresosCard from "@/components/dashboard/IngresosCard";
 import GuiaMenu from "@/components/dashboard/GuiaMenu";
@@ -349,7 +350,7 @@ export default function DashboardPage() {
                 <div className="flex gap-2 mt-2">
                   <input value={nuevoGastNombre} onChange={e => setNuevoGastNombre(e.target.value)} placeholder="Ej: Arriendo"
                     className="flex-1 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none" />
-                  <input type="number" value={nuevoGastValor} onChange={e => setNuevoGastValor(e.target.value)} placeholder="0"
+                  <MoneyInput value={nuevoGastValor} onChange={setNuevoGastValor} placeholder="0"
                     className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2 text-sm bg-[#ffedfa] outline-none text-right" />
                   <button onClick={() => { if (!nuevoGastNombre || !nuevoGastValor) return; setGastosFijosItems([...gastosFijosItems, { id: crypto.randomUUID(), descripcion: nuevoGastNombre, valor: parseFloat(nuevoGastValor), pagado: false }]); setNuevoGastNombre(""); setNuevoGastValor(""); }}
                     className="bg-[#ec7fa9] text-white px-3 py-2 rounded-xl font-semibold hover:bg-[#d96d97]">+</button>

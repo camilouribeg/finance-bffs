@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
+import MoneyInput from "@/components/MoneyInput";
 import { planHastaProximoIngreso, type Frecuencia } from "@/lib/ciclos";
 import { Check, X } from "lucide-react";
 
@@ -179,7 +180,7 @@ export default function CiclosPage() {
       <form onSubmit={guardarSaldo} className="bg-white rounded-2xl border border-[#ffb8e0] p-5 flex items-end gap-3">
         <div className="flex-1">
           <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Cuánto tienes hoy en tu cuenta?</label>
-          <input type="number" value={saldo} onChange={e => setSaldo(e.target.value)} placeholder="Ej: 800.000" className={inputCls} />
+          <MoneyInput value={saldo} onChange={setSaldo} placeholder="Ej: 800.000" className={inputCls} />
         </div>
         <button type="submit" className="bg-[#ec7fa9] text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-[#d96d97]">Guardar</button>
       </form>
@@ -256,7 +257,7 @@ export default function CiclosPage() {
         </div>
         <form onSubmit={addFuente} className="grid grid-cols-2 gap-3">
           <input value={fNombre} onChange={e => setFNombre(e.target.value)} placeholder="Ej: Sueldo" className={inputCls} />
-          <input type="number" value={fMonto} onChange={e => setFMonto(e.target.value)} placeholder="Monto" className={inputCls} />
+          <MoneyInput value={fMonto} onChange={setFMonto} placeholder="Monto" className={inputCls} />
           <select value={fFrec} onChange={e => setFFrec(e.target.value as Frecuencia)} className={inputCls}>
             {FRECUENCIAS.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
           </select>
@@ -292,7 +293,7 @@ export default function CiclosPage() {
         </div>
         <form onSubmit={addObligacion} className="grid grid-cols-3 gap-3">
           <input value={oNombre} onChange={e => setONombre(e.target.value)} placeholder="Ej: Arriendo" className={inputCls} />
-          <input type="number" value={oMonto} onChange={e => setOMonto(e.target.value)} placeholder="Monto" className={inputCls} />
+          <MoneyInput value={oMonto} onChange={setOMonto} placeholder="Monto" className={inputCls} />
           <input type="number" min={1} max={31} value={oDia} onChange={e => setODia(e.target.value)} placeholder="Día" className={inputCls} />
           <button type="submit" className="col-span-3 bg-[#ec7fa9] text-white font-semibold py-2.5 rounded-xl text-sm hover:bg-[#d96d97]">Agregar pago fijo</button>
         </form>
