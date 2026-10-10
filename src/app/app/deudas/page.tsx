@@ -6,6 +6,7 @@ import { useFmt } from "@/lib/useFmt";
 import MoneyInput from "@/components/MoneyInput";
 import { ordenarDeudas, METHOD_META, type DebtMethod } from "@/lib/debtMethods";
 import { CreditCard, Landmark, Home, Car, Users, FileText, Check, X, Plus, Lightbulb, PartyPopper, TrendingDown } from "lucide-react";
+import MoneyInput from "@/components/MoneyInput";
 
 type Deuda = { id: string; nombre: string; tipo: string; cuota_mensual: number; total_pendiente: number; tasa: number | null; saldo_inicial: number | null };
 
@@ -69,7 +70,26 @@ export default function DeudasPage() {
   // el abono aparte permite revertir exactamente lo mismo al autocorregir.
   const [confirmadas, setConfirmadas] = useState<Record<string, { id: string; abonoCapital: number }>>({});
 
+  // Saldo real del mes (4.8): "ok" si ya dijo cuánto debe según el banco, "despues" si
+  // lo dejó para más tarde. Vive en localStorage porque es una tarea de recordatorio.
+  const [saldoEstado, setSaldoEstado] = useState<Record<string, "ok" | "despues">>({});
+  const claveSaldo = (id: string) => { const { mes, anio } = mesActual(); return `amy_saldo_real_${id}_${anio}-${mes}`; };
+  function marcarSaldo(id: string, estado: "ok" | "despues") {
+    try { localStorage.setItem(claveSaldo(id), estado); } catch {}
+    setSaldoEstado(prev => ({ ...prev, [id]: estado }));
+  }
+
   useEffect(() => { load(); }, []);
+  useEffect(() => {
+    const leidos: Record<string, "ok" | "despues"> = {};
+    for (const d of deudas) {
+      try {
+        const v = localStorage.getItem(claveSaldo(d.id));
+        if (v === "ok" || v === "despues") leidos[d.id] = v;
+      } catch {}
+    }
+    setSaldoEstado(leidos);
+  }, [deudas.length]);
 
   async function load() {
     const supabase = createClient();
@@ -237,6 +257,7 @@ export default function DeudasPage() {
     await supabase.from("deudas").update({ total_pendiente: nuevo }).eq("id", id).eq("user_id", user.id);
     setDeudas(deudas.map(d => d.id === id ? { ...d, total_pendiente: nuevo } : d));
     setEditSaldoId(null); setEditSaldoValor("");
+    marcarSaldo(id, "ok");
   }
 
   async function removeDeuda(id: string) {
@@ -572,6 +593,28 @@ export default function DeudasPage() {
                         </span>
                         {confirmadas[d.id] ? "Pago de este mes registrado" : "Haz clic aquí cuando pagues la cuota de este mes en tu banco"}
                       </button>
+
+                      {confirmadas[d.id] && saldoEstado[d.id] !== "ok" && editSaldoId !== d.id && abonarId !== d.id && (
+                        <div className="mb-4 bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-4 py-3">
+                          <p className="text-sm font-semibold text-[#1a1a2e]">Ahora cuéntame cuánto debes hoy según tu banco</p>
+                          <p className="text-xs text-[#1a1a2e]/60 mt-1">
+                            Tu cuota incluye intereses, así que no todo lo que pagaste baja tu deuda. Lo encuentras en la app de tu banco o en tu extracto.
+                          </p>
+                          <div className="flex items-center gap-4 mt-2">
+                            <button onClick={() => { setAbonarId(null); setEditSaldoId(d.id); setEditSaldoValor(String(d.total_pendiente)); }}
+                              className="text-xs bg-[#ec7fa9] text-white font-semibold px-3 py-1.5 rounded-lg hover:bg-[#d96d97]">
+                              Decirlo ahora
+                            </button>
+                            {saldoEstado[d.id] === "despues" ? (
+                              <span className="text-xs text-[#1a1a2e]/50">Pendiente: actualizar tu saldo con lo que diga el banco</span>
+                            ) : (
+                              <button onClick={() => marcarSaldo(d.id, "despues")} className="text-xs text-[#1a1a2e]/50 hover:underline">
+                                Lo hago después
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                       {abonarId === d.id ? (
                         <div className="space-y-2">

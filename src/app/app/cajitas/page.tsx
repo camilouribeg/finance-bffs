@@ -8,6 +8,7 @@ import { calcularDisponible, cuotaMensualCajita, type ReservaLike } from "@/lib/
 import TransferenciaBanco from "@/components/dashboard/TransferenciaBanco";
 import { filasTransferencia, resumenTransferencia } from "@/lib/transferencia";
 import { Archive, Lightbulb, Check, X, PartyPopper, AlertTriangle } from "lucide-react";
+import MoneyInput from "@/components/MoneyInput";
 
 type Cajita = {
   id: string;

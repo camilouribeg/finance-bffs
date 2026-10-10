@@ -8,6 +8,7 @@ import { calcularDisponible, cuotaMensualBolsillo, type ReservaLike } from "@/li
 import TransferenciaBanco from "@/components/dashboard/TransferenciaBanco";
 import { filasTransferencia, resumenTransferencia } from "@/lib/transferencia";
 import { PiggyBank, Target, Check, X, PartyPopper, Star, Plus, Pencil, AlertTriangle } from "lucide-react";
+import MoneyInput from "@/components/MoneyInput";
 
 type Bolsillo = {
   id: string;
