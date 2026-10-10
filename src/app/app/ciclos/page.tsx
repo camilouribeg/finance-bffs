@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
 import MoneyInput from "@/components/MoneyInput";
-import { planHastaProximoIngreso, type Frecuencia } from "@/lib/ciclos";
+import { planHastaProximoIngreso, proyectarEventos, type Frecuencia } from "@/lib/ciclos";
+import LineaDeTiempo from "@/components/ciclos/LineaDeTiempo";
+import DistribucionIngresos from "@/components/ciclos/DistribucionIngresos";
 import { Check, X } from "lucide-react";
 
 type Fuente = { id: string; nombre: string; monto_1: number; monto_2: number | null; frecuencia: Frecuencia; dia_1: number | null; dia_2: number | null; fecha_inicio: string | null };
@@ -34,6 +36,10 @@ export default function CiclosPage() {
   // Solo la recarga mas reciente puede escribir la reserva: las viejas que terminan tarde no la pisan.
   const loadSeq = useRef(0);
   const [reservas, setReservas] = useState<{ id: string; monto: number; periodo_fin: string; apartada: boolean }[]>([]);
+
+  // Configuracion plegada (5.13): los formularios solo se abren al agregar o editar.
+  const [abrirIngresos, setAbrirIngresos] = useState(false);
+  const [abrirPagos, setAbrirPagos] = useState(false);
 
   // formulario de fuente
   const [fNombre, setFNombre] = useState("");
@@ -127,7 +133,7 @@ export default function CiclosPage() {
       })
       .select().single();
     if (data) setFuentes([...fuentes, data]);
-    setFNombre(""); setFMonto1(""); setFMonto2(""); setFInicio("");
+    setFNombre(""); setFMonto1(""); setFMonto2(""); setFInicio(""); setAbrirIngresos(false);
     load();
   }
 
@@ -141,7 +147,7 @@ export default function CiclosPage() {
       .insert({ user_id: user.id, nombre: oNombre, monto: parseFloat(oMonto), dia_pago: parseInt(oDia) })
       .select().single();
     if (data) setObligaciones([...obligaciones, data].sort((a, b) => a.dia_pago - b.dia_pago));
-    setONombre(""); setOMonto(""); setODia("");
+    setONombre(""); setOMonto(""); setODia(""); setAbrirPagos(false);
     load();
   }
 
@@ -172,6 +178,13 @@ export default function CiclosPage() {
   const plan = planHastaProximoIngreso(
     new Date(),
     parseFloat(saldo) || 0,
+    fuentes.map(f => ({ nombre: f.nombre, monto_1: f.monto_1, monto_2: f.monto_2, frecuencia: f.frecuencia, dia_1: f.dia_1, dia_2: f.dia_2, fecha_inicio: f.fecha_inicio })),
+    obligaciones.map(o => ({ nombre: o.nombre, monto: o.monto, dia_pago: o.dia_pago })),
+  );
+
+  // Mismos datos que usa el plan, sin segunda captura (5.11, 5.12).
+  const eventos = proyectarEventos(
+    new Date(),
     fuentes.map(f => ({ nombre: f.nombre, monto_1: f.monto_1, monto_2: f.monto_2, frecuencia: f.frecuencia, dia_1: f.dia_1, dia_2: f.dia_2, fecha_inicio: f.fecha_inicio })),
     obligaciones.map(o => ({ nombre: o.nombre, monto: o.monto, dia_pago: o.dia_pago })),
   );
@@ -256,11 +269,26 @@ export default function CiclosPage() {
         </div>
       )}
 
+      {!loading && <LineaDeTiempo eventos={eventos} />}
+      {!loading && <DistribucionIngresos eventos={eventos} />}
+
       {saldoBloque}
 
       {/* Fuentes de ingreso (5.1, 5.2, 5.17) */}
       <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
-        <p className="font-semibold text-[#1a1a2e] mb-3">Mis ingresos y cuándo llegan</p>
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div>
+            <p className="font-semibold text-[#1a1a2e]">Mis ingresos y cuándo llegan</p>
+            <p className="text-xs text-[#1a1a2e]/60 mt-0.5">
+              {fuentes.length === 0 ? "Aún no has agregado ingresos" : `${fuentes.length} ${fuentes.length === 1 ? "ingreso registrado" : "ingresos registrados"}`}
+              {plan.proximoIngreso && ` · próximo: ${plan.proximoIngreso.fecha.toLocaleDateString("es-CO", { day: "numeric", month: "long" })}`}
+            </p>
+          </div>
+          <button type="button" onClick={() => setAbrirIngresos(!abrirIngresos)} className="text-xs text-[#ec7fa9] font-semibold hover:underline flex-shrink-0">
+            {abrirIngresos ? "Cerrar" : fuentes.length === 0 ? "Agregar" : "Editar o agregar"}
+          </button>
+        </div>
+        {abrirIngresos && (<>
         <div className="space-y-2 mb-4">
           {fuentes.map(f => (
             <div key={f.id} className="flex items-center justify-between bg-[#ffedfa] rounded-xl px-4 py-2.5">
@@ -341,11 +369,23 @@ export default function CiclosPage() {
           )}
           <button type="submit" className="col-span-2 bg-[#ec7fa9] text-white font-semibold py-2.5 rounded-xl text-sm hover:bg-[#d96d97]">Agregar ingreso</button>
         </form>
+        </>)}
       </div>
 
       {/* Obligaciones recurrentes (5.3) */}
       <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
-        <p className="font-semibold text-[#1a1a2e] mb-3">Mis pagos fijos y cuándo se pagan</p>
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div>
+            <p className="font-semibold text-[#1a1a2e]">Mis pagos fijos y cuándo se pagan</p>
+            <p className="text-xs text-[#1a1a2e]/60 mt-0.5">
+              {obligaciones.length === 0 ? "Aún no has agregado pagos fijos" : `${obligaciones.length} ${obligaciones.length === 1 ? "pago fijo registrado" : "pagos fijos registrados"}`}
+            </p>
+          </div>
+          <button type="button" onClick={() => setAbrirPagos(!abrirPagos)} className="text-xs text-[#ec7fa9] font-semibold hover:underline flex-shrink-0">
+            {abrirPagos ? "Cerrar" : obligaciones.length === 0 ? "Agregar" : "Editar o agregar"}
+          </button>
+        </div>
+        {abrirPagos && (<>
         <div className="space-y-2 mb-4">
           {obligaciones.map(o => (
             <div key={o.id} className="flex items-center justify-between bg-[#ffedfa] rounded-xl px-4 py-2.5">
@@ -369,6 +409,7 @@ export default function CiclosPage() {
           </div>
           <button type="submit" className="col-span-3 bg-[#ec7fa9] text-white font-semibold py-2.5 rounded-xl text-sm hover:bg-[#d96d97]">Agregar pago fijo</button>
         </form>
+        </>)}
       </div>
     </div>
   );
