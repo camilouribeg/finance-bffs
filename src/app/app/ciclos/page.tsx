@@ -21,6 +21,7 @@ const FRECUENCIAS: { value: Frecuencia; label: string }[] = [
   { value: "variable", label: "Irregular (freelance)" },
 ];
 
+const labelCls = "text-xs text-[#1a1a2e]/60 mb-1 block";
 const inputCls = "w-full border border-[#ffb8e0] rounded-xl px-4 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30";
 
 export default function CiclosPage() {
@@ -167,25 +168,34 @@ export default function CiclosPage() {
     obligaciones.map(o => ({ nombre: o.nombre, monto: o.monto, dia_pago: o.dia_pago })),
   );
 
+  const saldoBloque = (
+    <form onSubmit={guardarSaldo} className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
+      <label className="text-sm font-semibold text-[#1a1a2e] mb-1 block">¿Con cuánto dinero puedes contar hoy?</label>
+      <p className="text-xs text-[#1a1a2e]/60 mb-3">
+        Amy lo usa como punto de partida para organizar lo que queda hasta tu próximo ingreso. Escribe lo que tienes disponible
+        hoy, sin contar el dinero que ya apartaste en una cajita, una bolsita o una reserva. Puedes actualizarlo cuando cambie.
+      </p>
+      <div className="flex items-end gap-3">
+        <div className="flex-1">
+          <MoneyInput value={saldo} onChange={setSaldo} placeholder="Ej: 800.000" className={inputCls} />
+        </div>
+        <button type="submit" className="bg-[#ec7fa9] text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-[#d96d97]">Guardar</button>
+      </div>
+    </form>
+  );
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-[#1a1a2e]" style={{ fontFamily: "var(--font-playfair)" }}>
-          Tus ciclos de ingreso
+          Mi plan de ingresos
         </h1>
-        <p className="text-[#1a1a2e]/50 text-sm mt-1">Cuándo entra tu dinero y cuándo sale</p>
+        <p className="text-[#1a1a2e]/60 text-sm mt-1">
+          Aquí Amy organiza tu dinero según cuándo lo recibes y cuándo tienes que usarlo, para ayudarte a llegar tranquila a tu próximo pago.
+        </p>
       </div>
 
-      {/* Saldo en cuenta (5.8) */}
-      <form onSubmit={guardarSaldo} className="bg-white rounded-2xl border border-[#ffb8e0] p-5 flex items-end gap-3">
-        <div className="flex-1">
-          <label className="text-xs text-[#1a1a2e]/50 mb-1 block">¿Cuánto tienes hoy en tu cuenta?</label>
-          <MoneyInput value={saldo} onChange={setSaldo} placeholder="Ej: 800.000" className={inputCls} />
-        </div>
-        <button type="submit" className="bg-[#ec7fa9] text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-[#d96d97]">Guardar</button>
-      </form>
-
-      {/* Plan hasta el proximo ingreso (5.7) */}
+      {/* Plan hasta el proximo ingreso (5.7): primero el analisis, despues la configuracion */}
       {!loading && (
         <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl p-5">
           <p className="text-xs font-bold text-[#ec7fa9] uppercase tracking-wider mb-2">Tu plan hasta el próximo ingreso</p>
@@ -238,7 +248,9 @@ export default function CiclosPage() {
         </div>
       )}
 
-      {/* Fuentes de ingreso (5.1, 5.2) */}
+      {saldoBloque}
+
+      {/* Fuentes de ingreso (5.1, 5.2, 5.17) */}
       <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
         <p className="font-semibold text-[#1a1a2e] mb-3">Mis ingresos y cuándo llegan</p>
         <div className="space-y-2 mb-4">
@@ -251,30 +263,48 @@ export default function CiclosPage() {
                   {f.frecuencia === "quincenal" ? ` · días ${f.dia_1} y ${f.dia_2}` : f.frecuencia === "mensual" ? ` · día ${f.dia_1}` : f.frecuencia === "semanal" && f.fecha_inicio ? ` · cada 7 días desde el ${f.fecha_inicio}` : ""}
                 </p>
               </div>
-              <button onClick={() => removeFuente(f.id)} className="text-[#1a1a2e]/30 hover:text-red-400"><X size={14} /></button>
+              <button onClick={() => removeFuente(f.id)} aria-label="Quitar ingreso" className="text-[#1a1a2e]/30 hover:text-red-400"><X size={14} /></button>
             </div>
           ))}
         </div>
         <form onSubmit={addFuente} className="grid grid-cols-2 gap-3">
-          <input value={fNombre} onChange={e => setFNombre(e.target.value)} placeholder="Ej: Sueldo" className={inputCls} />
-          <MoneyInput value={fMonto} onChange={setFMonto} placeholder="Monto" className={inputCls} />
-          <select value={fFrec} onChange={e => setFFrec(e.target.value as Frecuencia)} className={inputCls}>
-            {FRECUENCIAS.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
-          </select>
+          <div>
+            <label className={labelCls}>¿De dónde viene este ingreso?</label>
+            <input value={fNombre} onChange={e => setFNombre(e.target.value)} placeholder="Ej: Sueldo" className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>{fFrec === "quincenal" ? "Cuánto recibes en cada pago" : "Cuánto recibes"}</label>
+            <MoneyInput value={fMonto} onChange={setFMonto} placeholder="Monto" className={inputCls} />
+          </div>
+          <div className="col-span-2">
+            <label className={labelCls}>¿Cada cuánto te pagan?</label>
+            <select value={fFrec} onChange={e => setFFrec(e.target.value as Frecuencia)} className={inputCls}>
+              {FRECUENCIAS.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
+            </select>
+          </div>
           {fFrec === "quincenal" && (
-            <div className="flex gap-2">
-              <input type="number" min={1} max={31} value={fDia1} onChange={e => setFDia1(e.target.value)} className={inputCls} />
-              <input type="number" min={1} max={31} value={fDia2} onChange={e => setFDia2(e.target.value)} className={inputCls} />
-            </div>
+            <>
+              <div>
+                <label className={labelCls}>Primer pago: día del mes en que lo recibes</label>
+                <input type="number" min={1} max={31} value={fDia1} onChange={e => setFDia1(e.target.value)} className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Segundo pago: día del mes en que lo recibes</label>
+                <input type="number" min={1} max={31} value={fDia2} onChange={e => setFDia2(e.target.value)} className={inputCls} />
+              </div>
+            </>
           )}
           {fFrec === "semanal" && (
-            <div>
-              <label className="text-xs text-[#1a1a2e]/50 mb-1 block">Primer día que te pagan</label>
+            <div className="col-span-2">
+              <label className={labelCls}>Primer día que te pagan</label>
               <input type="date" value={fInicio} onChange={e => setFInicio(e.target.value)} className={inputCls} />
             </div>
           )}
           {fFrec === "mensual" && (
-            <input type="number" min={1} max={31} value={fDia1} onChange={e => setFDia1(e.target.value)} placeholder="Día del mes" className={inputCls} />
+            <div className="col-span-2">
+              <label className={labelCls}>Día del mes en que lo recibes</label>
+              <input type="number" min={1} max={31} value={fDia1} onChange={e => setFDia1(e.target.value)} placeholder="Ej: 30" className={inputCls} />
+            </div>
           )}
           <button type="submit" className="col-span-2 bg-[#ec7fa9] text-white font-semibold py-2.5 rounded-xl text-sm hover:bg-[#d96d97]">Agregar ingreso</button>
         </form>
@@ -287,14 +317,23 @@ export default function CiclosPage() {
           {obligaciones.map(o => (
             <div key={o.id} className="flex items-center justify-between bg-[#ffedfa] rounded-xl px-4 py-2.5">
               <p className="text-sm text-[#1a1a2e]"><span className="font-medium">{o.nombre}</span> · {fmt(o.monto)} · día {o.dia_pago}</p>
-              <button onClick={() => removeObligacion(o.id)} className="text-[#1a1a2e]/30 hover:text-red-400"><X size={14} /></button>
+              <button onClick={() => removeObligacion(o.id)} aria-label="Quitar pago fijo" className="text-[#1a1a2e]/30 hover:text-red-400"><X size={14} /></button>
             </div>
           ))}
         </div>
         <form onSubmit={addObligacion} className="grid grid-cols-3 gap-3">
-          <input value={oNombre} onChange={e => setONombre(e.target.value)} placeholder="Ej: Arriendo" className={inputCls} />
-          <MoneyInput value={oMonto} onChange={setOMonto} placeholder="Monto" className={inputCls} />
-          <input type="number" min={1} max={31} value={oDia} onChange={e => setODia(e.target.value)} placeholder="Día" className={inputCls} />
+          <div>
+            <label className={labelCls}>¿Qué pagas?</label>
+            <input value={oNombre} onChange={e => setONombre(e.target.value)} placeholder="Ej: Arriendo" className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Cuánto pagas</label>
+            <MoneyInput value={oMonto} onChange={setOMonto} placeholder="Monto" className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Día del mes</label>
+            <input type="number" min={1} max={31} value={oDia} onChange={e => setODia(e.target.value)} placeholder="Ej: 5" className={inputCls} />
+          </div>
           <button type="submit" className="col-span-3 bg-[#ec7fa9] text-white font-semibold py-2.5 rounded-xl text-sm hover:bg-[#d96d97]">Agregar pago fijo</button>
         </form>
       </div>
