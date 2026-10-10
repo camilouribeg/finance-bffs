@@ -53,8 +53,8 @@
 | 4.18 | Validar nuevas cajitas contra la capacidad disponible | Dashboard | Mis cajitas | Alta | Completo |
 | 4.19 | Explicar la metodología de salida de deudas con su autor | Dashboard | Mis deudas | Alta | Completo |
 | 4.20 | Hacer literal el check del pago mensual de la deuda | Dashboard | Mis deudas | Alta | Completo |
-| 5.1 | Identificar la frecuencia con la que la usuaria recibe sus ingresos | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
-| 5.2 | Registrar el monto específico de cada pago y su fecha | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
+| 5.1 | Identificar la frecuencia con la que la usuaria recibe sus ingresos | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.2 | Registrar el monto específico de cada pago y su fecha | Flujo de caja y ciclos de ingreso | Alta | Completo |
 | 5.3 | Registrar cuándo deben pagarse las obligaciones recurrentes | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
 | 5.4 | Detectar y explicar periodos que quedarán ajustados | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
 | 5.5 | Crear una reserva para equilibrar el siguiente periodo de ingreso | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
@@ -602,7 +602,7 @@
 - **Criterio de éxito:** El estado pendiente contiene una instrucción explícita, el clic cambia a confirmación y puede revertirse si fue accidental.
 
 ### 5.1 · Identificar la frecuencia con la que la usuaria recibe sus ingresos
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** El onboarding conoce cuánto dinero recibe la usuaria, pero no distingue con suficiente detalle la frecuencia con la que ese dinero entra. Dos usuarias con el mismo ingreso mensual pueden vivir realidades muy diferentes si una recibe todo una vez al mes y otra recibe varios pagos durante el mes.
 - **Experiencia deseada:** Durante el registro de ingresos, Amy debe entender cómo recibe el dinero la usuaria antes de construir su plan financiero. Debe reconocer frecuencias como mensual, quincenal, cada dos semanas, semanal, variable u otra frecuencia que la usuaria necesite.
@@ -614,7 +614,7 @@
 - **Criterio de éxito:** Cada fuente de ingreso conserva su frecuencia y Amy utiliza esa información para construir los periodos de disponibilidad de dinero.
 
 ### 5.2 · Registrar el monto específico de cada pago y su fecha
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** La configuración permite indicar que un ingreso es quincenal y registrar dos fechas, pero la interfaz actual conserva un único monto general. Esto puede provocar que Amy interprete que el mismo monto llega en cada fecha o que no pueda representar casos reales en los que un pago corresponde, por ejemplo, al 40 por ciento del ingreso mensual y el otro al 60 por ciento.
 - **Experiencia deseada:** Amy debe conocer el valor exacto que llega en cada fecha de pago. Una frecuencia quincenal no debe implicar que ambos pagos son iguales. La usuaria debe poder registrar de forma independiente cuánto recibe en el primer pago y cuánto recibe en el segundo.
