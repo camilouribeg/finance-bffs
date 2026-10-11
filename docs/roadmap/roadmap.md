@@ -55,21 +55,21 @@
 | 4.20 | Hacer literal el check del pago mensual de la deuda | Dashboard | Mis deudas | Alta | Completo |
 | 5.1 | Identificar la frecuencia con la que la usuaria recibe sus ingresos | Flujo de caja y ciclos de ingreso | Alta | Completo |
 | 5.2 | Registrar el monto específico de cada pago y su fecha | Flujo de caja y ciclos de ingreso | Alta | Completo |
-| 5.3 | Registrar cuándo deben pagarse las obligaciones recurrentes | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
+| 5.3 | Registrar cuándo deben pagarse las obligaciones recurrentes | Flujo de caja y ciclos de ingreso | Alta | Completo |
 | 5.4 | Detectar y explicar periodos que quedarán ajustados | Flujo de caja y ciclos de ingreso | Alta | Completo |
 | 5.5 | Crear una reserva para equilibrar el siguiente periodo de ingreso | Flujo de caja y ciclos de ingreso | Alta | Completo |
 | 5.6 | Acompañar el primer ciclo cuando todavía no existe una reserva previa | Flujo de caja y ciclos de ingreso | Alta | Completo |
-| 5.7 | Convertir el plan hasta el próximo ingreso en la información principal | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
+| 5.7 | Convertir el plan hasta el próximo ingreso en la información principal | Flujo de caja y ciclos de ingreso | Alta | Completo |
 | 5.8 | Mostrar dinero realmente utilizable y explicar qué parte ya tiene destino | Flujo de caja y ciclos de ingreso | Alta | Completo |
 | 5.9 | Confirmar que la reserva del siguiente periodo ya fue apartada | Flujo de caja y ciclos de ingreso | Alta | Completo |
 | 5.10 | Calcular el ahorro disponible después de proteger la liquidez | Flujo de caja y ciclos de ingreso | Alta | Completo |
 | 5.11 | Distribuir cada ingreso entre sus destinos | Flujo de caja y ciclos de ingreso | Alta | Completo |
 | 5.12 | Mostrar una línea de tiempo sencilla de próximos ingresos y obligaciones | Flujo de caja y ciclos de ingreso | Media | Completo |
 | 5.13 | Mover la configuración de ingresos y pagos a un nivel secundario | Flujo de caja y ciclos de ingreso | Alta | Completo |
-| 5.14 | Renombrar Mis ciclos como Mi plan de ingresos | Flujo de caja y ciclos de ingreso | Media | Pendiente |
-| 5.15 | Explicar qué es Mi plan de ingresos y para qué sirve | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
-| 5.16 | Pedir el dinero disponible hoy con contexto y propósito | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
-| 5.17 | Hacer autoexplicativos los campos según la frecuencia de ingreso | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
+| 5.14 | Renombrar Mis ciclos como Mi plan de ingresos | Flujo de caja y ciclos de ingreso | Media | Completo |
+| 5.15 | Explicar qué es Mi plan de ingresos y para qué sirve | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.16 | Pedir el dinero disponible hoy con contexto y propósito | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.17 | Hacer autoexplicativos los campos según la frecuencia de ingreso | Flujo de caja y ciclos de ingreso | Alta | Completo |
 
 ## Detalle por User Story
 
@@ -626,7 +626,7 @@
 - **Criterio de éxito:** Cada fecha de ingreso tiene un monto propio, el próximo ingreso muestra el valor correspondiente a esa fecha y casos como 40 por ciento y 60 por ciento se calculan correctamente.
 
 ### 5.3 · Registrar cuándo deben pagarse las obligaciones recurrentes
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Los gastos fijos indican cuánto debe pagar la usuaria, pero el monto mensual por sí solo no permite saber qué ingreso debe cubrir cada obligación. Esto puede ocultar periodos en los que la usuaria se queda con muy poco dinero aunque el mes completo cierre positivamente.
 - **Experiencia deseada:** Amy debe conocer aproximadamente cuándo vence o se paga cada obligación recurrente para relacionarla con los ingresos disponibles antes de esa fecha.
@@ -674,7 +674,7 @@
 - **Criterio de éxito:** El sistema identifica el primer ciclo, no contabiliza una reserva inexistente y permite construirla progresivamente hasta activar el flujo regular.
 
 ### 5.7 · Convertir el plan hasta el próximo ingreso en la información principal
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** La sección actual da gran protagonismo a campos de captura y listas de datos. El bloque 'Tu plan hasta el próximo ingreso' muestra el siguiente pago y si existen obligaciones, pero todavía obliga a la usuaria a interpretar cuánto puede usar y qué debería hacer ahora.
 - **Experiencia deseada:** Al entrar a la sección, la primera información debe ser el análisis de Amy. El plan debe responder inmediatamente cuánto dinero tiene hoy, cuánto necesita proteger antes del próximo ingreso, cuánto puede usar con tranquilidad y cuál es la siguiente acción recomendada.
@@ -758,7 +758,7 @@
 - **Criterio de éxito:** Los formularios no dominan la vista inicial, pueden abrirse bajo demanda y cualquier edición actualiza inmediatamente el análisis.
 
 ### 5.14 · Renombrar Mis ciclos como Mi plan de ingresos
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Media  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Media  ·  **Estado:** Completo
 
 - **Estado actual:** El menú utiliza el nombre 'Mis ciclos'. Aunque describe la lógica interna del producto, no comunica inmediatamente qué encontrará allí una usuaria que no conoce el concepto de ciclos de ingreso.
 - **Experiencia deseada:** La sección debe llamarse 'Mi plan de ingresos' para comunicar de manera más cercana que allí Amy organiza cuándo llega el dinero, qué debe cubrirse entre un ingreso y el siguiente y cómo prepararse para los próximos pagos.
@@ -770,7 +770,7 @@
 - **Criterio de éxito:** 'Mi plan de ingresos' aparece de forma consistente en toda la interfaz y ya no se muestra 'Mis ciclos' como nombre de la sección.
 
 ### 5.15 · Explicar qué es Mi plan de ingresos y para qué sirve
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** La sección empieza directamente con datos y cálculos, por lo que una usuaria puede no entender por qué existe esta vista ni qué diferencia tiene frente a Mis finanzas o Ingresos. Sin contexto, la funcionalidad puede sentirse como otra pantalla para registrar números.
 - **Experiencia deseada:** Al entrar a Mi plan de ingresos, Amy debe explicar en pocas palabras que esta sección organiza el dinero según cuándo llega y cuándo se necesita, con el objetivo de ayudar a la usuaria a llegar tranquila a su próximo ingreso y anticipar periodos que podrían quedar ajustados.
@@ -782,7 +782,7 @@
 - **Criterio de éxito:** La sección incluye una explicación visible y breve que comunica propósito, beneficio y relación entre fechas de ingreso y uso del dinero.
 
 ### 5.16 · Pedir el dinero disponible hoy con contexto y propósito
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** La pantalla pregunta '¿Cuánto tienes hoy en tu cuenta?' sin explicar por qué Amy necesita esa cifra ni qué dinero debe incluir. Además, saldo en cuenta y dinero realmente disponible pueden ser diferentes si parte del saldo ya está separado para otros propósitos.
 - **Experiencia deseada:** Amy debe pedir un punto de partida para organizar el periodo actual, pero la pregunta debe explicar para qué se utilizará y qué monto debe ingresar la usuaria. El dato debe representar el dinero con el que realmente puede contar para el plan actual, evitando duplicar dinero que ya está separado o comprometido.
@@ -794,7 +794,7 @@
 - **Criterio de éxito:** La pregunta define claramente qué dinero incluir, explica su propósito y el valor alimenta correctamente el cálculo hasta el próximo ingreso.
 
 ### 5.17 · Hacer autoexplicativos los campos según la frecuencia de ingreso
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Al seleccionar una frecuencia como quincenal, la interfaz muestra campos numéricos adicionales sin explicar claramente qué representa cada uno. Por ejemplo, pueden aparecer dos cajas con 15 y 30 sin etiquetas suficientes, obligando a la usuaria a deducir que corresponden a días de pago.
 - **Experiencia deseada:** Cada campo que aparezca como consecuencia de la frecuencia seleccionada debe indicar de forma explícita qué información espera Amy. Para ingresos quincenales, la usuaria debe identificar claramente el primer pago y el segundo pago, junto con el día y monto de cada uno.

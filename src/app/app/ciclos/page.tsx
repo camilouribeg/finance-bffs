@@ -206,6 +206,12 @@ export default function CiclosPage() {
   const dineroConDestino = plan.totalObligacionesAntes + totalReservasActivas(reservas);
   const dineroUtilizable = (parseFloat(saldo) || 0) - dineroConDestino;
 
+  // La reserva mas proxima que todavia no se aparta (5.7, 5.9): la siguiente accion
+  // concreta, una sola, sin importar cuantos periodos ajustados haya en total.
+  const proximaReserva = [...reservas]
+    .filter(r => !r.apartada)
+    .sort((a, b) => a.periodo_fin.localeCompare(b.periodo_fin))[0] ?? null;
+
   // Mismos datos que usa el plan, sin segunda captura (5.11, 5.12).
   const eventos = proyectarEventos(
     new Date(),
@@ -253,6 +259,21 @@ export default function CiclosPage() {
                 Puedes usar esto con tranquilidad hasta tu próximo ingreso.
                 {dineroConDestino > 0 && <> De los {fmt(parseFloat(saldo) || 0)} que tienes hoy, {fmt(dineroConDestino)} ya tienen destino: pagos antes de tu próximo ingreso y reservas de periodos futuros.</>}
               </p>
+
+              {/* Siguiente accion concreta (5.7): visible sin bajar, sin depender de
+                  cuantas tarjetas de periodos ajustados haya mas abajo. */}
+              {proximaReserva && (
+                <div className="flex items-center justify-between gap-3 bg-white border border-[#ffb8e0] rounded-xl px-4 py-2.5 mb-3">
+                  <p className="text-sm text-[#1a1a2e]">
+                    Tu próxima acción: aparta <span className="font-semibold">{fmt(proximaReserva.monto)}</span> antes del{" "}
+                    {new Date(proximaReserva.periodo_fin + "T12:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "long" })}
+                  </p>
+                  <button onClick={() => marcarApartada(proximaReserva.id, true)}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#ec7fa9] text-[#ec7fa9] bg-white hover:bg-[#ffedfa] flex-shrink-0">
+                    Ya la aparté
+                  </button>
+                </div>
+              )}
 
               <p className="text-sm text-[#1a1a2e]/70 mb-2">
                 Tu próximo ingreso es el <span className="font-semibold">{plan.proximoIngreso.fecha.toLocaleDateString("es-CO", { day: "numeric", month: "long" })}</span> ({fmt(plan.proximoIngreso.monto)}).
