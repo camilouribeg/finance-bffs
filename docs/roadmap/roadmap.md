@@ -56,16 +56,16 @@
 | 5.1 | Identificar la frecuencia con la que la usuaria recibe sus ingresos | Flujo de caja y ciclos de ingreso | Alta | Completo |
 | 5.2 | Registrar el monto específico de cada pago y su fecha | Flujo de caja y ciclos de ingreso | Alta | Completo |
 | 5.3 | Registrar cuándo deben pagarse las obligaciones recurrentes | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
-| 5.4 | Detectar y explicar periodos que quedarán ajustados | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
-| 5.5 | Crear una reserva para equilibrar el siguiente periodo de ingreso | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
-| 5.6 | Acompañar el primer ciclo cuando todavía no existe una reserva previa | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
+| 5.4 | Detectar y explicar periodos que quedarán ajustados | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.5 | Crear una reserva para equilibrar el siguiente periodo de ingreso | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.6 | Acompañar el primer ciclo cuando todavía no existe una reserva previa | Flujo de caja y ciclos de ingreso | Alta | Completo |
 | 5.7 | Convertir el plan hasta el próximo ingreso en la información principal | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
-| 5.8 | Mostrar dinero realmente utilizable y explicar qué parte ya tiene destino | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
-| 5.9 | Confirmar que la reserva del siguiente periodo ya fue apartada | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
-| 5.10 | Calcular el ahorro disponible después de proteger la liquidez | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
-| 5.11 | Distribuir cada ingreso entre sus destinos | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
-| 5.12 | Mostrar una línea de tiempo sencilla de próximos ingresos y obligaciones | Flujo de caja y ciclos de ingreso | Media | Pendiente |
-| 5.13 | Mover la configuración de ingresos y pagos a un nivel secundario | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
+| 5.8 | Mostrar dinero realmente utilizable y explicar qué parte ya tiene destino | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.9 | Confirmar que la reserva del siguiente periodo ya fue apartada | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.10 | Calcular el ahorro disponible después de proteger la liquidez | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.11 | Distribuir cada ingreso entre sus destinos | Flujo de caja y ciclos de ingreso | Alta | Completo |
+| 5.12 | Mostrar una línea de tiempo sencilla de próximos ingresos y obligaciones | Flujo de caja y ciclos de ingreso | Media | Completo |
+| 5.13 | Mover la configuración de ingresos y pagos a un nivel secundario | Flujo de caja y ciclos de ingreso | Alta | Completo |
 | 5.14 | Renombrar Mis ciclos como Mi plan de ingresos | Flujo de caja y ciclos de ingreso | Media | Pendiente |
 | 5.15 | Explicar qué es Mi plan de ingresos y para qué sirve | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
 | 5.16 | Pedir el dinero disponible hoy con contexto y propósito | Flujo de caja y ciclos de ingreso | Alta | Pendiente |
@@ -638,7 +638,7 @@
 - **Criterio de éxito:** Las obligaciones recurrentes conservan una fecha o periodo de pago y Amy puede asociarlas correctamente con los ciclos de ingreso.
 
 ### 5.4 · Detectar y explicar periodos que quedarán ajustados
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** El sistema puede calcular el periodo entre ingresos, pero la experiencia actual se limita principalmente a informar si existen pagos antes del próximo ingreso y cuánto dinero quedará. Esto no genera suficiente valor cuando Amy detecta que una parte del mes quedará demasiado ajustada.
 - **Experiencia deseada:** Cuando Amy detecte poca liquidez antes de un ingreso futuro, debe convertir ese hallazgo en una recomendación concreta. Debe explicar qué periodo queda ajustado, cuánto dinero faltaría o sería recomendable proteger y desde qué ingreso más holgado puede prepararse.
@@ -650,7 +650,7 @@
 - **Criterio de éxito:** Cuando existe un periodo ajustado, Amy lo identifica, cuantifica la necesidad y presenta una recomendación accionable antes de que ocurra.
 
 ### 5.5 · Crear una reserva para equilibrar el siguiente periodo de ingreso
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Cuando un periodo del mes queda muy ajustado y otro tiene mayor holgura, la usuaria puede necesitar conservar parte del ingreso más fuerte para utilizarlo después. Sin esta reserva, el excedente puede parecer disponible para ahorro o gasto aunque tenga un propósito próximo.
 - **Experiencia deseada:** Si Amy detecta un desbalance entre periodos, debe calcular cuánto dinero conviene reservar desde el periodo más holgado para complementar el siguiente y permitir que la usuaria llegue a su próximo ingreso con el dinero necesario.
@@ -662,7 +662,7 @@
 - **Criterio de éxito:** La reserva se calcula cuando existe un desbalance, se descuenta del dinero disponible y se actualiza cuando cambian las condiciones del flujo.
 
 ### 5.6 · Acompañar el primer ciclo cuando todavía no existe una reserva previa
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Una usuaria que acaba de cambiar de trabajo o de frecuencia de pago puede necesitar una reserva entre periodos, pero durante su primer ciclo todavía no ha tenido un ingreso anterior desde el cual construirla. El sistema no debe comportarse como si esa reserva ya existiera.
 - **Experiencia deseada:** Amy debe reconocer el primer ciclo como una etapa de transición y mostrar con claridad cuánto falta para estabilizar el flujo, qué puede cubrir con el dinero actual y cómo construir progresivamente la reserva necesaria.
@@ -686,7 +686,7 @@
 - **Criterio de éxito:** Sin hacer scroll ni cálculos propios, la usuaria puede identificar cuánto puede usar, cuánto debe proteger y cuál es su siguiente acción.
 
 ### 5.8 · Mostrar dinero realmente utilizable y explicar qué parte ya tiene destino
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** La pantalla pregunta cuánto tiene hoy la usuaria en su cuenta, pero el saldo bancario por sí solo no representa cuánto puede gastar. Parte de ese dinero puede estar comprometida para pagos próximos o para equilibrar un periodo futuro.
 - **Experiencia deseada:** Amy debe convertir el saldo actual en una cifra útil. Debe separar de forma visible cuánto dinero existe hoy, cuánto ya tiene un destino y cuánto puede utilizar la usuaria con tranquilidad hasta su próximo ingreso.
@@ -698,7 +698,7 @@
 - **Criterio de éxito:** El sistema calcula una cifra utilizable después de compromisos y reservas, la muestra de forma protagonista y permite entender su composición.
 
 ### 5.9 · Confirmar que la reserva del siguiente periodo ya fue apartada
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** Amy puede calcular que una parte del ingreso debe reservarse para el siguiente periodo, pero el cálculo por sí solo no garantiza que la usuaria haya separado ese dinero en la vida real.
 - **Experiencia deseada:** La usuaria debe recibir una acción concreta para apartar la reserva y poder confirmar cuando ya lo hizo, siguiendo la misma filosofía de conexión entre Amy y las acciones reales que existe en Cajitas, Bolsitas y Deudas.
@@ -710,7 +710,7 @@
 - **Criterio de éxito:** Cada reserva necesaria genera una acción clara, puede marcarse como realizada y conserva correctamente su estado durante el ciclo correspondiente.
 
 ### 5.10 · Calcular el ahorro disponible después de proteger la liquidez
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** El excedente mensual puede parecer disponible para ahorro aunque una parte sea necesaria para complementar un periodo del mes que queda corto. Si Amy recomienda bolsitas antes de proteger esa liquidez, puede crear un plan que funciona en el total mensual pero falla durante el mes.
 - **Experiencia deseada:** Amy debe determinar la capacidad de ahorro únicamente después de cubrir obligaciones y proteger el dinero necesario para llegar de forma sostenible al siguiente ingreso.
@@ -722,7 +722,7 @@
 - **Criterio de éxito:** Las recomendaciones de ahorro se calculan después de las reservas necesarias y nunca utilizan dinero que Amy ya identificó como necesario antes del siguiente ingreso.
 
 ### 5.11 · Distribuir cada ingreso entre sus destinos
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** La sección muestra cuándo llega el dinero y cuándo salen algunos pagos, pero todavía no le dice a la usuaria cómo repartir cada ingreso cuando lo reciba. La usuaria sigue teniendo que decidir por su cuenta cuánto separar para obligaciones, cuánto reservar para el siguiente periodo, cuánto destinar al ahorro y cuánto puede utilizar.
 - **Experiencia deseada:** Para cada ingreso futuro, Amy debe construir una distribución concreta del dinero. Cuando llegue un pago, la usuaria debe poder ver qué parte corresponde a obligaciones, qué parte debe reservarse para otro periodo, qué parte puede ir a ahorro y qué parte queda realmente disponible.
@@ -734,7 +734,7 @@
 - **Criterio de éxito:** Cada ingreso tiene una distribución coherente, los destinos suman correctamente y la usuaria puede identificar cuánto separar y cuánto queda libre.
 
 ### 5.12 · Mostrar una línea de tiempo sencilla de próximos ingresos y obligaciones
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Media  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Media  ·  **Estado:** Completo
 
 - **Estado actual:** Los ingresos y pagos aparecen actualmente como listas separadas. Para comprender qué ocurre primero, la usuaria debe comparar mentalmente fechas entre diferentes bloques de la página.
 - **Experiencia deseada:** Amy debe mostrar de forma visual y cronológica los próximos movimientos relevantes para que la usuaria pueda entender cómo se comportará su dinero durante las siguientes semanas.
@@ -746,7 +746,7 @@
 - **Criterio de éxito:** Los movimientos se presentan cronológicamente y coinciden con los datos usados por el cálculo del plan.
 
 ### 5.13 · Mover la configuración de ingresos y pagos a un nivel secundario
-**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Pendiente
+**Epic:** Flujo de caja y ciclos de ingreso  ·  **Prioridad:** Alta  ·  **Estado:** Completo
 
 - **Estado actual:** En la experiencia actual, los formularios para agregar ingresos y pagos ocupan gran parte de la pantalla principal. Esto hace que la sección se sienta como una herramienta de captura de datos y reduce el protagonismo del análisis de Amy.
 - **Experiencia deseada:** La pantalla principal debe estar dedicada al plan y a las recomendaciones. Los datos de ingresos y obligaciones deben seguir siendo fáciles de consultar y editar, pero como configuración secundaria.

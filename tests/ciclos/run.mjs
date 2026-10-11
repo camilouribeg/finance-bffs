@@ -5,7 +5,7 @@ import path from "node:path";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const dir = process.argv[2];
-const { planHastaProximoIngreso, proyectarEventos } = require(path.join(dir, "ciclos.js"));
+const { planHastaProximoIngreso, proyectarEventos, analizarPeriodos } = require(path.join(dir, "ciclos.js"));
 const { totalReservasActivas, calcularDisponible } = require(path.join(dir, "capacidad.js"));
 let ok = 0, fail = 0;
 const check = (name, cond, extra = "") => { if (cond) ok++; else fail++; console.log(cond ? "PASS" : "FAIL", name, extra); };
@@ -78,6 +78,28 @@ check("reserva vencida no cuenta", totalReservasActivas([{ monto: 200, periodo_f
 const base = { ingresoFijo: 5000000, ingresosOtros: [], gastosFijosItems: [{ valor: 1000000 }], deudas: [], cajitas: [], bolsillos: [] };
 check("disponible descuenta reserva activa", calcularDisponible({ ...base, reservas: [{ monto: 200000, periodo_fin: "2099-01-01" }] }) === 3800000);
 check("disponible sin reservas no cambia", calcularDisponible(base) === 4000000);
+
+// 12. analizarPeriodos (5.4/5.5): un periodo ajustado mas adelante en el horizonte
+// (no el proximo ingreso), con origen en el ingreso que lo cierra.
+const fuentesAP = [{ nombre: "S", monto_1: 1000000, monto_2: 1200000, frecuencia: "quincenal", dia_1: 15, dia_2: 30, fecha_inicio: null }];
+const obligacionesAP = [{ nombre: "Arriendo", monto: 2000000, dia_pago: 16 }];
+const ap = analizarPeriodos(new Date(2026, 9, 11), 50000, fuentesAP, obligacionesAP);
+check("analizarPeriodos: detecta 2 periodos ajustados en el horizonte (15oct->30oct y 15nov->30nov)", ap.length === 2, `len=${ap.length}`);
+check("analizarPeriodos: el primero tiene como origen el ingreso del 15oct", ap[0] && ap[0].origenReserva && fmtD(ap[0].origenReserva.fecha) === fmtD(new Date(2026, 9, 15)));
+check("analizarPeriodos: faltante del primer periodo es 950.000", ap[0] && ap[0].faltante === 950000, `faltante=${ap[0] && ap[0].faltante}`);
+check("analizarPeriodos: el segundo tiene como origen el ingreso del 15nov", ap[1] && ap[1].origenReserva && fmtD(ap[1].origenReserva.fecha) === fmtD(new Date(2026, 10, 15)));
+check("analizarPeriodos: faltante del segundo periodo es 750.000", ap[1] && ap[1].faltante === 750000, `faltante=${ap[1] && ap[1].faltante}`);
+
+// 13. analizarPeriodos (5.6): obligacion ANTES del primer ingreso visible -> el hueco
+// no tiene ingreso previo del cual reservar (primer ciclo).
+const apPrimerCiclo = analizarPeriodos(new Date(2026, 9, 11), 50000,
+  fuentesAP, [...obligacionesAP, { nombre: "Servicios", monto: 100000, dia_pago: 12 }]);
+check("analizarPeriodos: el primer ciclo (antes del 15oct) no tiene origen", apPrimerCiclo[0] && apPrimerCiclo[0].origenReserva === null, JSON.stringify(apPrimerCiclo[0]));
+check("analizarPeriodos: faltante del primer ciclo es el saldo negativo exacto (50.000)", apPrimerCiclo[0] && apPrimerCiclo[0].faltante === 50000, `faltante=${apPrimerCiclo[0] && apPrimerCiclo[0].faltante}`);
+
+// 14. analizarPeriodos: sin ningun hueco, no reporta periodos ajustados.
+const apSano = analizarPeriodos(new Date(2026, 9, 11), 5000000, fuentesAP, obligacionesAP);
+check("analizarPeriodos: saldo suficiente no genera periodos ajustados", apSano.length === 0, `len=${apSano.length}`);
 
 console.log(`\n${ok} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
