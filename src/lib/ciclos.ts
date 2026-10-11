@@ -134,3 +134,58 @@ export function planHastaProximoIngreso(
     faltante,
   };
 }
+
+export type PeriodoAjustado = {
+  // El periodo que queda corto: desde que empieza (hoy, o el ingreso que lo abre)
+  // hasta la fecha del ingreso que lo cierra (cuando llega el alivio).
+  inicio: Date;
+  fin: Date;
+  // Cuanto hay que tener preparado para no quedar en negativo durante el periodo.
+  faltante: number;
+  // El ingreso mas holgado anterior, desde el cual se puede reservar (5.5). Si es null,
+  // es el primer ciclo (5.6): el hueco ocurre antes de que exista un ingreso previo
+  // visible del cual preparar nada -- no hay una reserva real que contabilizar todavia.
+  origenReserva: { fecha: Date; monto: number } | null;
+};
+
+// Recorre todo el horizonte (no solo el proximo ingreso) y detecta cada periodo entre
+// ingresos donde el saldo proyectado caeria en negativo, aunque el total del horizonte
+// cierre en positivo (5.4). Para cada uno, identifica desde que ingreso anterior se
+// puede preparar la reserva (5.5), o si es el primer ciclo sin ingreso previo (5.6).
+export function analizarPeriodos(
+  hoy: Date,
+  saldoInicial: number,
+  fuentes: FuenteIngreso[],
+  obligaciones: Obligacion[],
+): PeriodoAjustado[] {
+  const eventos = proyectarEventos(hoy, fuentes, obligaciones);
+  const ajustados: PeriodoAjustado[] = [];
+
+  let saldo = saldoInicial;
+  let minEnPeriodo = saldo;
+  let inicioPeriodo = hoy;
+  let ultimoIngreso: { fecha: Date; monto: number } | null = null;
+
+  for (const ev of eventos) {
+    if (ev.tipo === "obligacion") {
+      saldo -= ev.monto;
+      minEnPeriodo = Math.min(minEnPeriodo, saldo);
+      continue;
+    }
+    // Un ingreso cierra el periodo que veniamos acumulando.
+    if (minEnPeriodo < 0) {
+      ajustados.push({
+        inicio: inicioPeriodo,
+        fin: ev.fecha,
+        faltante: Math.ceil(-minEnPeriodo),
+        origenReserva: ultimoIngreso,
+      });
+    }
+    saldo += ev.monto;
+    ultimoIngreso = { fecha: ev.fecha, monto: ev.monto };
+    inicioPeriodo = ev.fecha;
+    minEnPeriodo = saldo;
+  }
+
+  return ajustados;
+}

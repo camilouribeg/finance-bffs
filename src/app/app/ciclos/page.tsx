@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useFmt } from "@/lib/useFmt";
 import MoneyInput from "@/components/MoneyInput";
-import { planHastaProximoIngreso, type Frecuencia } from "@/lib/ciclos";
-import { Check, X } from "lucide-react";
+import { planHastaProximoIngreso, analizarPeriodos, type Frecuencia } from "@/lib/ciclos";
+import { totalReservasActivas } from "@/lib/capacidad";
+import { Check, X, AlertTriangle } from "lucide-react";
 
 type Fuente = { id: string; nombre: string; monto_1: number; monto_2: number | null; frecuencia: Frecuencia; dia_1: number | null; dia_2: number | null; fecha_inicio: string | null };
 type Obl = { id: string; nombre: string; monto: number; dia_pago: number };
@@ -67,37 +68,43 @@ export default function CiclosPage() {
     const reservasActuales = r.data ?? [];
     setReservas(reservasActuales);
     if (seq !== loadSeq.current) return;
-    await sincronizarReserva(user.id, reservasActuales, f.data ?? [], o.data ?? [], parseFloat(s.data?.[0]?.saldo ?? "0") || 0);
+    await sincronizarReservas(user.id, reservasActuales, f.data ?? [], o.data ?? [], parseFloat(s.data?.[0]?.saldo ?? "0") || 0);
     // Releer despues de sincronizar: la reserva recien creada tiene que verse sin recargar.
     const r2 = await supabase.from("reservas_ciclo").select("id, monto, periodo_fin, apartada").eq("user_id", user.id);
     setReservas(r2.data ?? []);
     setLoading(false);
   }
 
-  // Reserva del periodo actual (5.5): si el plan muestra un faltante, se guarda o actualiza
-  // la reserva hasta el proximo ingreso. Si ya no hay faltante, la reserva se borra.
-  // 5.6: solo cuenta una reserva que existe de verdad; nunca se inventa una del primer ciclo.
-  async function sincronizarReserva(userId: string, existentes: { id: string; monto: number; periodo_fin: string; apartada: boolean }[], f: Fuente[], o: Obl[], saldoActual: number) {
+  // Reservas por periodo (5.4, 5.5): recorre todo el horizonte, no solo el proximo
+  // ingreso, y guarda o actualiza una reserva por cada periodo ajustado que tenga un
+  // ingreso anterior del cual prepararse. 5.6: el primer periodo sin ingreso previo
+  // (origenReserva null) NO se guarda como reserva -- no hay nada real que mover
+  // todavia, es la etapa de transicion y se explica aparte en la UI, no se contabiliza.
+  async function sincronizarReservas(userId: string, existentes: { id: string; monto: number; periodo_fin: string; apartada: boolean }[], f: Fuente[], o: Obl[], saldoActual: number) {
     const supabase = createClient();
-    const plan = planHastaProximoIngreso(
+    const ajustados = analizarPeriodos(
       new Date(), saldoActual,
       f.map(x => ({ nombre: x.nombre, monto_1: x.monto_1, monto_2: x.monto_2, frecuencia: x.frecuencia, dia_1: x.dia_1, dia_2: x.dia_2, fecha_inicio: x.fecha_inicio })),
       o.map(x => ({ nombre: x.nombre, monto: x.monto, dia_pago: x.dia_pago })),
     );
-    if (!plan.proximoIngreso) return;
-    const fin = fechaISO(plan.proximoIngreso.fecha);
-    const actual = existentes.find(r => r.periodo_fin === fin);
-    if (plan.faltante > 0) {
+    const conOrigen = ajustados.filter(a => a.origenReserva != null);
+    const finesVigentes = new Set(conOrigen.map(a => fechaISO(a.fin)));
+
+    await Promise.all(conOrigen.map(async (a) => {
+      const fin = fechaISO(a.fin);
+      const actual = existentes.find(r => r.periodo_fin === fin);
       if (actual) {
-        if (actual.monto !== plan.faltante) {
-          await supabase.from("reservas_ciclo").update({ monto: plan.faltante, apartada: false }).eq("id", actual.id);
+        if (actual.monto !== a.faltante) {
+          await supabase.from("reservas_ciclo").update({ monto: a.faltante, apartada: false }).eq("id", actual.id);
         }
       } else {
-        await supabase.from("reservas_ciclo").insert({ user_id: userId, periodo_inicio: fechaISO(new Date()), periodo_fin: fin, monto: plan.faltante });
+        await supabase.from("reservas_ciclo").insert({ user_id: userId, periodo_inicio: fechaISO(a.inicio), periodo_fin: fin, monto: a.faltante });
       }
-    } else if (actual) {
-      await supabase.from("reservas_ciclo").delete().eq("id", actual.id);
-    }
+    }));
+    // Borra reservas de periodos que ya no estan ajustados (cambiaron ingresos/pagos/saldo).
+    await Promise.all(existentes.filter(r => !finesVigentes.has(r.periodo_fin)).map(r =>
+      supabase.from("reservas_ciclo").delete().eq("id", r.id)
+    ));
   }
 
   async function marcarApartada(id: string, apartada: boolean) {
@@ -168,13 +175,30 @@ export default function CiclosPage() {
     load();
   }
 
-  // Plan hasta el proximo ingreso (5.4 / 5.7). Usa el saldo escrito a mano (5.8).
+  // Plan hasta el proximo ingreso (5.7). Usa el saldo escrito a mano (5.8).
   const plan = planHastaProximoIngreso(
     new Date(),
     parseFloat(saldo) || 0,
     fuentes.map(f => ({ nombre: f.nombre, monto_1: f.monto_1, monto_2: f.monto_2, frecuencia: f.frecuencia, dia_1: f.dia_1, dia_2: f.dia_2, fecha_inicio: f.fecha_inicio })),
     obligaciones.map(o => ({ nombre: o.nombre, monto: o.monto, dia_pago: o.dia_pago })),
   );
+
+  // Periodos ajustados en todo el horizonte, no solo el proximo ingreso (5.4). Los que
+  // tienen un ingreso anterior del cual reservar son 5.5 (y ya viven en `reservas`);
+  // el que no tiene origen es el primer ciclo (5.6).
+  const ajustados = analizarPeriodos(
+    new Date(),
+    parseFloat(saldo) || 0,
+    fuentes.map(f => ({ nombre: f.nombre, monto_1: f.monto_1, monto_2: f.monto_2, frecuencia: f.frecuencia, dia_1: f.dia_1, dia_2: f.dia_2, fecha_inicio: f.fecha_inicio })),
+    obligaciones.map(o => ({ nombre: o.nombre, monto: o.monto, dia_pago: o.dia_pago })),
+  );
+  const primerCiclo = ajustados.find(a => a.origenReserva == null) ?? null;
+  const ajustadosConOrigen = ajustados.filter(a => a.origenReserva != null);
+
+  // Dinero realmente utilizable (5.8): el saldo de hoy, menos lo que ya tiene destino
+  // (pagos antes del proximo ingreso + reservas activas de periodos futuros).
+  const dineroConDestino = plan.totalObligacionesAntes + totalReservasActivas(reservas);
+  const dineroUtilizable = (parseFloat(saldo) || 0) - dineroConDestino;
 
   const saldoBloque = (
     <form onSubmit={guardarSaldo} className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
@@ -203,12 +227,20 @@ export default function CiclosPage() {
         </p>
       </div>
 
-      {/* Plan hasta el proximo ingreso (5.7): primero el analisis, despues la configuracion */}
+      {/* Plan hasta el proximo ingreso (5.7): la cifra protagonista primero (5.8),
+          despues el detalle, despues la configuracion mas abajo */}
       {!loading && (
         <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-2xl p-5">
           <p className="text-xs font-bold text-[#ec7fa9] uppercase tracking-wider mb-2">Tu plan hasta el próximo ingreso</p>
+
           {plan.proximoIngreso ? (
             <>
+              <p className="text-3xl font-bold text-[#1a1a2e]">{fmt(Math.max(0, dineroUtilizable))}</p>
+              <p className="text-sm text-[#1a1a2e]/60 mb-3">
+                Puedes usar esto con tranquilidad hasta tu próximo ingreso.
+                {dineroConDestino > 0 && <> De los {fmt(parseFloat(saldo) || 0)} que tienes hoy, {fmt(dineroConDestino)} ya tienen destino: pagos antes de tu próximo ingreso y reservas de periodos futuros.</>}
+              </p>
+
               <p className="text-sm text-[#1a1a2e]/70 mb-2">
                 Tu próximo ingreso es el <span className="font-semibold">{plan.proximoIngreso.fecha.toLocaleDateString("es-CO", { day: "numeric", month: "long" })}</span> ({fmt(plan.proximoIngreso.monto)}).
               </p>
@@ -221,12 +253,32 @@ export default function CiclosPage() {
               ) : (
                 <p className="text-sm text-[#1a1a2e]/70 mb-2">No tienes pagos antes de tu próximo ingreso.</p>
               )}
-              {plan.faltante > 0 ? (
-                <p className="text-sm font-semibold text-red-500">
-                  Te faltarían {fmt(plan.faltante)} antes de tu próximo ingreso. Conviene apartarlos como reserva.
-                </p>
-              ) : (
-                <p className="text-sm font-semibold text-green-600 flex items-center gap-1.5"><Check size={14} />Llegas al próximo ingreso con {fmt(plan.saldoAlProximoIngreso)}.</p>
+
+              {/* 5.4: periodos ajustados mas adelante en el horizonte, con recomendacion concreta */}
+              {ajustadosConOrigen.map((a, i) => (
+                <div key={i} className="mt-3 bg-white border border-red-200 rounded-xl px-4 py-3 flex items-start gap-2">
+                  <AlertTriangle size={15} className="text-red-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-600">
+                    Del {a.inicio.toLocaleDateString("es-CO", { day: "numeric", month: "short" })} al {a.fin.toLocaleDateString("es-CO", { day: "numeric", month: "short" })} te quedarías corta: te faltarían {fmt(a.faltante)}.
+                    Cuando recibas tu pago del {a.origenReserva!.fecha.toLocaleDateString("es-CO", { day: "numeric", month: "long" })} ({fmt(a.origenReserva!.monto)}), deja {fmt(a.faltante)} preparados para complementar.
+                  </p>
+                </div>
+              ))}
+
+              {/* 5.6: primer ciclo, sin ingreso anterior del cual reservar todavia */}
+              {primerCiclo && (
+                <div className="mt-3 bg-white border border-[#ffb8e0] rounded-xl px-4 py-3">
+                  <p className="text-sm font-semibold text-[#1a1a2e]">Estás empezando este ciclo con Amy</p>
+                  <p className="text-sm text-[#1a1a2e]/70 mt-1">
+                    Todavía no tienes un ingreso anterior del cual preparar dinero, así que es normal que este tramo se sienta ajustado:
+                    te faltarían {fmt(primerCiclo.faltante)} antes del {primerCiclo.fin.toLocaleDateString("es-CO", { day: "numeric", month: "long" })}.
+                    No es que tu plan esté mal — es la transición. A medida que recibas tus próximos pagos, aparta un poco en cada uno hasta estabilizarte.
+                  </p>
+                </div>
+              )}
+
+              {!primerCiclo && ajustadosConOrigen.length === 0 && (
+                <p className="text-sm font-semibold text-green-600 flex items-center gap-1.5 mt-2"><Check size={14} />Vas bien: no se ve ningún periodo ajustado por ahora.</p>
               )}
             </>
           ) : (
@@ -235,10 +287,10 @@ export default function CiclosPage() {
         </div>
       )}
 
-      {/* Reservas del periodo (5.5, 5.9) */}
+      {/* Reservas por periodo (5.5, 5.9) */}
       {reservas.length > 0 && (
         <div className="bg-white rounded-2xl border border-[#ffb8e0] p-5">
-          <p className="font-semibold text-[#1a1a2e] mb-3">Reservas para tu próximo ingreso</p>
+          <p className="font-semibold text-[#1a1a2e] mb-3">Reservas para tus próximos ingresos</p>
           <div className="space-y-2">
             {reservas.map(r => (
               <div key={r.id} className={`flex items-center justify-between rounded-xl px-4 py-2.5 border ${r.apartada ? "bg-green-50 border-green-200" : "bg-[#ffedfa] border-[#ffb8e0]"}`}>
