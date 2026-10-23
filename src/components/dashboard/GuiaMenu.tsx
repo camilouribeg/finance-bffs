@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Archive, CreditCard, LayoutDashboard, PiggyBank, ShoppingCart, X } from "lucide-react";
+import { Archive, CalendarDays, CreditCard, LayoutDashboard, PiggyBank, ShoppingCart, TrendingUp, X } from "lucide-react";
 
 // Guia ligera del menu lateral en la primera visita (roadmap 3.9). No bloquea el dashboard,
 // se puede omitir y no vuelve una vez cerrada. Flag en localStorage, por usuaria.
+// Mismo orden que el menu real (AppSidebar.tsx) -- si se agrega una seccion ahi, se agrega aqui tambien.
 const MODULOS = [
   { icon: LayoutDashboard, nombre: "Mis finanzas", frase: "tu panel del mes" },
+  { icon: TrendingUp, nombre: "Ingresos", frase: "de dónde viene tu dinero" },
+  { icon: CalendarDays, nombre: "Mi plan de ingresos", frase: "cuánto puedes usar hasta tu próximo pago" },
   { icon: ShoppingCart, nombre: "Mis gastos", frase: "lo que gastas día a día" },
   { icon: Archive, nombre: "Cajitas", frase: "para gastos grandes que no son todos los meses" },
   { icon: PiggyBank, nombre: "Bolsitas de ahorro", frase: "tus metas y fondos" },

@@ -531,8 +531,21 @@ export default function OnboardingPage() {
     return fondos + metas;
   })();
   const bolsitasDisponible = (selectedAhorro ?? 0) - bolsitasUsadoMensual;
+  // El reparto proporcional por importancia (bolImportancia/15) nunca llega exactamente a
+  // cero por si solo: con importancia baja decae tan lento que tomaria decenas de bolsitas
+  // (en el peor caso, siempre 1 estrella, nunca converge en una sesion real) -- la persona
+  // se queda creando bolsitas para siempre, aceptando una recomendacion cada vez mas chica
+  // (feedback real: "se queda uno forever creando bolsitas"). Dos topes para garantizar que
+  // termine rapido sin importar el patron de importancia que elija:
+  //   1. si lo que queda es una migaja de redondeo (<=2% del ahorro total), o
+  //   2. si ya lleva varias bolsitas (desde la 5ta en adelante),
+  // se recomienda repartir TODO el resto de una vez, no una fraccion.
+  const UMBRAL_RESTO_MINIMO = Math.max(1, Math.round((selectedAhorro ?? 0) * 0.02));
+  const quedaEsMigaja = bolsitasDisponible > 0 && bolsitasDisponible <= UMBRAL_RESTO_MINIMO;
+  const yaLlevaVarias = bolsitasOB.length >= 4;
+  const sugerirTodoElResto = quedaEsMigaja || yaLlevaVarias;
   const bolCuotaRecomendada = bolsitasDisponible > 0 && bolTipo === "fondos" && bolImportancia > 0
-    ? Math.round((bolImportancia / 15) * bolsitasDisponible)
+    ? (sugerirTodoElResto ? Math.round(bolsitasDisponible) : Math.round((bolImportancia / 15) * bolsitasDisponible))
     : 0;
 
   // roadmap 3.14: si la fecha elegida ya pasó, proponer la próxima ocurrencia futura
@@ -1896,19 +1909,29 @@ export default function OnboardingPage() {
                         </button>
                       </div>
                     ) : editingBolCuota ? (
-                      <div className="flex gap-2">
-                        <MoneyInput {...monedaProps} value={bolCuota} onChange={setBolCuota}
-                          autoFocus
-                          placeholder={bolCuotaRecomendada > 0 ? String(bolCuotaRecomendada) : "Monto mensual"}
-                          className={`${inputCls} flex-1 ${bolCuota && parseFloat(bolCuota) > bolsitasDisponible ? "border-red-400" : ""}`} />
-                        <button type="button" onClick={() => setEditingBolCuota(false)} disabled={!bolCuota}
-                          className="bg-[#ec7fa9] text-white px-3 py-2.5 rounded-xl hover:bg-[#d96d97] disabled:opacity-40 flex items-center">
-                          <Check size={14} />
-                        </button>
+                      <div>
+                        <div className="flex gap-2">
+                          <MoneyInput {...monedaProps} value={bolCuota} onChange={setBolCuota}
+                            autoFocus
+                            placeholder={bolCuotaRecomendada > 0 ? String(bolCuotaRecomendada) : "Monto mensual"}
+                            className={`${inputCls} flex-1 ${bolCuota && parseFloat(bolCuota) > bolsitasDisponible ? "border-red-400" : ""}`} />
+                          <button type="button" onClick={() => setEditingBolCuota(false)} disabled={!bolCuota}
+                            className="bg-[#ec7fa9] text-white px-3 py-2.5 rounded-xl hover:bg-[#d96d97] disabled:opacity-40 flex items-center">
+                            <Check size={14} />
+                          </button>
+                        </div>
+                        {bolsitasDisponible > 0 && (
+                          <button type="button" onClick={() => setBolCuota(String(Math.round(bolsitasDisponible)))}
+                            className="text-xs text-[#ec7fa9] font-semibold hover:underline mt-1.5">
+                            Usar los {fmt(bolsitasDisponible)}/mes que quedan y terminar aquí
+                          </button>
+                        )}
                       </div>
                     ) : bolCuotaRecomendada > 0 ? (
                       <div className="bg-[#ffedfa] border border-[#ffb8e0] rounded-xl px-3 py-2.5">
-                        <p className="text-xs text-[#1a1a2e]/50 mb-1.5">Amy recomienda apartar</p>
+                        <p className="text-xs text-[#1a1a2e]/50 mb-1.5">
+                          {sugerirTodoElResto ? "Ya casi repartes todo. Amy recomienda cerrar aquí con" : "Amy recomienda apartar"}
+                        </p>
                         <div className="flex items-center justify-between">
                           <p className="text-lg font-bold text-[#ec7fa9]">{fmt(bolCuotaRecomendada)}<span className="text-xs font-normal text-[#1a1a2e]/40">/mes</span></p>
                           <div className="flex gap-1.5">
@@ -1924,9 +1947,17 @@ export default function OnboardingPage() {
                         </div>
                       </div>
                     ) : (
-                      <MoneyInput {...monedaProps} value={bolCuota} onChange={setBolCuota}
-                        placeholder="¿Cuánto apartas al mes?"
-                        className={inputCls} />
+                      <div>
+                        <MoneyInput {...monedaProps} value={bolCuota} onChange={setBolCuota}
+                          placeholder="¿Cuánto apartas al mes?"
+                          className={inputCls} />
+                        {bolsitasDisponible > 0 && (
+                          <button type="button" onClick={() => setBolCuota(String(Math.round(bolsitasDisponible)))}
+                            className="text-xs text-[#ec7fa9] font-semibold hover:underline mt-1.5">
+                            Usar los {fmt(bolsitasDisponible)}/mes que quedan y terminar aquí
+                          </button>
+                        )}
+                      </div>
                     )}
                     {bolCuota && parseFloat(bolCuota) > bolsitasDisponible && (
                       <p className="text-xs text-red-500 mt-1">Excede el dinero disponible. Máximo: {fmt(bolsitasDisponible)}/mes</p>
