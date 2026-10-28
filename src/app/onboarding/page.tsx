@@ -984,9 +984,15 @@ export default function OnboardingPage() {
                     )}
 
                     <button type="button" onClick={addIngreso}
-                      className="w-full bg-[#ec7fa9] text-white font-semibold px-4 py-2.5 rounded-xl hover:bg-[#d96d97] transition-colors text-sm">+ Agregar</button>
+                      className="w-full bg-[#ec7fa9] text-white font-semibold px-4 py-2.5 rounded-xl hover:bg-[#d96d97] transition-colors text-sm">
+                      {ingresosOtros.length === 0 ? "+ Agregar" : "+ Agregar otro ingreso"}
+                    </button>
                   </div>
-                  <p className="text-xs text-[#1a1a2e]/40 mt-1.5">Completa los campos y toca <strong>+ Agregar</strong> por cada ingreso extra</p>
+                  <p className="text-xs text-[#1a1a2e]/40 mt-1.5">
+                    {ingresosOtros.length === 0
+                      ? <>Escribe de dónde y cuánto, y toca <strong>+ Agregar</strong> para anotarlo</>
+                      : <>¿Otro más? Completa los campos y toca <strong>+ Agregar otro ingreso</strong></>}
+                  </p>
                 </div>
 
                 {totalIngresos > 0 && (
@@ -1056,9 +1062,15 @@ export default function OnboardingPage() {
                     className="w-28 border border-[#ffb8e0] rounded-xl px-3 py-2.5 text-sm bg-[#ffedfa] outline-none focus:ring-2 focus:ring-[#ec7fa9]/30" />
                 </div>
                 <button type="button" onClick={addGasto}
-                  className="w-full bg-[#ec7fa9] text-white font-semibold px-4 py-2.5 rounded-xl hover:bg-[#d96d97] transition-colors text-sm">+ Agregar</button>
+                  className="w-full bg-[#ec7fa9] text-white font-semibold px-4 py-2.5 rounded-xl hover:bg-[#d96d97] transition-colors text-sm">
+                  {gastosFijos.length === 0 ? "+ Agregar" : "+ Agregar otro gasto"}
+                </button>
               </div>
-              <p className="text-xs text-[#1a1a2e]/40 mt-1.5 mb-4">Completa los campos y toca <strong>+ Agregar</strong> por cada gasto fijo</p>
+              <p className="text-xs text-[#1a1a2e]/40 mt-1.5 mb-4">
+                {gastosFijos.length === 0
+                  ? <>Escribe el nombre y el valor, y toca <strong>+ Agregar</strong> para anotarlo</>
+                  : <>¿Otro más? Completa los campos y toca <strong>+ Agregar otro gasto</strong></>}
+              </p>
 
               {totalGastos > 0 && (
                 <div className="bg-[#ec7fa9]/10 border border-[#ec7fa9]/30 rounded-xl px-4 py-2.5 text-sm mb-4">
@@ -1249,7 +1261,7 @@ export default function OnboardingPage() {
               <button type="button" onClick={addDeuda}
                 disabled={!dNombre || !dCuota || !dTotal}
                 className="w-full border border-[#ec7fa9] text-[#ec7fa9] font-semibold py-2.5 rounded-xl text-sm hover:bg-[#ffedfa] disabled:opacity-40 transition-colors mb-4">
-                + Agregar deuda
+                {deudas.length === 0 ? "+ Agregar deuda" : "+ Agregar otra deuda"}
               </button>
 
               {totalDeudas > 0 && (
@@ -1713,7 +1725,7 @@ export default function OnboardingPage() {
                 </div>
                 <button type="button" onClick={() => { addCajitaOB(); setCajFecha(""); }} disabled={!cajNombre || !cajMonto}
                   className="w-full border border-[#ec7fa9] text-[#ec7fa9] font-semibold py-2 rounded-xl text-sm hover:bg-white disabled:opacity-40 transition-colors">
-                  + Agregar cajita
+                  {cajitasOB.length === 0 ? "+ Agregar cajita" : "+ Agregar otra cajita"}
                 </button>
               </div>
 
@@ -1982,7 +1994,7 @@ export default function OnboardingPage() {
                           ? "bg-[#ec7fa9] text-white hover:bg-[#d96d97] shadow-sm"
                           : "border border-[#ffb8e0] text-[#1a1a2e]/30"
                       }`}>
-                      + Agregar bolsita
+                      {bolsitasOB.length === 0 ? "+ Agregar bolsita" : "+ Agregar otra bolsita"}
                     </button>
                   );
                 })()}
